@@ -17,12 +17,10 @@ From Imperial College London, R_0 under certain intervention:
 
 ### ABS Census data
 
-#### Dwelling type by SA1: `sa1-residential-facilities.csv`
+#### Dwelling type by SA1: `nonprivate_sa1.fst`
 
 Source: '2016 Census - Counting Persons, Place of Enumeration (MB)',
 accessed via TableBuilder.
-
-Filters: none.
 
 Variables:
 
@@ -57,11 +55,10 @@ Variables:
     - Not applicable
 
 
-#### SA2 home and SA2 work: `sa2-home-sa2-work.csv` [coming soon]
+
+#### SA2 home and SA2 work: `data-raw/int/hw_sa2_sa2.fst`
 
 Source: '2016 Census - Counting Employed Persons, Place of Work (POW)'
-
-Filters: none.
 
 Variables:
 
@@ -69,7 +66,18 @@ Variables:
 - `SA2 (POW)`
 
 
-### ACARA schools data
+
+#### SA2 home and SA2 work: `data-raw/int/hw_sa2_dzn.fst`
+
+Source: '2016 Census - Counting Employed Persons, Place of Work (POW)'
+
+Variables:
+
+- `SA2 (UR)`
+- `DZN (POW)`
+
+
+### ACARA schools data: `schools.fst`
 
 School locations (`school-locations.xlsx`) and profiles (`school-profile.xlsx`)
 sourced from ACARA's Data Access Program: https://www.acara.edu.au/contact-us/acara-data-access.
