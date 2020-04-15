@@ -244,21 +244,3 @@ write_fst(people, "data-raw/int/people.fst", compress = 100)
 # For each kid that attends school, put them in a nearby school ----------------
 
 # to do
-schools %>%
-  select(year_range) %>%
-  mutate(range = year_range %>%
-           str_remove_all("[A-Z], ") %>%
-           str_replace_all("[a-zA-Z]{1,4}-", "1-")) %>% View()
-           case_when(
-    year_range
-  ))
-  count(year_range) %>%
-  View()
-
-
-schools %>%
-  filter(sa2_name == sa2_list[45])
-
-
-
-
