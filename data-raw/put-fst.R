@@ -39,7 +39,7 @@ write_fst(sa2_codes, "data-raw/int/sa2_codes.fst")
 
 # Home to work (hw) ------------------------------------------------------------
 
-hw_sa2_dzn <- read_csv("data-raw/abs/sa2_live_dzn_work.zip", skip = 9) %>%
+hw_sa2_dzn <- read_csv("data-raw/abs/sa2-live-dzn-work.zip", skip = 9) %>%
   rename(sa2_name = 1) %>%
   pivot_longer(-sa2_name, names_to = "work_dzn", values_to = "n") %>%
   filter(!is.na(n),
@@ -110,7 +110,18 @@ schools_location <- read_excel("data-raw/acara/school-locations.xlsx",
          sa4 = statistical_area_4)
 
 schools <- schools_profile %>%
-  left_join(schools_location)
+  left_join(schools_location) %>%
+  # do schools take primary/secondary?
+  mutate(range = year_range %>%
+           str_remove_all("[A-Z], ") %>%
+           str_replace_all("[a-zA-Z]{1,4}", "0")) %>%
+  separate(range, c("from", "to"), "-") %>%
+  mutate(to = if_else(is.na(to), from, to),
+         takes_primary = from <= 4,
+         takes_secondary = from >= 10 | to >= 10,
+         primary_n = students_n * takes_primary / (takes_primary + takes_secondary),
+         secondary_n = students_n * takes_secondary / (takes_primary + takes_secondary))
+
 
 
 write_fst(schools, "data-raw/int/schools.fst")
@@ -191,7 +202,13 @@ demog <- demog_raw %>%
        ((in20s *  post_sec * runif(n())) > 0.8) |
        ((in20s * !post_sec * runif(n())) > 0.2),
      "kid", "adult")) %>%
-  select(-post_sec, -under20, -in20s)
+  select(-post_sec, -under20, -in20s) %>%
+  # make age numeric
+  mutate(age = case_when(
+    str_detect(age, "100 years") ~ 100,
+    TRUE ~ (as.numeric(substr(age, 1, 1)) * 10 + runif(n(), 0, 9))),
+    age = as.integer(age))
+
 
 
 # Combine people demographics with household/person list -----------------------
@@ -204,6 +221,12 @@ apply_demographics <- function(area) {
 
   p <- people_raw %>% filter(sa2 == area)
   d <- demog %>% filter(sa2 == area)
+
+  # ignore SA2s with fewer than 20 people
+  if (nrow(p) < 20) {
+    message(paste("\tSkipping with small sample", nrow(p)))
+    return(p %>% select(hid, sa2))
+  }
 
   # for each adult in houses, get demographics with sampling
   p_adults <- p %>% filter(person == "adult")
@@ -235,12 +258,68 @@ apply_demographics <- function(area) {
 sa2_list <- unique(sa2_codes$sa2_name)
 
 people <- map_dfr(sa2_list, apply_demographics) %>%
-  select(-person)
-
+  select(-person) %>%
+  rename(sa2_name = sa2)
 # to do: should assume that people > 65 don't (or low prob) live with kids
 
-write_fst(people, "data-raw/int/people.fst", compress = 100)
 
-# For each kid that attends school, put them in a nearby school ----------------
+# Schools ----------------------------------------------------------------------
+# For each kid that attends school, put them in a nearby school
+
+kids <- people %>%
+  select(hid, pid, sa2_name, edu, age) %>%
+  filter(edu %in% c("Primary", "Secondary"))
+
+find_schools <- function(area) {
+
+  message(paste("Finding schools for kids in", area))
+
+  k <- kids %>% filter(sa2_name == area)
+
+  kp <- k %>% filter(edu == "Primary")
+  ks <- k %>% filter(edu == "Secondary")
+
+
+  s <- schools %>%
+    filter(sa2_name == area) %>%
+    select(school_name, school_id,
+           takes_primary, takes_secondary, primary_n, secondary_n)
+
+  sp <- s %>%
+    filter(takes_primary) %>%
+    sample_n(nrow(kp), weight = primary_n, replace = TRUE)
+
+  ss <- s %>%
+    filter(takes_secondary) %>%
+    sample_n(nrow(ks), weight = secondary_n, replace = TRUE)
+
+  kp <- kp %>% bind_cols(sp)
+  ks <- ks %>% bind_cols(ss)
+
+  k <- kp %>% bind_rows(ks)
+
+  return(k)
+
+}
+
+kids_schools <- map_dfr(unique(kids$sa2_name), find_schools)
+
+
+# Where do people do post-secondary study --------------------------------------
 
 # to do
+
+# Where do people work ---------------------------------------------------------
+
+# to do
+
+
+
+# Combine and export Australia -------------------------------------------------
+
+australia <- people %>%
+  left_join(kids_schools)
+
+
+write_fst(australia, "data-raw/int/people.fst", compress = 100)
+
