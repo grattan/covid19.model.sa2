@@ -8,8 +8,9 @@ library(absmapsdata) # remotes::install_github("wfmackey/absmapsdata")
 library(sf)
 library(fst)
 library(janitor)
+library(purrr)
 
-
+`%nin%` <- Negate(`%in%`)
 # Statistical area levels ------------------------------------------------------
 
 sa1_codes <- absmapsdata::sa12016 %>%
@@ -113,3 +114,151 @@ schools <- schools_profile %>%
 
 
 write_fst(schools, "data-raw/int/schools.fst")
+
+# Households -------------------------------------------------------------------
+households_raw <- read_csv("data-raw/abs/sa2-households-families-persons.zip",
+                       skip = 9, col_types = "_cccd_",
+                       col_names = c("persons", "families", "sa2", "n")) %>%
+  filter(!is.na(n),
+         persons != "Total", families != "Total")
+
+
+drop_families <- c(
+  "Visitors only household", # hotels etc; NA given circumstances
+  "Other non-classifiable household", # assume zero; but not much info on this
+  "Not applicable"
+  )
+
+
+households <- households_raw %>%
+  mutate(
+    persons = case_when(
+      # make persons numeric
+      persons == "Not applicable" ~ NA_real_,
+      str_starts(persons, "One") ~ 1,
+      str_starts(persons, "Two") ~ 2,
+      str_starts(persons, "Three") ~ 3,
+      str_starts(persons, "Four") ~ 4,
+      str_starts(persons, "Five") ~ 5,
+      str_starts(persons, "Six") ~ 6,
+      str_starts(persons, "Seven") ~ 7,
+      str_starts(persons, "Eight") ~ 8)) %>%  # assume 8+ is 8
+  # drop ignored family groups
+  filter(families %nin% drop_families) %>%
+  # generate adult and child counts for each household
+  mutate(
+    family_count = case_when(
+      str_starts(families, "Two") ~ 2,
+      str_starts(families, "Three") ~ 3,
+      TRUE ~ 1),
+    couple1 = str_detect(families, "Couple family"),
+    adult = case_when(
+      families == "Lone person household" ~ 1,
+      families == "Group household" ~ persons,
+      family_count == 1 ~ 1 + couple1, # 1 for singles; 2 for couples
+      family_count >  1 ~ 1 + couple1 + family_count),
+    kid = persons - adult) %>%
+  # get one observation per household
+  uncount(n) %>%
+  mutate(hid = row_number()) %>%
+  select(hid, sa2, adult, kid)
+
+# generate people count
+people_raw <- households %>%
+  pivot_longer(c(-hid, -sa2), names_to = "person", values_to = "n") %>%
+  uncount(n) %>%
+  mutate(pid = row_number())
+
+# People demographics ----------------------------------------------------------
+demog_raw <- read_csv("data-raw/abs/sa2-age-lfs-occ-edu.zip", skip = 9,
+         col_types = "_cccccd_",
+         col_names = c("edu", "lfs", "occ", "sa2", "age", "n")) %>%
+  filter(!is.na(n)) %>%
+  filter_all(all_vars(. != "Total"))
+
+demog <- demog_raw %>%
+  uncount(n) %>%
+  mutate(edu = case_when(
+    str_detect(edu, "University") ~ "University",
+    str_detect(edu, "TAFE") ~ "TAFE",
+    TRUE ~ edu),
+  # from demography; define kids as under 20 (to be re-examined)
+   post_sec = edu %in% c("University", "TAFE"),
+   under20 = age %in% c("0-9 years", "10-19 years"),
+   in20s = age %in% c("20-29 years"),
+   person = if_else(
+     under20 |
+       ((in20s *  post_sec * runif(n())) > 0.8) |
+       ((in20s * !post_sec * runif(n())) > 0.2),
+     "kid", "adult")) %>%
+  select(-post_sec, -under20, -in20s)
+
+
+# Combine people demographics with household/person list -----------------------
+
+# For each set of households in an SA2
+
+apply_demographics <- function(area) {
+
+  message(paste("Getting demographics for", area))
+
+  p <- people_raw %>% filter(sa2 == area)
+  d <- demog %>% filter(sa2 == area)
+
+  # for each adult in houses, get demographics with sampling
+  p_adults <- p %>% filter(person == "adult")
+
+  d_adults <- d %>%
+    filter(person == "adult") %>%
+    select(-person, -sa2) %>%
+    sample_n(nrow(p_adults), replace = TRUE)
+
+  adults <- p_adults %>%
+    bind_cols(d_adults)
+
+  # for each kid in houses, get demographics with sampling
+  p_kids <- p %>% filter(person == "kid")
+  d_kids <- d %>%
+    filter(person == "kid") %>%
+    select(-person, -sa2) %>%
+    sample_n(nrow(p_kids), replace = TRUE)
+
+  kids <- p_kids %>%
+    bind_cols(d_kids)
+
+  ret <- adults %>%
+    bind_rows(kids)
+
+  return(ret)
+}
+
+sa2_list <- unique(sa2_codes$sa2_name)
+
+people <- map_dfr(sa2_list, apply_demographics) %>%
+  select(-person)
+
+# to do: should assume that people > 65 don't (or low prob) live with kids
+
+write_fst(people, "data-raw/int/people.fst", compress = 100)
+
+# For each kid that attends school, put them in a nearby school ----------------
+
+# to do
+schools %>%
+  select(year_range) %>%
+  mutate(range = year_range %>%
+           str_remove_all("[A-Z], ") %>%
+           str_replace_all("[a-zA-Z]{1,4}-", "1-")) %>% View()
+           case_when(
+    year_range
+  ))
+  count(year_range) %>%
+  View()
+
+
+schools %>%
+  filter(sa2_name == sa2_list[45])
+
+
+
+
