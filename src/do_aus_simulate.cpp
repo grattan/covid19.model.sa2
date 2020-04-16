@@ -41,6 +41,7 @@ IntegerVector rcauchy_int(int N, double l, double s) {
 //' @param check_sa2_key \code{bool} Whether to check SA2 is sorted, defaults to \code{true}.
 //' @noRd
 
+// [[Rcpp::export(rng = false)]]
 IntegerVector do_1day_supermarket(IntegerVector Status,
                                   IntegerVector SA2,
                                   IntegerVector Age,
@@ -50,6 +51,10 @@ IntegerVector do_1day_supermarket(IntegerVector Status,
                                   IntegerVector CauchyM,
                                   int N = 25e6,
                                   bool check_sa2_key = true) {
+
+
+  const int PERSONS_PER_SUPERMARKET = N / N_SUPERMARKETS;
+
   // Idea: First, count number of people and infected people
   // who visited each supermarket.  Then, if these numbers
   // are large enough, create new infections among the
@@ -66,7 +71,7 @@ IntegerVector do_1day_supermarket(IntegerVector Status,
   }
 
   // Provide Cauchy if not already supplied.
-  IntegerVector thisCauchyM = (N == CauchyM.length()) ? CauchyM : (rcauchy_int(N, 2, 0.01));
+  IntegerVector thisCauchyM = (N == CauchyM.length()) ? CauchyM : (rcauchy_int(N, 2, 0.001));
 
 
   // assume that SA2 is keyed
@@ -78,6 +83,7 @@ IntegerVector do_1day_supermarket(IntegerVector Status,
   IntegerVector nInfectedVisitorsBySupermarket(N_SUPERMARKETS);
   IntegerVector nVisitorsBySupermarket(N_SUPERMARKETS);
 
+  // supermarket_j is the shift from
   int supermarket_j = 0;
   int infected_visitors = 0;
   for (int i = 0; i < N; ++i) {
@@ -105,7 +111,8 @@ IntegerVector do_1day_supermarket(IntegerVector Status,
 
       // infected (s = 1) if resistance lower than n_infected
       // critical (s = 2) if resistance much lower than n_infected;
-      int p = Resistance[i] + thisCauchyM[i];
+      int64_t p = Resistance[i] + thisCauchyM[i];
+      p *= PERSONS_PER_SUPERMARKET;
       Status[i] = (p < n_infected) + (p * p < n_infected);
     }
   }
@@ -114,27 +121,44 @@ IntegerVector do_1day_supermarket(IntegerVector Status,
 
 
 // [[Rcpp::export]]
-int do_au_simulate(IntegerVector Status,
-                   IntegerVector SA2,
-                   IntegerVector Age,
-                   IntegerVector PlaceTypeBySA2,
-                   IntegerVector Employment,
-                   List FreqsByDestType,
-                   int yday_start,
-                   int days_to_sim,
-                   int N = 25e6) {
+List do_au_simulate(IntegerVector Status,
+                    IntegerVector SA2,
+                    IntegerVector Age,
+                    IntegerVector PlaceTypeBySA2,
+                    IntegerVector Employment,
+                    IntegerVector Resistance,
+                    IntegerVector CauchyM,
+                    List nPlacesByDestType,
+                    List FreqsByDestType,
+                    int yday_start,
+                    int days_to_sim,
+                    int N = 25e6) {
 
-  if (FreqsByDestType.length() <= 98) {
+  if (FreqsByDestType.length() <= 98 ||
+      nPlacesByDestType.length() <= 98) {
     stop("Internal error: FreqsByDestType.length < 98");
   }
 
-  IntegerVector SupermarketFreq = FreqsByDestType[98]; // Type_by_TypeInt.fst
+  IntegerVector nSupermarketsBySA2 = nPlacesByDestType[97];
+  IntegerVector SupermarketFreq = FreqsByDestType[97]; // Type_by_TypeInt.fst
 
   if (N != SupermarketFreq.length()) {
     stop("Internal error: SupermarketFreq.length mismatch");
   }
+  if (NSA2 != nSupermarketsBySA2.length()) {
+    stop("Internal error: nSupermarketsBySA2.length() != NSA2.");
+  }
 
+  if (PlaceTypeBySA2.length() > 1) {
+    stop("Internal error: PlaceTypeBySA2 not implemented yet.");
+  }
+
+
+  IntegerVector nInfected = no_init(days_to_sim);
+  IntegerVector FinalSupermarketTarget(N);
   for (int day = 0; day < days_to_sim; ++day) {
+
+
 
     // For example, SupermarketFreq[i] = 365  => every day
     // SupermarketFreq[i] = 1 every year.  So we create a vector
@@ -144,12 +168,46 @@ int do_au_simulate(IntegerVector Status,
     IntegerVector TodaysHz = Rcpp::sample(365, N, true);
 
 
-    //
-    IntegerVector SupermarketTarget = no_init(N);
+    // Need to initalize with zeroes as it will get too unwiedly
+    // to write a case for each branch.
+    IntegerVector SupermarketTarget(N);
+
+
+    // ------------------------------------------------
+    // SA2
+    // |==============|========|========================|
+    //                <--nsu-->                         // n_supermarkets_avbl
+    // cum_j ----------------->
+    // (Vertical pipes indicate the first person in a SA2)
+
+
+    int supermarket_cumj = 0;
+    int n_supermarkets_avbl = 0;
     for (int i = 0; i < N; ++i) {
       // did they go outside
-      bool goes_outside = false;
-      bool contagious = false;
+      bool goes_outside = true;
+      bool contagious = Status[i] != 0;
+
+      int ssa2 = short_sa2(SA2[i]);
+      bool sa2_change = ((i > 0) && SA2[i] != SA2[i - 1]);
+      if (sa2_change) {
+        // on the sa2 change we incremenent supermarket_cumj
+        // by the previous SA2's number of supermarket
+        // This moves along the array of supermarkets
+        // so that rand % n_supermarkets_avbl moves within
+        // the SA2's supermarket index for SupermarketTarget.
+        supermarket_cumj += n_supermarkets_avbl;
+        n_supermarkets_avbl = nSupermarketsBySA2[ssa2];
+      }
+      /*
+       * Alternate array method of counting visits
+       int s_visits_to_supermarket[n_supermarkets_avbl];
+       int i_visits_to_supermarket[n_supermarkets_avbl];
+       memset(s_visits_to_supermarket, 0, sizeof s_visits_to_supermarket);
+       memset(i_visits_to_supermarket, 0, sizeof i_visits_to_supermarket);
+       */
+
+
 
       if (goes_outside) {
 
@@ -163,19 +221,43 @@ int do_au_simulate(IntegerVector Status,
           bool is_pupil = false;
           int destination_type = 0; // 1-106
 
-          if (SupermarketFreq[i] > TodaysHz[i]) {
+          // TODO: n_supermarkets_avbl needs to be loosened
+          if (n_supermarkets_avbl && SupermarketFreq[i] > TodaysHz[i]) {
             // they will visit a supermarket
-
+            // std::rand isn't uniform but who cares?
+            int supermarket_visited = std::rand() % n_supermarkets_avbl;
+            SupermarketTarget[i] = supermarket_visited + supermarket_cumj;
           }
 
         }
 
-        // based on where they went
-        bool gets_infected = false;
+      }
+      if (day + 1 == days_to_sim) {
+        FinalSupermarketTarget[i] = SupermarketTarget[i];
       }
     }
+
+    Status = do_1day_supermarket(Status,
+                                 SA2,
+                                 Age,
+                                 Employment,
+                                 SupermarketTarget,
+                                 Resistance,
+                                 CauchyM,
+                                 N,
+                                 /* check_sa2_key = */ day == 0);
+
+
+    int n_infected_today = 0;
+    for (int i = 0; i < N; ++i) {
+      n_infected_today += (Status[i] == 1);
+    }
+    nInfected[day] = n_infected_today;
+
+
   }
-  return 0;
+  return Rcpp::List::create(Named("nInfected") = nInfected,
+                            Named("SupermarketTarget") = FinalSupermarketTarget);
 }
 
 

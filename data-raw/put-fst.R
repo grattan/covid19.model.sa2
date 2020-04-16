@@ -10,7 +10,7 @@ rebuild_jobs <- FALSE
 
 
 # Functions --------------------------------------------------------------------
-
+library(hutils)
 library(data.table)
 library(tidyverse)
 library(readxl)
@@ -472,5 +472,47 @@ house <- people %>%
 
 
 write_fst(house, "data-raw/int/house.fst", compress = 100)
+
+
+# // data-raw/google/sa2_by_place_id.fst
+if (!requireNamespace("ASGS", quietly = TRUE)) {
+  message("ASGS not installed, skipping. Consider\n\t",
+          'install.packages("ASGS.foyer")')
+} else {
+  read_fst("data-raw/google/TypeInt_by_place_id.fst",
+           as.data.table = TRUE) %>%
+    merge(fread("data-raw/latlon-by-placeid.csv", key = "place_id"),
+          by = "place_id") %>%
+    unique(by = "place_id") %>%
+    .[complete.cases(lat),
+      sa2_name := ASGS::latlon2SA(lat, lon, to = "SA2", return = "v")] %>%
+    .[ASGS::SA2016_decoder, sa2 := i.SA2_MAIN16, on = "sa2_name==SA2_NAME16"] %>%
+    .[, .(place_id, sa2)] %>%
+    setkey(place_id) %T>%
+    write_fst("data-raw/google/sa2_by_place_id.fst", compress = 100) %>%
+    .[]
+
+  ASGS::SA2016_decoder[, .(SA2_MAIN16, SA2_5DIG16)] %>%
+    write_fst("data-raw/SA2_MAIN16-vsSA2_5DIG16.fst")
+}
+
+
+
+# Temporary for proof-of-concept with supermarkets
+read_fst("data-raw/google/TypeInt_by_place_id.fst") %>%
+  .[read_fst("data-raw/google/sa2_by_place_id.fst")] %>%
+  .[read_fst("data-raw/google/Type_by_TypeInt.fst"), on = "TypeInt"] %>%
+  .[TypeInt %in% c(43L, 98L)] %>%
+  .[complete.cases(sa2)] %>%
+  setkey(place_id) %>%
+  .[, c("N", "seqN") := list(.N, seq_len(.N)), keyby = .(sa2)] %>%
+  .[] %T>%
+  write_fst(provide.file("data-raw/google/tmp/seqN-sa2--supermarket.fst")) %>%
+  # right join so that SA2s that have no supermarkets appear (as zero)
+  # instead of being absent
+  .[read_fst("data-raw/int/sa2_codes.fst")[, sa2 := as.integer(sa2)], on = "sa2"] %>%
+  .[, .(nSupermarkets = uniqueN(place_id, na.rm = TRUE)), keyby = .(sa2)] %T>%
+  write_fst(provide.file("data-raw/google/tmp/nSupermarkets_by_sa2.fst")) %>%
+  .[]
 
 
