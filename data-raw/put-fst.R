@@ -1,5 +1,17 @@
 
+
+
 # Read, join and build data ----------------------------------------------------
+
+
+# Settings ---------------------------------------------------------------------
+rebuild_people <- FALSE
+rebuild_schools <- FALSE
+rebuild_jobs <- FALSE
+
+
+
+# Functions --------------------------------------------------------------------
 
 library(data.table)
 library(tidyverse)
@@ -11,22 +23,14 @@ library(janitor)
 library(purrr)
 
 `%nin%` <- Negate(`%in%`)
+pm <- function(...) {message(paste(...))}
+
+
+
+
 # Statistical area levels ------------------------------------------------------
 
-sa1_codes <- absmapsdata::sa12016 %>%
-  st_drop_geometry() %>%
-  select(sa1 = sa1_7dig_2016,
-         sa2_name = sa2_name_2016,
-         sa2 = sa2_main_2016,
-         sa3 = sa3_code_2016,
-         sa4 = sa4_code_2016,
-         state = state_code_2016)
-
-write_fst(sa1_codes, "data-raw/int/sa1_codes.fst")
-
-
-
-sa2_codes <- absmapsdata::sa22016 %>%
+sa2_codes <- sa22016 %>%
   st_drop_geometry() %>%
   select(sa2_name = sa2_name_2016,
          sa2 = sa2_main_2016,
@@ -37,99 +41,11 @@ sa2_codes <- absmapsdata::sa22016 %>%
 write_fst(sa2_codes, "data-raw/int/sa2_codes.fst")
 
 
-# Home to work (hw) ------------------------------------------------------------
-
-hw_sa2_dzn <- read_csv("data-raw/abs/sa2-live-dzn-work.zip", skip = 9) %>%
-  rename(sa2_name = 1) %>%
-  pivot_longer(-sa2_name, names_to = "work_dzn", values_to = "n") %>%
-  filter(!is.na(n),
-         n > 0, # drop file size
-         sa2_name != "Total",
-         work_dzn != "Total")
-
-write_fst(hw_sa2_dzn, "data-raw/int/hw_sa2_dzn.fst")
-
-
-hw_sa2_sa2 <- read_csv("data-raw/abs/sa2-sa2-work.zip", skip = 9,
-                       col_types = "_ccd_",
-                       col_names = c("sa2_name", "work_sa2_name", "n")) %>%
-  filter(!is.na(n),
-         n > 0, # drop file size
-         sa2_name != "Total",
-         work_sa2_name != "Total")
-
-write_fst(hw_sa2_sa2, "data-raw/int/hw_sa2_sa2.fst")
-
-
-# Non-private facilities -------------------------------------------------------
-
-nonprivate_sa1 <- read_csv("data-raw/abs/sa1-residential-facilities.zip",
-                           skip = 9, col_types = "_ccd_",
-                           col_names = c("residence", "sa1", "n")) %>%
-  filter(!is.na(n),
-         residence != "Total",
-         sa1 != "Total")
-
-write_fst(nonprivate_sa1, "data-raw/int/nonprivate_sa1.fst")
-
-# Schools ----------------------------------------------------------------------
-
-
-schools_vars <- read_excel("data-raw/acara/school-profile.xlsx")
-
-schools_profile <- read_excel("data-raw/acara/school-profile.xlsx",
-                              sheet = 2) %>%
-  clean_names() %>%
-  select(school_name,
-         school_id = acara_sml_id,
-         state,
-         postcode,
-         sector = school_sector,
-         governing_body,
-         year_range,
-         rmeoteness_area = geolocation,
-         icsea_pc = icsea_percentile,
-         teachers_n = teaching_staff,
-         teachers_fte = full_time_equivalent_teaching_staff,
-         non_teachers_n = non_teaching_staff,
-         non_teachers_fte = full_time_equivalent_non_teaching_staff,
-         students_n = total_enrolments,
-         stdents_fte = full_time_equivalent_enrolments)
-
-schools_location <- read_excel("data-raw/acara/school-locations.xlsx",
-           sheet = 2) %>%
-  clean_names() %>%
-  select(school_name,
-         school_id = acara_sml_id,
-         lat = latitude,
-         lon = longitude,
-         sa1 = statistical_area_1,
-         sa2 = statistical_area_2,
-         sa2_name = name_of_statistical_area_2,
-         sa3 = statistical_area_3,
-         sa4 = statistical_area_4)
-
-schools <- schools_profile %>%
-  left_join(schools_location) %>%
-  # do schools take primary/secondary?
-  mutate(range = year_range %>%
-           str_remove_all("[A-Z], ") %>%
-           str_replace_all("[a-zA-Z]{1,4}", "0")) %>%
-  separate(range, c("from", "to"), "-") %>%
-  mutate(to = if_else(is.na(to), from, to),
-         takes_primary = from <= 4,
-         takes_secondary = from >= 10 | to >= 10,
-         primary_n = students_n * takes_primary / (takes_primary + takes_secondary),
-         secondary_n = students_n * takes_secondary / (takes_primary + takes_secondary))
-
-
-
-write_fst(schools, "data-raw/int/schools.fst")
 
 # Households -------------------------------------------------------------------
 households_raw <- read_csv("data-raw/abs/sa2-households-families-persons.zip",
-                       skip = 9, col_types = "_cccd_",
-                       col_names = c("persons", "families", "sa2", "n")) %>%
+                           skip = 9, col_types = "_cccd_",
+                           col_names = c("persons", "families", "sa2", "n")) %>%
   filter(!is.na(n),
          persons != "Total", families != "Total")
 
@@ -138,7 +54,7 @@ drop_families <- c(
   "Visitors only household", # hotels etc; NA given circumstances
   "Other non-classifiable household", # assume zero; but not much info on this
   "Not applicable"
-  )
+)
 
 
 households <- households_raw %>%
@@ -180,10 +96,12 @@ people_raw <- households %>%
   uncount(n) %>%
   mutate(pid = row_number())
 
+
+
 # People demographics ----------------------------------------------------------
 demog_raw <- read_csv("data-raw/abs/sa2-age-lfs-occ-edu.zip", skip = 9,
-         col_types = "_cccccd_",
-         col_names = c("edu", "lfs", "occ", "sa2", "age", "n")) %>%
+                      col_types = "_cccccd_",
+                      col_names = c("edu", "lfs", "occ", "sa2", "age", "n")) %>%
   filter(!is.na(n)) %>%
   filter_all(all_vars(. != "Total"))
 
@@ -193,15 +111,15 @@ demog <- demog_raw %>%
     str_detect(edu, "University") ~ "University",
     str_detect(edu, "TAFE") ~ "TAFE",
     TRUE ~ edu),
-  # from demography; define kids as under 20 (to be re-examined)
-   post_sec = edu %in% c("University", "TAFE"),
-   under20 = age %in% c("0-9 years", "10-19 years"),
-   in20s = age %in% c("20-29 years"),
-   person = if_else(
-     under20 |
-       ((in20s *  post_sec * runif(n())) > 0.8) |
-       ((in20s * !post_sec * runif(n())) > 0.2),
-     "kid", "adult")) %>%
+    # from demography; define kids as under 20 (to be re-examined)
+    post_sec = edu %in% c("University", "TAFE"),
+    under20 = age %in% c("0-9 years", "10-19 years"),
+    in20s = age %in% c("20-29 years"),
+    person = if_else(
+      under20 |
+        ((in20s *  post_sec * runif(n())) > 0.8) |
+        ((in20s * !post_sec * runif(n())) > 0.2),
+      "kid", "adult")) %>%
   select(-post_sec, -under20, -in20s) %>%
   # make age numeric
   mutate(age = case_when(
@@ -217,14 +135,14 @@ demog <- demog_raw %>%
 
 apply_demographics <- function(area) {
 
-  message(paste("Getting demographics for", area))
+  pm("Getting demographics for", area)
 
   p <- people_raw %>% filter(sa2 == area)
   d <- demog %>% filter(sa2 == area)
 
   # ignore SA2s with fewer than 20 people
   if (nrow(p) < 20) {
-    message(paste("\tSkipping with small sample", nrow(p)))
+    pm("\tSkipping with small sample", nrow(p))
     return(p %>% select(hid, sa2))
   }
 
@@ -257,24 +175,90 @@ apply_demographics <- function(area) {
 
 sa2_list <- unique(sa2_codes$sa2_name)
 
-people <- map_dfr(sa2_list, apply_demographics) %>%
-  select(-person) %>%
-  rename(sa2_name = sa2)
+if (rebuild_people) {
+  people <- map_dfr(sa2_list, apply_demographics) %>%
+    filter(!is.na(pid)) %>%
+    select(-person) %>%
+    rename(sa2_name = sa2)
+
+  write_fst(people, "data-raw/int/people.fst", compress = 100)
+}
+
 # to do: should assume that people > 65 don't (or low prob) live with kids
+
+people <- read_fst("data-raw/int/people.fst")
 
 
 # Schools ----------------------------------------------------------------------
-# For each kid that attends school, put them in a nearby school
 
+# Schools information
+schools_profile <- read_excel("data-raw/acara/school-profile.xlsx",
+                              sheet = 2) %>%
+  clean_names() %>%
+  select(school_name,
+         school_id = acara_sml_id,
+         state,
+         postcode,
+         sector = school_sector,
+         governing_body,
+         year_range,
+         rmeoteness_area = geolocation,
+         icsea_pc = icsea_percentile,
+         teachers_n = teaching_staff,
+         teachers_fte = full_time_equivalent_teaching_staff,
+         non_teachers_n = non_teaching_staff,
+         non_teachers_fte = full_time_equivalent_non_teaching_staff,
+         students_n = total_enrolments,
+         stdents_fte = full_time_equivalent_enrolments)
+
+schools_location <- read_excel("data-raw/acara/school-locations.xlsx",
+                               sheet = 2) %>%
+  clean_names() %>%
+  select(school_name,
+         school_id = acara_sml_id,
+         lat = latitude,
+         lon = longitude,
+         sa1 = statistical_area_1,
+         sa2 = statistical_area_2,
+         sa2_name = name_of_statistical_area_2,
+         sa3 = statistical_area_3,
+         sa4 = statistical_area_4)
+
+schools <- schools_profile %>%
+  left_join(schools_location) %>%
+  # do schools take primary/secondary?
+  mutate(range = year_range %>%
+           str_remove_all("[A-Z], ") %>%
+           str_replace_all("[a-zA-Z]{1,4}", "0")) %>%
+  separate(range, c("from", "to"), "-") %>%
+  mutate(to = if_else(is.na(to), from, to),
+         students_n = if_else(is.na(students_n), teachers_n * 15, students_n),
+         takes_primary = from <= 4,
+         takes_secondary = from >= 10 | to >= 10,
+         primary_n = students_n * takes_primary / (takes_primary + takes_secondary),
+         secondary_n = students_n * takes_secondary / (takes_primary + takes_secondary))
+
+
+write_fst(schools, "data-raw/int/schools.fst")
+
+
+
+# For each kid that attends school, put them in a nearby school
 kids <- people %>%
   select(hid, pid, sa2_name, edu, age) %>%
   filter(edu %in% c("Primary", "Secondary"))
 
 find_schools <- function(area) {
 
-  message(paste("Finding schools for kids in", area))
+
+  pm("Finding schools for kids in", area)
 
   k <- kids %>% filter(sa2_name == area)
+
+  if (nrow(k) == 0) {
+    pm("\tNo school kids; skipping.")
+    return(k)
+  }
 
   kp <- k %>% filter(edu == "Primary")
   ks <- k %>% filter(edu == "Secondary")
@@ -285,41 +269,148 @@ find_schools <- function(area) {
     select(school_name, school_id,
            takes_primary, takes_secondary, primary_n, secondary_n)
 
-  sp <- s %>%
-    filter(takes_primary) %>%
-    sample_n(nrow(kp), weight = primary_n, replace = TRUE)
+  if (nrow(s) == 0) {
+    pm("\tNo schools found")
+    return(k)
+  }
 
-  ss <- s %>%
-    filter(takes_secondary) %>%
-    sample_n(nrow(ks), weight = secondary_n, replace = TRUE)
+  # primary
+  sp <- s %>% filter(takes_primary)
 
-  kp <- kp %>% bind_cols(sp)
-  ks <- ks %>% bind_cols(ss)
+  if (nrow(kp) > 0 & nrow(sp) == 0) pm("\tNo primary schools found for primary school kids")
 
-  k <- kp %>% bind_rows(ks)
+  if (nrow(kp) > 0 & nrow(sp) > 0) {
+    sp <- sp %>%
+      sample_n(nrow(kp), weight = primary_n, replace = TRUE)
 
-  return(k)
+    kp <- kp %>% bind_cols(sp)
+  }
+
+  # secondary
+  ss <- s %>% filter(takes_secondary)
+
+  if (nrow(ks) > 0 & nrow(ss) == 0) pm("\tNo secondary schools found for secondary school kids")
+
+  if (nrow(ks) > 0 & nrow(ss) > 0) {
+    ss <- ss %>%
+      sample_n(nrow(ks), weight = secondary_n, replace = TRUE)
+
+    ks <- ks %>% bind_cols(ss)
+  }
+
+  ret <- kp %>% bind_rows(ks)
+
+  return(ret)
 
 }
 
-kids_schools <- map_dfr(unique(kids$sa2_name), find_schools)
+if (rebuild_schools) {
+  school_spine <- map_dfr(unique(kids$sa2_name), find_schools) %>%
+    select(pid, school_id)
 
+  write_fst
+}
 
-# Where do people do post-secondary study --------------------------------------
+# Post-secondary study --------------------------------------
 
 # to do
 
-# Where do people work ---------------------------------------------------------
 
+# Work -------------------------------------------------------------------------
+
+# Home to work (hw) ------------------------------------------------------------
+
+# this table is wide for some reason
+hw_sa2_dzn <- read_csv("data-raw/abs/sa2-live-dzn-work.zip", skip = 9) %>%
+  rename(sa2_name = 1) %>%
+  pivot_longer(-sa2_name, names_to = "work_dzn", values_to = "n") %>%
+  mutate(work_dzn = as.integer(work_dzn)) %>%
+  filter(!is.na(n),
+         !is.na(work_dzn),
+         n > 0, # drop file size
+         sa2_name != "Total",
+         work_dzn != "Total")
+
+write_fst(hw_sa2_dzn, "data-raw/int/hw_sa2_dzn.fst")
+
+# get new data cutting by FT/PT work (excl on leave)
+
+
+workers <- people %>%
+  filter(lfs %in% c("Employed, worked full-time",
+                    "Employed, worked part-time")) %>%
+  select(pid, sa2_name)
+
+
+find_work <- function(area) {
+
+
+  pm("Finding job locations for workers in", area)
+
+  w <- workers %>% filter(sa2_name == area)
+
+  if (nrow(w) == 0) {
+    pm("\tNo workers; skipping.")
+    return(w)
+  }
+
+  j <- hw_sa2_dzn %>%
+    filter(sa2_name == area)
+
+  if (nrow(j) == 0) {
+    pm("\tNo jobs found")
+    return(w)
+  }
+
+  j <- j %>%
+    sample_n(nrow(w), weight = n, replace = TRUE) %>%
+    select(-sa2_name, -n)
+
+
+  ret <- w %>% bind_cols(j)
+
+  return(ret)
+
+}
+
+workers_jobs <- map_dfr(sa2_list, find_work)
+work_spine <- workers_jobs %>% select(pid, work_dzn)
+
+# Get distance for each unique combination
 # to do
+
+
+
+
+
 
 
 
 # Combine and export Australia -------------------------------------------------
 
-australia <- people %>%
-  left_join(kids_schools)
+australia_spine <- people %>%
+  select(hid, pid) %>%
+  left_join(school_spine) %>%
+  left_join(work_spine)
 
 
-write_fst(australia, "data-raw/int/people.fst", compress = 100)
+write_fst(australia_spine, "data-raw/int/australia.fst", compress = 100)
+
+
+person_demography <- people %>%
+  select(hid, pid, age, edu, lfs) %>%
+  mutate(edu = if_else(edu == "Not attending", NA_character_, edu) %>%
+           as_factor(),
+         lfs = if_else(lfs == "Not working", NA_character_, lfs) %>%
+           as_factor())
+
+write_fst(person_demography, "data-raw/int/person_demography.fst", compress = 100)
+
+
+house <- people %>%
+  select(hid, sa2_name) %>%
+  distinct()
+
+
+write_fst(house, "data-raw/int/house.fst", compress = 100)
 
