@@ -5,8 +5,8 @@
 # Settings ---------------------------------------------------------------------
 rebuild_people <- FALSE
 rebuild_schools <- FALSE
-rebuild_jobs <- TRUE
-  rebuild_distance <- TRUE
+rebuild_jobs <- FALSE
+  rebuild_distance <- FALSE
 
 
 # Functions --------------------------------------------------------------------
@@ -14,36 +14,32 @@ library(hutils)
 library(data.table)
 library(tidyverse)
 library(readxl)
-library(absmapsdata)
+library(absmapsdata) # remotes::install_github("wfmackey/absmapsdata")
 library(sf)
 library(fst)
 library(janitor)
-
-
-# Statistical area levels ------------------------------------------------------
-
-sa1_codes <- absmapsdata::sa12016 %>%
-  st_drop_geometry() %>%
-  select(sa1 = sa1_7dig_2016,
-         sa2_name = sa2_name_2016,
-         sa2 = sa2_main_2016,
-         sa3 = sa3_code_2016,
-         sa4 = sa4_code_2016,
-         state = state_code_2016)
-
-write_fst(sa1_codes, "data-raw/int/sa1_codes.fst")
-
-
-
-sa2_codes <- absmapsdata::sa22016 %>%
 library(purrr)
 
 `%nin%` <- Negate(`%in%`)
 pm <- function(...) {message(paste(...))}
 
 
-# remotes::install_github("wfmackey/absmapsdata")
+
+# Statistical area levels ------------------------------------------------------
+
+sa2_codes <- absmapsdata::sa22016 %>%
+  st_drop_geometry() %>%
+  select(sa2_name = sa2_name_2016,
+         sa2 = sa2_main_2016,
+         sa3 = sa3_code_2016,
+         sa4 = sa4_code_2016,
+         state = state_code_2016)
+
+
+write_fst(sa2_codes, "data-raw/int/sa2_codes.fst")
+
 sa2_list <- absmapsdata::sa22016$sa2_name
+
 
 
 
