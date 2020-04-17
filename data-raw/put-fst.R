@@ -5,10 +5,10 @@
 
 
 # Settings ---------------------------------------------------------------------
-rebuild_people <- TRUE
-rebuild_schools <- TRUE
+rebuild_people <- FALSE
+rebuild_schools <- FALSE
 rebuild_jobs <- TRUE
-
+  rebuild_distance <- TRUE
 
 
 # Functions --------------------------------------------------------------------
@@ -43,7 +43,7 @@ households_raw <- read_csv("data-raw/abs/sa2-households-families-persons.zip",
 drop_families <- c(
   "Visitors only household", # hotels etc; NA given circumstances
   "Other non-classifiable household", # assume zero; but not much info on this
-  "Not applicable"
+  "Not applicable" # non-private houses that will be added separately
 )
 
 
@@ -240,7 +240,6 @@ schools <- schools_profile %>%
            str_replace_all("[a-zA-Z]{1,4}", "0")) %>%
   separate(range, c("from", "to"), "-") %>%
   mutate(to = if_else(is.na(to), from, to),
-         # to = na_if(to, from), # this doesn't work as expected; should look into
          students_n = if_else(is.na(students_n), teachers_n * 15, students_n),
          takes_primary = from <= 4,
          takes_secondary = from >= 10 | to >= 10,
@@ -390,35 +389,39 @@ if (rebuild_jobs) {
 
   workers_jobs <- map_dfr(sa2_list, find_work)
 
-  # Get distance for each unique combination
-  dzn_shape <- absmapsdata::dz2016 %>%
-    mutate(work_dzn = as.integer(dz_code_2016),
-           geometry = st_centroid(geometry)) %>%
-    select(work_dzn)
+  if (rebuild_distance) {
+    # Get distance for each unique combination observed in data
+    dzn_shape <- absmapsdata::dz2016 %>%
+      mutate(work_dzn = as.integer(dz_code_2016),
+             geometry = st_centroid(geometry)) %>%
+      select(work_dzn)
 
-  sa2_shape <- absmapsdata::sa22016 %>%
-    mutate(geometry = st_centroid(geometry)) %>%
-    select(sa2_name = sa2_name_2016)
+    sa2_shape <- absmapsdata::sa22016 %>%
+      mutate(geometry = st_centroid(geometry)) %>%
+      select(sa2_name = sa2_name_2016)
 
-  routes <- workers_jobs %>%
-    distinct(sa2_name, work_dzn) %>%
-    left_join(sa2_shape) %>%
-    rename(sa2_geom = geometry) %>%
-    left_join(dzn_shape) %>%
-    rename(dzn_geom = geometry)
+    routes <- workers_jobs %>%
+      distinct(sa2_name, work_dzn) %>%
+      left_join(sa2_shape) %>%
+      rename(sa2_geom = geometry) %>%
+      left_join(dzn_shape) %>%
+      rename(dzn_geom = geometry)
 
-  get_distance <- function(x) {
-  st_distance(routes$sa2_geom[x], routes$dzn_geom[x]) %>%
-    as.numeric()
+    get_distance <- function(x) {
+    st_distance(routes$sa2_geom[x], routes$dzn_geom[x]) %>%
+      as.numeric()
+    }
+
+    distances <- routes %>%
+      # bah this takes 65 minutes
+      mutate(distance_to_work = map_dbl(1:nrow(.), get_distance)) %>%
+      select(-ends_with("geom"))
+
+    write_fst(distances, "data-raw/int/distances.fst")
+
   }
 
-  distances <- routes %>%
-    sample_n(100) %>%
-    # bah this takes 65 minutes
-    mutate(distance_to_work = map_dbl(1:nrow(.), get_distance)) %>%
-    select(-ends_with("geom"))
-
-  write_fst(distances, "data-raw/int/distances.fst", compress = 100)
+  distances <- read_fst("data-raw/int/distances.fst")
 
   work_spine <- workers_jobs %>%
     left_join(distances) %>%
@@ -445,11 +448,8 @@ write_fst(australia_spine, "data-raw/int/australia.fst", compress = 100)
 
 
 person_demography <- people %>%
-  select(hid, pid, age, edu, lfs) %>%
-  mutate(edu = if_else(edu == "Not attending", NA_character_, edu) %>%
-           as_factor(),
-         lfs = if_else(lfs == "Not working", NA_character_, lfs) %>%
-           as_factor())
+  select(hid, pid, age, edu, lfs)
+
 
 write_fst(person_demography, "data-raw/int/person_demography.fst", compress = 100)
 
