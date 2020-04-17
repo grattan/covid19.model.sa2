@@ -512,6 +512,13 @@ house <- people %>% distinct(hid, sa2_name)
 write_fst(house, "data-raw/int/house.fst", compress = 100)
 
 
+## Maybe it should be a submodule?
+try({
+  # Not fst because it's small and insertions are easier on git and useful to see
+fread("https://github.com/pappubahry/AU_COVID19/raw/master/time_series_cases.csv") %>%
+  fwrite(provide.file("data-raw/pappubahry/AU_COVID19/time_series_cases.csv"))
+})
+
 # // data-raw/google/sa2_by_place_id.fst
 if (!requireNamespace("ASGS", quietly = TRUE)) {
   message("ASGS not installed, skipping. Consider\n\t",
@@ -552,5 +559,7 @@ read_fst("data-raw/google/TypeInt_by_place_id.fst") %>%
   .[, .(nSupermarkets = uniqueN(place_id, na.rm = TRUE)), keyby = .(sa2)] %T>%
   write_fst(provide.file("data-raw/google/tmp/nSupermarkets_by_sa2.fst")) %>%
   .[]
+
+
 
 
