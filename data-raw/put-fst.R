@@ -5,8 +5,8 @@
 # Settings ---------------------------------------------------------------------
 rebuild_people <- FALSE
 rebuild_schools <- FALSE
-rebuild_jobs <- FALSE
-
+rebuild_jobs <- TRUE
+  rebuild_distance <- TRUE
 
 
 # Functions --------------------------------------------------------------------
@@ -14,7 +14,7 @@ library(hutils)
 library(data.table)
 library(tidyverse)
 library(readxl)
-library(absmapsdata) # remotes::install_github("wfmackey/absmapsdata")
+library(absmapsdata)
 library(sf)
 library(fst)
 library(janitor)
@@ -42,19 +42,9 @@ library(purrr)
 pm <- function(...) {message(paste(...))}
 
 
+# remotes::install_github("wfmackey/absmapsdata")
+sa2_list <- absmapsdata::sa22016$sa2_name
 
-
-# Statistical area levels ------------------------------------------------------
-
-sa2_codes <- sa22016 %>%
-  st_drop_geometry() %>%
-  select(sa2_name = sa2_name_2016,
-         sa2 = sa2_main_2016,
-         sa3 = sa3_code_2016,
-         sa4 = sa4_code_2016,
-         state = state_code_2016)
-
-write_fst(sa2_codes, "data-raw/int/sa2_codes.fst")
 
 
 # Home to work (hw) ------------------------------------------------------------
@@ -109,7 +99,7 @@ households_raw <- read_csv("data-raw/abs/sa2-households-families-persons.zip",
 drop_families <- c(
   "Visitors only household", # hotels etc; NA given circumstances
   "Other non-classifiable household", # assume zero; but not much info on this
-  "Not applicable"
+  "Not applicable" # non-private houses that will be added separately
 )
 
 
@@ -154,7 +144,7 @@ people_raw <- households %>%
 
 
 
-# People demographics ----------------------------------------------------------
+# People -----------------------------------------------------------------------
 demog_raw <- read_csv("data-raw/abs/sa2-age-lfs-occ-edu.zip", skip = 9,
                       col_types = "_cccccd_",
                       col_names = c("edu", "lfs", "occ", "sa2", "age", "n")) %>%
@@ -185,9 +175,7 @@ demog <- demog_raw %>%
 
 
 
-# Combine people demographics with household/person list -----------------------
-
-# For each set of households in an SA2
+# Put people in houses ---------------------------------------------------------
 
 apply_demographics <- function(area) {
 
@@ -229,20 +217,40 @@ apply_demographics <- function(area) {
   return(ret)
 }
 
-sa2_list <- unique(sa2_codes$sa2_name)
-
 if (rebuild_people) {
   people <- map_dfr(sa2_list, apply_demographics) %>%
     filter(!is.na(pid)) %>%
     select(-person) %>%
-    rename(sa2_name = sa2)
+    rename(sa2_name = sa2) %>%
+    mutate_at(vars(sa2_name, edu, lfs, occ), ~as_factor(.)) # reduce file size
 
   write_fst(people, "data-raw/int/people.fst", compress = 100)
 }
 
+people <- read_fst("data-raw/int/people.fst")
+
 # to do: should assume that people > 65 don't (or low prob) live with kids
 
-people <- read_fst("data-raw/int/people.fst")
+
+# Add people in non-private facilities -----------------------------------------
+
+nonprivate_sa1 <- read_csv("data-raw/abs/sa1-residential-facilities.zip",
+                           skip = 9, col_types = "_ccd_",
+                           col_names = c("residence", "sa1", "n")) %>%
+  filter(!is.na(n),
+         n > 0,
+         residence != "Total",
+         sa1 != "Total")
+
+write_fst(nonprivate_sa1, "data-raw/int/nonprivate_sa1.fst")
+
+
+
+
+
+
+
+
 
 
 # Schools ----------------------------------------------------------------------
@@ -283,7 +291,7 @@ schools_location <- read_excel("data-raw/acara/school-locations.xlsx",
 
 schools <- schools_profile %>%
   left_join(schools_location) %>%
-  # do schools take primary/secondary?
+  filter(!is.na(year_range)) %>% # removes 'environmental centres' mostly
   mutate(range = year_range %>%
            str_remove_all("[A-Z], ") %>%
            str_replace_all("[a-zA-Z]{1,4}", "0")) %>%
@@ -337,8 +345,7 @@ find_schools <- function(area) {
   if (nrow(kp) > 0 & nrow(sp) == 0) pm("\tNo primary schools found for primary school kids")
 
   if (nrow(kp) > 0 & nrow(sp) > 0) {
-    sp <- sp %>%
-      sample_n(nrow(kp), weight = primary_n, replace = TRUE)
+    sp <- sp %>% sample_n(nrow(kp), weight = primary_n, replace = TRUE)
 
     kp <- kp %>% bind_cols(sp)
   }
@@ -349,8 +356,7 @@ find_schools <- function(area) {
   if (nrow(ks) > 0 & nrow(ss) == 0) pm("\tNo secondary schools found for secondary school kids")
 
   if (nrow(ks) > 0 & nrow(ss) > 0) {
-    ss <- ss %>%
-      sample_n(nrow(ks), weight = secondary_n, replace = TRUE)
+    ss <- ss %>% sample_n(nrow(ks), weight = secondary_n, replace = TRUE)
 
     ks <- ks %>% bind_cols(ss)
   }
@@ -370,16 +376,18 @@ if (rebuild_schools) {
 
 school_spine <- read_fst("data-raw/int/school_spine.fst")
 
-# Post-secondary study --------------------------------------
+
+# Post-secondary study ---------------------------------------------------------
 
 # to do
 
 
+
+
+
 # Work -------------------------------------------------------------------------
 
-# Home to work (hw) ------------------------------------------------------------
-
-# this table is wide for some reason
+# Where people live, and where they work
 hw_sa2_dzn <- read_csv("data-raw/abs/sa2-live-dzn-work.zip", skip = 9) %>%
   rename(sa2_name = 1) %>%
   pivot_longer(-sa2_name, names_to = "work_dzn", values_to = "n") %>%
@@ -392,9 +400,10 @@ hw_sa2_dzn <- read_csv("data-raw/abs/sa2-live-dzn-work.zip", skip = 9) %>%
 
 write_fst(hw_sa2_dzn, "data-raw/int/hw_sa2_dzn.fst")
 
-# get new data cutting by FT/PT work (excl on leave)
+# get new data cutting by mode of transport (coming from TableBuilder)
 
 
+# Find each worker a job in a place
 workers <- people %>%
   filter(lfs %in% c("Employed, worked full-time",
                     "Employed, worked part-time")) %>%
@@ -404,7 +413,7 @@ workers <- people %>%
 find_work <- function(area) {
 
 
-  pm("Finding job locations for workers in", area)
+  pm("Finding jobs for people living in", area)
 
   w <- workers %>% filter(sa2_name == area)
 
@@ -432,15 +441,53 @@ find_work <- function(area) {
 
 }
 
-workers_jobs <- map_dfr(sa2_list, find_work)
-work_spine <- workers_jobs %>% select(pid, work_dzn)
+if (rebuild_jobs) {
 
-# Get distance for each unique combination
-# to do
+  workers_jobs <- map_dfr(sa2_list, find_work)
 
+  if (rebuild_distance) {
+    # Get distance for each unique combination observed in data
+    dzn_shape <- absmapsdata::dz2016 %>%
+      mutate(work_dzn = as.integer(dz_code_2016),
+             geometry = st_centroid(geometry)) %>%
+      select(work_dzn)
 
+    sa2_shape <- absmapsdata::sa22016 %>%
+      mutate(geometry = st_centroid(geometry)) %>%
+      select(sa2_name = sa2_name_2016)
 
+    routes <- workers_jobs %>%
+      distinct(sa2_name, work_dzn) %>%
+      left_join(sa2_shape) %>%
+      rename(sa2_geom = geometry) %>%
+      left_join(dzn_shape) %>%
+      rename(dzn_geom = geometry)
 
+    get_distance <- function(x) {
+    st_distance(routes$sa2_geom[x], routes$dzn_geom[x]) %>%
+      as.numeric()
+    }
+
+    distances <- routes %>%
+      # bah this takes 65 minutes
+      mutate(distance_to_work = map_dbl(1:nrow(.), get_distance)) %>%
+      select(-ends_with("geom"))
+
+    write_fst(distances, "data-raw/int/distances.fst")
+
+  }
+
+  distances <- read_fst("data-raw/int/distances.fst")
+
+  work_spine <- workers_jobs %>%
+    left_join(distances) %>%
+    select(pid, work_dzn, distance_to_work)
+
+  write_fst(work_spine, "data-raw/int/work_spine.fst", compress = 100)
+
+}
+
+work_spine <- read_fst("data-raw/int/work_spine.fst")
 
 
 
@@ -457,18 +504,13 @@ write_fst(australia_spine, "data-raw/int/australia.fst", compress = 100)
 
 
 person_demography <- people %>%
-  select(hid, pid, age, edu, lfs) %>%
-  mutate(edu = if_else(edu == "Not attending", NA_character_, edu) %>%
-           as_factor(),
-         lfs = if_else(lfs == "Not working", NA_character_, lfs) %>%
-           as_factor())
+  select(hid, pid, age, edu, lfs)
+
 
 write_fst(person_demography, "data-raw/int/person_demography.fst", compress = 100)
 
 
-house <- people %>%
-  select(hid, sa2_name) %>%
-  distinct()
+house <- people %>% distinct(hid, sa2_name)
 
 
 write_fst(house, "data-raw/int/house.fst", compress = 100)
