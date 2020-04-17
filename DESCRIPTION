@@ -12,6 +12,7 @@ License: GPL-2
 LinkingTo: Rcpp
 Imports:
     Rcpp,
+    checkmate,
     data.table,
     fst,
     hutils

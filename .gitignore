@@ -5,3 +5,5 @@
 .DS_Store
 data-raw/int/people.fst
 data-raw/int/people.fst
+*.dll
+*.o

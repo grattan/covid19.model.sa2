@@ -515,8 +515,11 @@ write_fst(house, "data-raw/int/house.fst", compress = 100)
 ## Maybe it should be a submodule?
 try({
   # Not fst because it's small and insertions are easier on git and useful to see
-fread("https://github.com/pappubahry/AU_COVID19/raw/master/time_series_cases.csv") %>%
-  fwrite(provide.file("data-raw/pappubahry/AU_COVID19/time_series_cases.csv"))
+  fread("https://github.com/pappubahry/AU_COVID19/raw/master/time_series_cases.csv") %>%
+    fwrite(provide.file("data-raw/pappubahry/AU_COVID19/time_series_cases.csv"))
+
+  fread("https://github.com/pappubahry/AU_COVID19/raw/master/time_series_recovered.csv") %>%
+    fwrite(provide.file("data-raw/pappubahry/AU_COVID19/time_series_recovered.csv"))
 })
 
 # // data-raw/google/sa2_by_place_id.fst

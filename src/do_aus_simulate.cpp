@@ -1,26 +1,16 @@
 #include "covid19model.h"
 #include <Rcpp.h>
+#include <Rcpp/Benchmark/Timer.h>
 using namespace Rcpp;
 
 #define N_SUPERMARKETS 7487
 
 
 // Just a way to get quasi-cauchy distributed nonnegative integer vector
-IntegerVector rcauchy_int(int N, double l, double s) {
-  NumericVector o = Rcpp::rcauchy(N, l, s);
-  IntegerVector out = no_init(N);
-  for (int i = 0; i < N; ++i) {
-    double oi = o[i];
-    out[i] = 1;
-    if (oi < -1) {
-      out[i] = 0;
-    } else if (oi > 1000) {
-      out[i] = 1000;
-    } else {
-      // won't be NaN and is now definitely in range.
-      out[i] = (int)(oi);
-    }
-  }
+int rcauchy_int(double l, double s) {
+  NumericVector o = Rcpp::rcauchy(1, l, s);
+  double out = o[0];
+  out = (out < -1 || out > 1000) ? 0 : out;
   return out;
 }
 
@@ -28,6 +18,7 @@ IntegerVector rcauchy_int(int N, double l, double s) {
 //' @description Simulate the experience of everyone's interactions
 //' at supermarkets in a single day
 //' @param Status \code{integer(N)}: Whether each individual is infected or not etc.
+//' @param InfectedOn The day on which the individual was infected.
 //' @param SA2 The 2016 SA2 code of each individual. Must be sorted.
 //' @param Age The age of every individual.
 //' @param Employment Information about employment of each individual.
@@ -39,50 +30,70 @@ IntegerVector rcauchy_int(int N, double l, double s) {
 //' element of resistance if not.
 //' @param N \code{int} Population of Australia.
 //' @param check_sa2_key \code{bool} Whether to check SA2 is sorted, defaults to \code{true}.
+//' @param returner Used to return other elements. By default 0, i.e. just return Status.
+//' @param r0_supermarket The reproduction rate of infection in each supermarket, without
+//' including resistance.
+//' @param resistance1 Resistance parameter 1: the threshold below which
+//' an infection takes place.
+//' @param resistance2 Reistance parameter 2: used with Age to increase
+//' the likelihood of both critical and active cases among the elderly.
 //' @noRd
 
-// [[Rcpp::export(rng = false)]]
-IntegerVector do_1day_supermarket(IntegerVector Status,
-                                  IntegerVector SA2,
-                                  IntegerVector Age,
-                                  IntegerVector Employment,
-                                  IntegerVector SupermarketTarget,
-                                  IntegerVector Resistance,
-                                  IntegerVector CauchyM,
-                                  int N = 25e6,
-                                  bool check_sa2_key = true) {
-
-
+void do_1day_supermarket(IntegerVector Status,
+                         IntegerVector InfectedOn,
+                         IntegerVector SA2,
+                         IntegerVector Age,
+                         IntegerVector Employment,
+                         IntegerVector SupermarketTarget,
+                         IntegerVector Resistance,
+                         IntegerVector CauchyM,
+                         int N = 25e6,
+                         bool check_sa2_key = true,
+                         int returner = 0,
+                         double r0_supermarket = 2.5,
+                         int resistance1 = 400,
+                         int resistance2 = 3) {
   const int PERSONS_PER_SUPERMARKET = N / N_SUPERMARKETS;
+
+  Timer timer;
 
   // Idea: First, count number of people and infected people
   // who visited each supermarket.  Then, if these numbers
   // are large enough, create new infections among the
   // susceptible.
 
-  // Provide the supermarket each individual went to
   if (N != Status.length() ||
       N != SA2.length() ||
       N != Age.length() ||
       N != Employment.length() ||
       N != SupermarketTarget.length() ||
       N != Resistance.length()) {
+    Rcout << "SupermarketTarget " << SupermarketTarget.length() << "\n";
+    Rcout << "N " << N << "\n";
+    Rcout << "Status " << Status.length() << "\n";
+    Rcout << "SA2 " << SA2.length() << "\n";
+    Rcout << "Age " << Age.length() << "\n";
+    Rcout << "Employment " << Employment.length() << "\n";
+    Rcout << "Resistance " << Resistance.length() << "\n";
     stop("Internal error: lengths differ.");
   }
 
   // Provide Cauchy if not already supplied.
-  IntegerVector thisCauchyM = (N == CauchyM.length()) ? CauchyM : (rcauchy_int(N, 2, 0.001));
+  timer.step("thisCauchyM");
+  // IntegerVector thisCauchyM = (N == CauchyM.length()) ? CauchyM : (rcauchy_int(N, 2, 0.001));
 
 
   // assume that SA2 is keyed
+  timer.step("which_unsorted_int");
   if (check_sa2_key && which_unsorted_int(SA2)) {
     stop("Internal error: SA2 not sorted.");
   }
 
-
+  timer.step("allocate_n_supermarkets");
   IntegerVector nInfectedVisitorsBySupermarket(N_SUPERMARKETS);
   IntegerVector nVisitorsBySupermarket(N_SUPERMARKETS);
 
+  timer.step("supermarket_j");
   // supermarket_j is the shift from
   int supermarket_j = 0;
   int infected_visitors = 0;
@@ -91,10 +102,17 @@ IntegerVector do_1day_supermarket(IntegerVector Status,
     if (supermarket_target > 0) {
       // SupermarketTarget is 1-indexed.
       nVisitorsBySupermarket[supermarket_target - 1] += 1;
-      nInfectedVisitorsBySupermarket[supermarket_target - 1] += (Status[i] > 0) * thisCauchyM[i];
+      nInfectedVisitorsBySupermarket[supermarket_target - 1] += (Status[i] > 0) ? rcauchy_int(2, 0.001) : 0;
     }
   }
 
+  IntegerVector NewInfectionsBySupermarket = no_init(N_SUPERMARKETS);
+  for (int k = 0; k < N_SUPERMARKETS; ++k) {
+    NewInfectionsBySupermarket[k] = (int)(r0_supermarket * nInfectedVisitorsBySupermarket[k]);
+  }
+
+  IntegerVector nInfected = no_init(N);
+  timer.step("reinfect");
   // reinfect
   for (int i = 0; i < N; ++i) {
     if (Status[i]) {
@@ -102,26 +120,32 @@ IntegerVector do_1day_supermarket(IntegerVector Status,
     }
 
     int supermarket_target = SupermarketTarget[i];
-
     // if the person visited a supermarket they become infected
     // probablistically
     if (supermarket_target > 0) {
-      int n_visitors = nVisitorsBySupermarket[supermarket_target - 1];
-      int n_infected = nInfectedVisitorsBySupermarket[supermarket_target - 1];
-
-      // infected (s = 1) if resistance lower than n_infected
-      // critical (s = 2) if resistance much lower than n_infected;
-      int64_t p = Resistance[i] + thisCauchyM[i];
-      p *= PERSONS_PER_SUPERMARKET;
-      Status[i] = (p < n_infected) + (p * p < n_infected);
+      int n_new_cases = NewInfectionsBySupermarket[supermarket_target - 1];
+      if (n_new_cases) {
+        // Resistance determines infections and Age determines criticality
+        Status[i] = (Resistance[i] < resistance1) + (Resistance[i] < (Age[i] * resistance2));
+        // Used
+        NewInfectionsBySupermarket[supermarket_target - 1] -= 1;
+      }
     }
   }
-  return Status;
+  NumericVector res(timer);
+  for (int i = 0; i < res.size(); ++i) {
+    res[i] = res[i] / 1e6;
+  }
+  Rcout << res << std::endl;
+
+
+  // void
 }
 
 
 // [[Rcpp::export]]
 List do_au_simulate(IntegerVector Status,
+                    IntegerVector InfectedOn,
                     IntegerVector SA2,
                     IntegerVector Age,
                     IntegerVector PlaceTypeBySA2,
@@ -130,6 +154,7 @@ List do_au_simulate(IntegerVector Status,
                     IntegerVector CauchyM,
                     List nPlacesByDestType,
                     List FreqsByDestType,
+                    List Epi, /* Epidemiological parameters */
                     int yday_start,
                     int days_to_sim,
                     int N = 25e6) {
@@ -152,6 +177,20 @@ List do_au_simulate(IntegerVector Status,
   if (PlaceTypeBySA2.length() > 1) {
     stop("Internal error: PlaceTypeBySA2 not implemented yet.");
   }
+  double asympto = 0.48;
+  int duration_active = 13;
+  int lambda_infectious = 9;
+  if (Epi.length() && Epi.containsElementNamed("asympto")) {
+    asympto = Epi["asympto"];
+  }
+  if (Epi.length() && Epi.containsElementNamed("duration_active")) {
+    duration_active = Epi["duration_active"];
+  }
+  if (Epi.length() && Epi.containsElementNamed("lambda_infectious")) {
+    lambda_infectious = Epi["lambda_infectious"];
+  }
+
+
 
 
   IntegerVector nInfected = no_init(days_to_sim);
@@ -186,7 +225,7 @@ List do_au_simulate(IntegerVector Status,
     for (int i = 0; i < N; ++i) {
       // did they go outside
       bool goes_outside = true;
-      bool contagious = Status[i] != 0;
+      bool contagious = Status[i] > 0;
 
       int ssa2 = short_sa2(SA2[i]);
       bool sa2_change = ((i > 0) && SA2[i] != SA2[i - 1]);
@@ -237,15 +276,17 @@ List do_au_simulate(IntegerVector Status,
       }
     }
 
-    Status = do_1day_supermarket(Status,
-                                 SA2,
-                                 Age,
-                                 Employment,
-                                 SupermarketTarget,
-                                 Resistance,
-                                 CauchyM,
-                                 N,
-                                 /* check_sa2_key = */ day == 0);
+    // This function actually performs the interactions and infections
+    do_1day_supermarket(Status,
+                        InfectedOn,
+                        SA2,
+                        Age,
+                        Employment,
+                        SupermarketTarget,
+                        Resistance,
+                        CauchyM,
+                        N,
+                        /* check_sa2_key = */ day == 0);
 
 
     int n_infected_today = 0;
@@ -256,10 +297,9 @@ List do_au_simulate(IntegerVector Status,
 
 
   }
-  return Rcpp::List::create(Named("nInfected") = nInfected,
-                            Named("SupermarketTarget") = FinalSupermarketTarget);
-}
 
+  return Rcpp::List::create(Named("nInfected") = nInfected);
+}
 
 
 

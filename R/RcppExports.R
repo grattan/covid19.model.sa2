@@ -20,15 +20,18 @@ distr2status <- function(N, dead, healed, active, critical) {
 #' element of resistance if not.
 #' @param N \code{int} Population of Australia.
 #' @param check_sa2_key \code{bool} Whether to check SA2 is sorted, defaults to \code{true}.
+#' @param returner Used to return other elements. By default 0, i.e. just return Status.
+#' @param r0_supermarket The reproduction rate of infection in each supermarket, without
+#' including resistance.
+#' @param resistance1 Resistance parameter 1: the threshold below which
+#' an infection takes place.
+#' @param resistance2 Reistance parameter 2: used with Age to increase
+#' the likelihood of both critical and active cases among the elderly.
 #' @noRd
 NULL
 
-do_1day_supermarket <- function(Status, SA2, Age, Employment, SupermarketTarget, Resistance, CauchyM, N = 25e6L, check_sa2_key = TRUE) {
-    .Call(`_covid19_model_sa2_do_1day_supermarket`, Status, SA2, Age, Employment, SupermarketTarget, Resistance, CauchyM, N, check_sa2_key)
-}
-
-do_au_simulate <- function(Status, SA2, Age, PlaceTypeBySA2, Employment, Resistance, CauchyM, nPlacesByDestType, FreqsByDestType, yday_start, days_to_sim, N = 25e6L) {
-    .Call(`_covid19_model_sa2_do_au_simulate`, Status, SA2, Age, PlaceTypeBySA2, Employment, Resistance, CauchyM, nPlacesByDestType, FreqsByDestType, yday_start, days_to_sim, N)
+do_au_simulate <- function(Status, SA2, Age, PlaceTypeBySA2, Employment, Resistance, CauchyM, nPlacesByDestType, FreqsByDestType, Epi, yday_start, days_to_sim, N = 25e6L) {
+    .Call(`_covid19_model_sa2_do_au_simulate`, Status, SA2, Age, PlaceTypeBySA2, Employment, Resistance, CauchyM, nPlacesByDestType, FreqsByDestType, Epi, yday_start, days_to_sim, N)
 }
 
 short_sa2 <- function(sa2) {

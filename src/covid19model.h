@@ -4,6 +4,9 @@
 #include "covid19model.h"
 #include <Rcpp.h>
 using namespace Rcpp;
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 #define NSA2 2310
 

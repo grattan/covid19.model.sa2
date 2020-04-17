@@ -8,6 +8,7 @@ simulate_sa2 <- function(days_to_simulate = 300,
                                               active = 2592,
                                               critical = 66),
                          CauchyM = integer(0),  # allow changes every day
+                         EpiPars = list(),
                          .population = 25e6) {
   ## Each day a person can
   ## stay in the household
@@ -70,7 +71,7 @@ simulate_sa2 <- function(days_to_simulate = 300,
   aus[, Status := samp_status]
   aus[sa2_by_hid, SA2 := i.sa2, on = "hid"]
   aus[demo_by_person, Age := i.age, on = "pid"]
-  aus[, Resistance := rep_len(samp(1:6000, size = 13381L), .N)]
+  aus[, Resistance := rep_len(sample(1:1000, size = 13381L, replace = TRUE), .N)]
 
   nPlacesByDestType <-
     lapply(1:106, function(i) {
@@ -103,19 +104,60 @@ simulate_sa2 <- function(days_to_simulate = 300,
   aus[, stopifnot(is.integer(Status),
                   is.integer(SA2))]
 
+  EpiPars <- set_epipars_defaults(EpiPars)
 
-  aus[, do_au_simulate(Status,
-                       SA2,
-                       Age,
-                       PlaceTypeBySA2 = integer(0),
-                       Employment = Age, # not implemented
-                       Resistance,
-                       CauchyM = CauchyM,
-                       nPlacesByDestType = nPlacesByDestType,
-                       FreqsByDestType = FreqsByDestType,
-                       yday_start = 1L,
-                       days_to_sim = days_to_simulate,
-                       N = nrow(aus))]
+  with(aus,
+       do_au_simulate(Status,
+                      InfectedOn,
+                      SA2,
+                      Age,
+                      PlaceTypeBySA2 = integer(0),
+                      Employment = Age, # not implemented
+                      Resistance,
+                      CauchyM = CauchyM,
+                      nPlacesByDestType = nPlacesByDestType,
+                      FreqsByDestType = FreqsByDestType,
+                      Epi = EpiPars,
+                      yday_start = 1L,
+                      days_to_sim = days_to_simulate,
+                      N = nrow(aus)))
 }
+
+
+set_epipars_defaults <- function(EpiPars,
+                                 .asympto = 0.48,
+                                 .duration_active = 13L,
+                                 .lambda_infectious = 9L) {
+  if (!length(EpiPars)) {
+    return(list(CHECKED = TRUE,
+                asympto = .asympto,
+                duration_active = .duration_active,
+                lambda_infectious = .lambda_infectious))
+  }
+  if (hasName(EpiPars, "asympto")) {
+    checkmate::assert_double(EpiPars[["asympo"]],
+                             any.missing = FALSE,
+                             len = 1L)
+    .asympto <- EpiPars[["asympto"]]
+  }
+  if (hasName(EpiPars, "duration_active")) {
+    checkmate::assert_integerish(EpiPars[["duration_active"]],
+                                 len = 1L,
+                                 any.missing = FALSE)
+    .duration_active <- as.integer(EpiPars[["duration_active"]])
+  }
+  if (hasName(EpiPars, ".lambda_infectious")) {
+    checkmate::assert_integerish(EpiPars[[".lambda_infectious"]],
+                                 len = 1L,
+                                 any.missing = FALSE)
+    .duration_active <- as.integer(EpiPars[[".lambda_infectious"]])
+  }
+
+  list(CHECKED = TRUE,
+       asympto = .asympto,
+       duration_active = .duration_active,
+       lambda_infectious = .lambda_infectious)
+}
+
 
 
