@@ -55,11 +55,11 @@
 
 
 simulate_sa2 <- function(days_to_simulate = 300,
-                         InitialStatus = list(dead = 63,
-                                              healed = 3747,
-                                              active = 2592,
-                                              critical = 66),
-                         CauchyM = integer(0),  # allow changes every day
+                         PolicyPars = list(),
+                         InitialStatus = list(dead = 70,
+                                              healed = 4230,
+                                              active = 2258,
+                                              critical = 48),
                          EpiPars = list(),
                          .first_day = yday(Sys.Date()),
                          .population = 25e6,
@@ -255,7 +255,7 @@ simulate_sa2 <- function(days_to_simulate = 300,
                         PlaceTypeBySA2 = integer(0),
                         Employment = Age, # not implemented
                         Resistance = Resistance,
-                        CauchyM = CauchyM,
+                        Policy = Policy,
                         nPlacesByDestType = nPlacesByDestType,
                         FreqsByDestType = FreqsByDestType,
                         Epi = EpiPars,

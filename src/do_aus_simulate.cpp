@@ -32,9 +32,6 @@ int rpois_int(int l) {
 //' @param SupermarketTarget The supermarket that the person visits,
 //' equal to zero for each individual who doesn't visit a supermarket.
 //' @param Resistance For each individual, inherent resistance to being infected.
-//' @param CauchyM A pool of random numbers integers cauchy distributed,
-//' the contagiousness of the individual if infected and an epheremal
-//' element of resistance if not.
 //' @param N \code{int} Population of Australia.
 //' @param check_sa2_key \code{bool} Whether to check SA2 is sorted, defaults to \code{true}.
 //' @param returner Used to return other elements. By default 0, i.e. just return Status.
@@ -53,7 +50,6 @@ void do_1day_supermarket(IntegerVector Status,
                          IntegerVector Employment,
                          IntegerVector SupermarketTarget,
                          IntegerVector Resistance,
-                         IntegerVector CauchyM,
                          int yday,
                          int N = 25e6,
                          bool check_sa2_key = true,
@@ -86,11 +82,6 @@ void do_1day_supermarket(IntegerVector Status,
     Rcout << "Resistance " << Resistance.length() << "\n";
     stop("Internal error: lengths differ.");
   }
-
-  // Provide Cauchy if not already supplied.
-  timer.step("thisCauchyM");
-  // IntegerVector thisCauchyM = (N == CauchyM.length()) ? CauchyM : (rcauchy_int(N, 2, 0.001));
-
 
   // assume that SA2 is keyed
   timer.step("which_unsorted_int");
