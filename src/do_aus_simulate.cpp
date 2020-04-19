@@ -18,15 +18,6 @@ int rpois_int(int l) {
   return Rcpp::rpois(1, l)[0];
 }
 
-// [[Rcpp::export(rng = false)]]
-int fast_basic_rand(int i, int d) {
-  i ^= d;
-  i ^= i << 13;
-  i ^= i >> 17;
-  i ^= i << 5;
-  return i;
-}
-
 // https://stackoverflow.com/questions/1577475/c-sorting-and-keeping-track-of-indexes
 
 
@@ -314,7 +305,7 @@ List do_au_simulate(IntegerVector Status,
 
 #pragma omp parallel for
     for (int i = 0; i < N; ++i) {
-      if (Status[i] > 0 && (InfectedOn[i] + rpois_int(11) > yday)) {
+      if (Status[i] > 0 && (InfectedOn[i] + dbl2int(3 * lnormRand(incubation_mu, 0.44)) > yday)) {
         Status[i] = -1;
       }
       // did they go outside
@@ -356,7 +347,7 @@ List do_au_simulate(IntegerVector Status,
             // fast_basic_rand is both deterministic and non-uniform
             // but neither is important here: we just want some allocation
             // to one of the supermarkets that allows mixing.
-            int supermarket_visited = fast_basic_rand(i, day) % n_supermarkets_avbl;
+            int supermarket_visited = unifRand(0, n_supermarkets_avbl - 1);
             SupermarketTarget[i] = supermarket_visited + supermarket_cumj;
           }
 

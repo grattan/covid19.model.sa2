@@ -20,5 +20,15 @@ int which_unsorted_int(IntegerVector x);
 
 int short_sa2(int sa2);
 
+double m2mu(double m, double s);
+
+int unifRand(const int & a, const int & b);
+
+double lnormRand(const double & a, const double & b);
+
+double cauchyRand(const double & a, const double & b);
+
+int dbl2int(double x);
+
 
 #endif
