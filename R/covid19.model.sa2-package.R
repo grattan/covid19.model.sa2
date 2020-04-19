@@ -9,7 +9,9 @@
 #' @import data.table
 #' @importFrom Rcpp evalCpp
 #' @importFrom fst read_fst
+#' @importFrom hutils coalesce
 #' @importFrom hutils samp
+#' @importFrom hutils weight2rows
 #' @importFrom magrittr %>%
 #'
 #' @useDynLib covid19.model.sa2, .registration = TRUE
