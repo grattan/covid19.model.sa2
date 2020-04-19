@@ -14,6 +14,22 @@ int rcauchy_int(double l, double s) {
   return out;
 }
 
+int rpois_int(int l) {
+  return Rcpp::rpois(1, l)[0];
+}
+
+// [[Rcpp::export(rng = false)]]
+int fast_basic_rand(int i, int d) {
+  i ^= d;
+  i ^= i << 13;
+  i ^= i >> 17;
+  i ^= i << 5;
+  return i;
+}
+
+// https://stackoverflow.com/questions/1577475/c-sorting-and-keeping-track-of-indexes
+
+
 //' @name do_1day_supermarket
 //' @description Simulate the experience of everyone's interactions
 //' at supermarkets in a single day
@@ -263,16 +279,13 @@ List do_au_simulate(IntegerVector Status,
           // TODO: n_supermarkets_avbl needs to be loosened
           if (n_supermarkets_avbl && SupermarketFreq[i] > TodaysHz[i]) {
             // they will visit a supermarket
-            // std::rand isn't uniform but who cares?
-            int supermarket_visited = std::rand() % n_supermarkets_avbl;
+            // std::rand isn't threadsafe
+            int supermarket_visited = fast_basic_rand(i, day) % n_supermarkets_avbl;
             SupermarketTarget[i] = supermarket_visited + supermarket_cumj;
           }
 
         }
 
-      }
-      if (day + 1 == days_to_sim) {
-        FinalSupermarketTarget[i] = SupermarketTarget[i];
       }
     }
 
