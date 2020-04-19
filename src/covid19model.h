@@ -5,6 +5,9 @@
 #include <vector>
 #include <numeric>      // std::iota
 #include <algorithm>
+// [[Rcpp::depends(RcppProgress)]]
+#include <progress.hpp>
+#include <progress_bar.hpp>
 #include <Rcpp.h>
 using namespace Rcpp;
 #ifdef _OPENMP

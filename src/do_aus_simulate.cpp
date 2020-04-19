@@ -244,6 +244,7 @@ List do_au_simulate(IntegerVector Status,
                     int days_to_sim,
                     int N = 25e6) {
 
+  Progress p(days_to_sim, display_progress);
   if (FreqsByDestType.length() <= 98 ||
       nPlacesByDestType.length() <= 98) {
     stop("Internal error: FreqsByDestType.length < 98");
@@ -285,6 +286,7 @@ List do_au_simulate(IntegerVector Status,
   DataFrame Statuses = DataFrame::create(Named("Status") = Status);
   for (int day = 0; day < days_to_sim; ++day) {
     int yday = yday_start + day;
+    p.increment();
 
     // For example, SupermarketFreq[i] = 365  => every day
     // SupermarketFreq[i] = 1 every year.  So we create a vector
