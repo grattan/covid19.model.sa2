@@ -276,15 +276,22 @@ List do_au_simulate(IntegerVector Status,
   double asympto = 0.48;
   int duration_active = 13;
   int lambda_infectious = 9;
-  if (Epi.length() && Epi.containsElementNamed("asympto")) {
+  if (useEpi && Epi.containsElementNamed("asympto")) {
     asympto = Epi["asympto"];
   }
-  if (Epi.length() && Epi.containsElementNamed("duration_active")) {
+  if (useEpi && Epi.containsElementNamed("duration_active")) {
     duration_active = Epi["duration_active"];
   }
-  if (Epi.length() && Epi.containsElementNamed("lambda_infectious")) {
+  if (useEpi && Epi.containsElementNamed("lambda_infectious")) {
     lambda_infectious = Epi["lambda_infectious"];
   }
+
+  double cau_l = 2;
+  double cau_s = 0.01;
+  cau_l = (useEpi && Epi.containsElementNamed("cau_l") ? Epi["cau_l"] : cau_l);
+  cau_s = (useEpi && Epi.containsElementNamed("cau_s") ? Epi["cau_s"] : cau_s);
+
+  double incubation_m = Epi["incubation_m"];
 
   std::vector<int> schoolsIndex;
   for (int i = 0; i < N; ++i) {
