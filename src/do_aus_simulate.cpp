@@ -184,6 +184,7 @@ void infect_school(IntegerVector Status,
     int Agei = (Age[i] > 20) ? 20 : Age[i];
     if (only_Year12 && Agei < 17) {
       continue;
+    }
     s_visits[schooli][0] += 1;
     s_visits[schooli][Agei] += 1;
     // rcauchy relates to the single day
