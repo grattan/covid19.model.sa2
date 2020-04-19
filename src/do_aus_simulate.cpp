@@ -390,7 +390,6 @@ List do_au_simulate(IntegerVector Status,
                         Employment,
                         SupermarketTarget,
                         Resistance,
-                        CauchyM,
                         yday,
                         N,
                         /* check_sa2_key = */ day == 0);
