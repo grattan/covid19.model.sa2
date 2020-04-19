@@ -133,7 +133,6 @@ simulate_sa2 <- function(days_to_simulate = 300,
     .[read_sys("sa2_codes.fst", columns = c("sa2_name", "sa2")),
       sa2 := as.integer(i.sa2),
       on = "sa2_name"] %>%
-    .[, sa2_name := NULL] %>%
     .[]
 
   demo_by_person <- read_sys("person_demography.fst")
