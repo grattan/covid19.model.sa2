@@ -105,16 +105,24 @@ simulate_sa2 <- function(days_to_simulate = 300,
   }
   hh_ss("Start\t")
 
-  read_sys <- function(file) {
+  read_sys <- function(file, columns = NULL) {
+    # Distinguish between objects with different columns
+    .file <- paste0(c(file, columns), collapse = "-")
+    if (exists(.file, envir = dataEnv)) {
+      return(get(.file, envir = dataEnv))
+    }
     if (file.exists(file)) {
-      return(fst::read_fst(file, as.data.table = TRUE))
+      ans <- fst::read_fst(file, columns = columns, as.data.table = TRUE)
+    } else {
+      sys_file <- system.file("extdata", file, package = "covid19.model.sa2")
+      if (!nzchar(sys_file)) {
+        stop(glue::glue("`file = {file}`, yet this file does not exist, "),
+             "either by path or in the package system file.")
+      }
+      ans <- fst::read_fst(sys_file, columns = columns, as.data.table = TRUE)
     }
-    sys_file <- system.file("extdata", file, package = "covid19.model.sa2")
-    if (!nzchar(sys_file)) {
-      stop(glue::glue("`file = {file}`, yet this file does not exist, "),
-           "either by path or in the package system file.")
-    }
-    fst::read_fst(sys_file, as.data.table = TRUE)
+    # assign(.file, value = copy(ans), envir = dataEnv)
+    ans
   }
 
   aus <- read_sys("australia.fst")
