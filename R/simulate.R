@@ -193,10 +193,9 @@ simulate_sa2 <- function(days_to_simulate = 300,
   IS <- InitialStatus
   n_status0 <- nrow(aus) - sum(unlist(IS))
   samp_status <-
-    sample(c(-2L, -1L, 0L, 1L, 2L),
+    wsamp(c(-2L, -1L, 0L, 1L, 2L, 3L),
            size = nrow(aus),
-           replace = TRUE,
-           prob = c(IS$dead, IS$healed, n_status0, IS$active, IS$critical) / nrow(aus))
+           w = c(IS$dead, IS$healed, n_status0, IS$active * c(asympto, sympto), IS$critical))
 
 
   aus[, Status := samp_status]
