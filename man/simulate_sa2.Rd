@@ -2,18 +2,71 @@
 % Please edit documentation in R/simulate.R
 \name{simulate_sa2}
 \alias{simulate_sa2}
-\title{Simulate this}
+\title{Simulate the spread of COVID-19 through Australia}
 \usage{
 simulate_sa2(
   days_to_simulate = 300,
-  InitialStatus = list(dead = 63, healed = 3747, active = 2592, critical = 66),
-  CauchyM = integer(0),
+  PolicyPars = list(),
+  InitialStatus = list(dead = 70, healed = 4230, active = 2258, critical = 48),
   EpiPars = list(),
   .first_day = yday(Sys.Date()),
   .population = 2.5e+07,
-  verbose_timer = TRUE
+  verbose_timer = TRUE,
+  dataEnv = getOption("covid19.model.sa2_dataEnv", new.env())
 )
 }
+\arguments{
+\item{days_to_simulate}{\describe{
+\item{\code{integer(1)}}{The number of days to simulate.}
+}}
+
+\item{PolicyPars}{\describe{
+\item{\code{list()}}{A list describing the policy parameters.
+(\code{list(schools_open = TRUE|FALSE, only_Year12 = TRUE|FALSE)}
+are supported but no others. An empty list corresponds to current settings.)}
+}}
+
+\item{InitialStatus}{\describe{
+\item{\code{list(4)}}{A list of four named components giving the
+number of dead, healed, active, and critical on the day zero.}
+}}
+
+\item{EpiPars}{\describe{
+\item{\code{list()}}{A list of epidemiological parameters. Set to reasonable
+values by default.}
+}}
+
+\item{.first_day}{\describe{
+\item{\code{integer(1)}}{The first day to model. By convention, set to the
+day of the year of 2020. Used to predict the outcomes of those presently
+ill with COVID-19 based on imputed duration of infection.}
+}}
+
+\item{.population}{(Not used.)}
+
+\item{verbose_timer}{Should the time be printed at points during the computation?}
+
+\item{dataEnv}{An environment into which the data will be saved and
+retrieved. Used to save time reading after the first time.}
+}
+\value{
+A list of \code{days_to_simulate + 1} components. The first
+component is the inital status of each individual and
+subsequent components are the statuses of each day simulated.
+}
 \description{
-Simulate this
+Simulates the spread of COVID-19 given today's condition, and
+the (imputed) distribution of indivdiuals among households,
+schools, and other places, from day to day.
+}
+\details{
+The \strong{Status} of an individual is\tabular{rl}{
+   Status \tab Description \cr
+   -2 \tab Dead \cr
+   -1 \tab Healed \cr
+   0 \tab Susceptible \cr
+   1 \tab Infected, not showing symptoms \cr
+   2 \tab Infected, showing symptoms \cr
+   3 \tab Critical \cr
+}
 }

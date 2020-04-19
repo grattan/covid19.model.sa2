@@ -1,4 +1,56 @@
-#' Simulate this
+#' Simulate the spread of COVID-19 through Australia
+#' @description
+#' Simulates the spread of COVID-19 given today's condition, and
+#' the (imputed) distribution of indivdiuals among households,
+#' schools, and other places, from day to day.
+#'
+#'
+#' @param days_to_simulate \describe{
+#' \item{\code{integer(1)}}{The number of days to simulate.}
+#' }
+#' @param InitialStatus \describe{
+#' \item{\code{list(4)}}{A list of four named components giving the
+#' number of dead, healed, active, and critical on the day zero.}
+#' }
+#' @param PolicyPars \describe{
+#' \item{\code{list()}}{A list describing the policy parameters.
+#' (\code{list(schools_open = TRUE|FALSE, only_Year12 = TRUE|FALSE)}
+#' are supported but no others. An empty list corresponds to current settings.)}
+#' }
+#' @param EpiPars \describe{
+#' \item{\code{list()}}{A list of epidemiological parameters. Set to reasonable
+#' values by default.}
+#' }
+#' @param .first_day \describe{
+#' \item{\code{integer(1)}}{The first day to model. By convention, set to the
+#' day of the year of 2020. Used to predict the outcomes of those presently
+#' ill with COVID-19 based on imputed duration of infection.}
+#' }
+#' @param .population (Not used.)
+#' @param verbose_timer Should the time be printed at points during the computation?
+#' @param dataEnv An environment into which the data will be saved and
+#' retrieved. Used to save time reading after the first time.
+#'
+#' @return
+#' A list of \code{days_to_simulate + 1} components. The first
+#' component is the inital status of each individual and
+#' subsequent components are the statuses of each day simulated.
+#'
+#' @details
+#' The \strong{Status} of an individual is
+#'
+#' | Status | Description                    |
+#' | -----: | :----------------------------- |
+#' |     -2 | Dead                           |
+#' |     -1 | Healed                         |
+#' |      0 | Susceptible                    |
+#' |      1 | Infected, not showing symptoms |
+#' |      2 | Infected, showing symptoms     |
+#' |      3 | Critical                       |
+#'
+#' @md
+#'
+#'
 #' @export
 
 
