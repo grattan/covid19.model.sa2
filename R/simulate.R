@@ -126,7 +126,7 @@ simulate_sa2 <- function(days_to_simulate = 300,
   }
 
   aus <- read_sys("australia.fst")
-  nSupermarkets_by_sa2 <- read_fst("data-raw/google/tmp/nSupermarkets_by_sa2.fst")
+  nSupermarkets_by_sa2 <- read_fst("data-raw/google/tmp/nSupermarkets_by_sa2.fst", as.data.table = TRUE)
 
   sa2_by_hid <-
     read_sys("house.fst") %>%
