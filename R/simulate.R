@@ -200,40 +200,32 @@ simulate_sa2 <- function(days_to_simulate = 300,
 }
 
 
-set_epipars_defaults <- function(EpiPars,
-                                 .asympto = 0.48,
-                                 .duration_active = 13L,
-                                 .lambda_infectious = 10L) {
-  if (!length(EpiPars)) {
-    return(list(CHECKED = TRUE,
-                asympto = .asympto,
-                duration_active = .duration_active,
-                lambda_infectious = .lambda_infectious))
+set_epipars_defaults <- function(EpiPars = list()) {
+  "%||%" <- function(a, b) if (is.null(a)) b else a
+  get_epi_arg <- function(nom, default) {
+    v <- EpiPars[[nom]] %||% default
+    if (is.integer(default)) {
+      checkmate::assert_integerish(v, any.missing = FALSE, len = 1L)
+      v <- as.integer(v)
+    }
+    assign(paste0(".", nom), value = v, envir = parent.frame())
   }
-  if (hasName(EpiPars, "asympto")) {
-    checkmate::assert_double(EpiPars[["asympo"]],
-                             any.missing = FALSE,
-                             len = 1L)
-    .asympto <- EpiPars[["asympto"]]
-  }
-  if (hasName(EpiPars, "duration_active")) {
-    checkmate::assert_integerish(EpiPars[["duration_active"]],
-                                 len = 1L,
-                                 any.missing = FALSE)
-    .duration_active <- as.integer(EpiPars[["duration_active"]])
-  }
-  if (hasName(EpiPars, ".lambda_infectious")) {
-    checkmate::assert_integerish(EpiPars[[".lambda_infectious"]],
-                                 len = 1L,
-                                 any.missing = FALSE)
-    .duration_active <- as.integer(EpiPars[[".lambda_infectious"]])
-  }
+  get_epi_arg("asympto", 0.48)
+  get_epi_arg("duration_active", 13L)
+  get_epi_arg("lambda_infectious", 10L)
+  get_epi_arg("cau_l", 2)
+  get_epi_arg("cau_s", 0.01)
 
   list(CHECKED = TRUE,
        asympto = .asympto,
        duration_active = .duration_active,
-       lambda_infectious = .lambda_infectious)
+       lambda_infectious = .lambda_infectious,
+       cau_l = .cau_l,
+       cau_s = .cau_s)
 }
 
+get_epi_arg <- function(nom, default, List) {
+  assign(nom, value = List[[paste0(".", nom)]] %||% default, envir = parent.frame())
+}
 
 
