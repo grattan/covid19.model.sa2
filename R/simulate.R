@@ -63,7 +63,8 @@ simulate_sa2 <- function(days_to_simulate = 300,
                          EpiPars = list(),
                          .first_day = yday(Sys.Date()),
                          .population = 25e6,
-                         verbose_timer = TRUE) {
+                         verbose_timer = TRUE,
+                         dataEnv = getOption("covid19.model.sa2_dataEnv", new.env())) {
   ## Each day a person can
   ## stay in the household
   ## journey outside

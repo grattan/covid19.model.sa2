@@ -156,6 +156,9 @@ void infect_school(IntegerVector Status,
                    int yday,
                    int N,
                    std::vector<int> schoolIndices,
+                   double cauchy_loc,
+                   double cauchy_scale,
+                   bool only_Year12 = false,
                    int n_schools = -1) {
   // void function so this run at most once
   if (n_schools < 0) {
@@ -170,7 +173,6 @@ void infect_school(IntegerVector Status,
   // Cube: number of visits by School x Age
   // First array index is the total, following indices are the age-based infections
   // Teachers are all aged '20'.
-  int s_visits[n_schools][20];
   int i_visits[n_schools][20];
   memset(s_visits, 0, sizeof s_visits);
   memset(i_visits, 0, sizeof i_visits);
@@ -179,6 +181,8 @@ void infect_school(IntegerVector Status,
     int i = schoolIndices[k];
     int schooli = School[i] - 1;
     int Agei = (Age[i] > 20) ? 20 : Age[i];
+    if (only_Year12 && Agei < 17) {
+      continue;
     s_visits[schooli][0] += 1;
     s_visits[schooli][Agei] += 1;
     // rcauchy relates to the single day
