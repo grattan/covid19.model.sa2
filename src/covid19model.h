@@ -2,6 +2,9 @@
 #define covid19model_H
 
 #include "covid19model.h"
+#include <vector>
+#include <numeric>      // std::iota
+#include <algorithm>
 #include <Rcpp.h>
 using namespace Rcpp;
 #ifdef _OPENMP

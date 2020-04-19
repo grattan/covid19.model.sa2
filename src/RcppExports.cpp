@@ -20,15 +20,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fast_basic_rand
+int fast_basic_rand(int i, int d);
+RcppExport SEXP _covid19_model_sa2_fast_basic_rand(SEXP iSEXP, SEXP dSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< int >::type i(iSEXP);
+    Rcpp::traits::input_parameter< int >::type d(dSEXP);
+    rcpp_result_gen = Rcpp::wrap(fast_basic_rand(i, d));
+    return rcpp_result_gen;
+END_RCPP
+}
 // do_au_simulate
-List do_au_simulate(IntegerVector Status, IntegerVector SA2, IntegerVector Age, IntegerVector PlaceTypeBySA2, IntegerVector Employment, IntegerVector Resistance, IntegerVector CauchyM, List nPlacesByDestType, List FreqsByDestType, List Epi, /* Epidemiological parameters */                     int yday_start, int days_to_sim, int N);
-RcppExport SEXP _covid19_model_sa2_do_au_simulate(SEXP StatusSEXP, SEXP SA2SEXP, SEXP AgeSEXP, SEXP PlaceTypeBySA2SEXP, SEXP EmploymentSEXP, SEXP ResistanceSEXP, SEXP CauchyMSEXP, SEXP nPlacesByDestTypeSEXP, SEXP FreqsByDestTypeSEXP, SEXP EpiSEXP, SEXP yday_startSEXP, SEXP days_to_simSEXP, SEXP NSEXP) {
+List do_au_simulate(IntegerVector Status, IntegerVector InfectedOn, IntegerVector SA2, IntegerVector Age, IntegerVector School, IntegerVector PlaceTypeBySA2, IntegerVector Employment, IntegerVector Resistance, IntegerVector CauchyM, List nPlacesByDestType, List FreqsByDestType, List Epi, /* Epidemiological parameters */                     IntegerVector nSupermarketsAvbl, int yday_start, int days_to_sim, int N);
+RcppExport SEXP _covid19_model_sa2_do_au_simulate(SEXP StatusSEXP, SEXP InfectedOnSEXP, SEXP SA2SEXP, SEXP AgeSEXP, SEXP SchoolSEXP, SEXP PlaceTypeBySA2SEXP, SEXP EmploymentSEXP, SEXP ResistanceSEXP, SEXP CauchyMSEXP, SEXP nPlacesByDestTypeSEXP, SEXP FreqsByDestTypeSEXP, SEXP EpiSEXP, SEXP nSupermarketsAvblSEXP, SEXP yday_startSEXP, SEXP days_to_simSEXP, SEXP NSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< IntegerVector >::type Status(StatusSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type InfectedOn(InfectedOnSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type SA2(SA2SEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type Age(AgeSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type School(SchoolSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type PlaceTypeBySA2(PlaceTypeBySA2SEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type Employment(EmploymentSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type Resistance(ResistanceSEXP);
@@ -36,10 +49,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type nPlacesByDestType(nPlacesByDestTypeSEXP);
     Rcpp::traits::input_parameter< List >::type FreqsByDestType(FreqsByDestTypeSEXP);
     Rcpp::traits::input_parameter< List >::type Epi(EpiSEXP);
-    Rcpp::traits::input_parameter< /* Epidemiological parameters */                     int >::type yday_start(yday_startSEXP);
+    Rcpp::traits::input_parameter< /* Epidemiological parameters */                     IntegerVector >::type nSupermarketsAvbl(nSupermarketsAvblSEXP);
+    Rcpp::traits::input_parameter< int >::type yday_start(yday_startSEXP);
     Rcpp::traits::input_parameter< int >::type days_to_sim(days_to_simSEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
-    rcpp_result_gen = Rcpp::wrap(do_au_simulate(Status, SA2, Age, PlaceTypeBySA2, Employment, Resistance, CauchyM, nPlacesByDestType, FreqsByDestType, Epi, yday_start, days_to_sim, N));
+    rcpp_result_gen = Rcpp::wrap(do_au_simulate(Status, InfectedOn, SA2, Age, School, PlaceTypeBySA2, Employment, Resistance, CauchyM, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, yday_start, days_to_sim, N));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -56,7 +70,8 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_distr2status", (DL_FUNC) &_covid19_model_sa2_distr2status, 5},
-    {"_covid19_model_sa2_do_au_simulate", (DL_FUNC) &_covid19_model_sa2_do_au_simulate, 13},
+    {"_covid19_model_sa2_fast_basic_rand", (DL_FUNC) &_covid19_model_sa2_fast_basic_rand, 2},
+    {"_covid19_model_sa2_do_au_simulate", (DL_FUNC) &_covid19_model_sa2_do_au_simulate, 16},
     {"_covid19_model_sa2_short_sa2", (DL_FUNC) &_covid19_model_sa2_short_sa2, 1},
     {NULL, NULL, 0}
 };

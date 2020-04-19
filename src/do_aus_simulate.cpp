@@ -63,12 +63,14 @@ void do_1day_supermarket(IntegerVector Status,
                          IntegerVector SupermarketTarget,
                          IntegerVector Resistance,
                          IntegerVector CauchyM,
+                         int yday,
                          int N = 25e6,
                          bool check_sa2_key = true,
                          int returner = 0,
                          double r0_supermarket = 2.5,
                          int resistance1 = 400,
-                         int resistance2 = 3) {
+                         int resistance2 = 3,
+                         bool verbose = false) {
   const int PERSONS_PER_SUPERMARKET = N / N_SUPERMARKETS;
 
   Timer timer;
@@ -143,18 +145,83 @@ void do_1day_supermarket(IntegerVector Status,
       if (n_new_cases) {
         // Resistance determines infections and Age determines criticality
         Status[i] = (Resistance[i] < resistance1) + (Resistance[i] < (Age[i] * resistance2));
+        if (Status[i] > 0) {
+          InfectedOn[i] = yday;
+        }
         // Used
         NewInfectionsBySupermarket[supermarket_target - 1] -= 1;
       }
+
     }
   }
-  NumericVector res(timer);
-  for (int i = 0; i < res.size(); ++i) {
-    res[i] = res[i] / 1e6;
+  timer.step("finish");
+  if (verbose) {
+    DoubleVector res(timer);
+    for (int i = 0; i < res.size(); ++i) {
+      res[i] = res[i] / 1e6;
+    }
+
+    Rcout << res << std::endl;
   }
-  Rcout << res << std::endl;
 
+  // void
+}
 
+void infect_school(IntegerVector Status,
+                   IntegerVector InfectedOn,
+                   IntegerVector School,
+                   IntegerVector Age,
+                   int yday,
+                   int N,
+                   std::vector<int> schoolIndices,
+                   int n_schools = -1) {
+  // void function so this run at most once
+  if (n_schools < 0) {
+    std::set<int> SchoolSet;
+    for (int i = 0; i < N; ++i) {
+      SchoolSet.insert(School[i]);
+    }
+    n_schools = SchoolSet.size();
+  }
+  // infect people within a school
+
+  // Cube: number of visits by School x Age
+  // First array index is the total, following indices are the age-based infections
+  // Teachers are all aged '20'.
+  int s_visits[n_schools][20];
+  int i_visits[n_schools][20];
+  memset(s_visits, 0, sizeof s_visits);
+  memset(i_visits, 0, sizeof i_visits);
+
+  for (int k = 0; k < schoolIndices.size(); ++k) {
+    int i = schoolIndices[k];
+    int schooli = School[i] - 1;
+    int Agei = (Age[i] > 20) ? 20 : Age[i];
+    s_visits[schooli][0] += 1;
+    s_visits[schooli][Agei] += 1;
+    // rcauchy relates to the single day
+    if (Status[i] == 1) {
+      int infectedi = rcauchy_int(2, 0.01);
+      i_visits[schooli][0] += infectedi;
+      i_visits[schooli][Agei] += infectedi;
+    }
+  }
+  for (int k = 0; k < schoolIndices.size(); ++k) {
+    int i = schoolIndices[k];
+    if (Status[i]) continue;
+    int schooli = School[i] - 1;
+    int Agei = (Age[i] > 20) ? 20 : Age[i];
+    // N.B. This logic means the 'first' people in the table get infected
+    // first.  We could randomize this, but I don't think it matters.
+
+    // TODO: make students of the same age more likely/first to be infected
+    if (i_visits[schooli][0]) {
+      Status[i] = 1;
+      InfectedOn[i] = yday;
+      i_visits[schooli][Agei] -= i_visits[schooli][Agei] > 0;
+      i_visits[schooli][0] -= 1;
+    }
+  }
   // void
 }
 
@@ -164,6 +231,7 @@ List do_au_simulate(IntegerVector Status,
                     IntegerVector InfectedOn,
                     IntegerVector SA2,
                     IntegerVector Age,
+                    IntegerVector School,
                     IntegerVector PlaceTypeBySA2,
                     IntegerVector Employment,
                     IntegerVector Resistance,
@@ -171,6 +239,7 @@ List do_au_simulate(IntegerVector Status,
                     List nPlacesByDestType,
                     List FreqsByDestType,
                     List Epi, /* Epidemiological parameters */
+                    IntegerVector nSupermarketsAvbl,
                     int yday_start,
                     int days_to_sim,
                     int N = 25e6) {
@@ -183,7 +252,7 @@ List do_au_simulate(IntegerVector Status,
   IntegerVector nSupermarketsBySA2 = nPlacesByDestType[97];
   IntegerVector SupermarketFreq = FreqsByDestType[97]; // Type_by_TypeInt.fst
 
-  if (N != SupermarketFreq.length()) {
+  if (N != SupermarketFreq.length() || N != nSupermarketsAvbl.length()) {
     stop("Internal error: SupermarketFreq.length mismatch");
   }
   if (NSA2 != nSupermarketsBySA2.length()) {
@@ -206,21 +275,23 @@ List do_au_simulate(IntegerVector Status,
     lambda_infectious = Epi["lambda_infectious"];
   }
 
-
+  std::vector<int> schoolsIndex;
+  for (int i = 0; i < N; ++i) {
+    if (School[i] > 0) schoolsIndex.push_back(i);
+  }
 
 
   IntegerVector nInfected = no_init(days_to_sim);
-  IntegerVector FinalSupermarketTarget(N);
+  DataFrame Statuses = DataFrame::create(Named("Status") = Status);
   for (int day = 0; day < days_to_sim; ++day) {
-
-
+    int yday = yday_start + day;
 
     // For example, SupermarketFreq[i] = 365  => every day
     // SupermarketFreq[i] = 1 every year.  So we create a vector
     // of 1:366 and compare that to the individual's tendency to
     // visit. So if TodaysHz[i] = 366 they will not visit anything
     // regardless; if TodaysHz[i] = 1 they will visit everything.
-    IntegerVector TodaysHz = Rcpp::sample(365, N, true);
+    IntegerVector TodaysHz = Rcpp::rep_len(Rcpp::sample(365, 365, true), N);
 
 
     // Need to initalize with zeroes as it will get too unwiedly
@@ -238,34 +309,35 @@ List do_au_simulate(IntegerVector Status,
 
     int supermarket_cumj = 0;
     int n_supermarkets_avbl = 0;
-    for (int i = 0; i < N; ++i) {
-      // did they go outside
-      bool goes_outside = true;
-      bool contagious = Status[i] > 0;
 
-      int ssa2 = short_sa2(SA2[i]);
-      bool sa2_change = ((i > 0) && SA2[i] != SA2[i - 1]);
-      if (sa2_change) {
-        // on the sa2 change we incremenent supermarket_cumj
-        // by the previous SA2's number of supermarket
-        // This moves along the array of supermarkets
-        // so that rand % n_supermarkets_avbl moves within
-        // the SA2's supermarket index for SupermarketTarget.
-        supermarket_cumj += n_supermarkets_avbl;
-        n_supermarkets_avbl = nSupermarketsBySA2[ssa2];
+#pragma omp parallel for
+    for (int i = 0; i < N; ++i) {
+      if (Status[i] > 0 && (InfectedOn[i] + rpois_int(11) > yday)) {
+        Status[i] = -1;
       }
-      /*
-       * Alternate array method of counting visits
-       int s_visits_to_supermarket[n_supermarkets_avbl];
-       int i_visits_to_supermarket[n_supermarkets_avbl];
-       memset(s_visits_to_supermarket, 0, sizeof s_visits_to_supermarket);
-       memset(i_visits_to_supermarket, 0, sizeof i_visits_to_supermarket);
-       */
+      // did they go outside
+      // 1 -> infectious but showing no symptoms
+      // -1 healed potentially go outside (but not to infect or be infected)
+      bool goes_outside = Status[i] == 0 || Status[i] == 1;
+      // goes_outside = true;
+      // bool contagious = Status[i] > 0;
+
+      // int ssa2 = short_sa2(SA2[i]);
+      // bool sa2_change = ((i > 0) && SA2[i] != SA2[i - 1]);
+      // if (sa2_change) {
+      //   // on the sa2 change we incremenent supermarket_cumj
+      //   // by the previous SA2's number of supermarket
+      //   // This moves along the array of supermarkets
+      //   // so that rand % n_supermarkets_avbl moves within
+      //   // the SA2's supermarket index for SupermarketTarget.
+      //   supermarket_cumj += n_supermarkets_avbl;
+      //   n_supermarkets_avbl = nSupermarketsBySA2[ssa2];
+      // }
+      int n_supermarkets_avbl = nSupermarketsAvbl[i];
 
 
 
       if (goes_outside) {
-
         bool moves_sa2 = false;
         if (moves_sa2) {
           int new_sa2 = 0;
@@ -279,7 +351,9 @@ List do_au_simulate(IntegerVector Status,
           // TODO: n_supermarkets_avbl needs to be loosened
           if (n_supermarkets_avbl && SupermarketFreq[i] > TodaysHz[i]) {
             // they will visit a supermarket
-            // std::rand isn't threadsafe
+            // fast_basic_rand is both deterministic and non-uniform
+            // but neither is important here: we just want some allocation
+            // to one of the supermarkets that allows mixing.
             int supermarket_visited = fast_basic_rand(i, day) % n_supermarkets_avbl;
             SupermarketTarget[i] = supermarket_visited + supermarket_cumj;
           }
@@ -298,23 +372,28 @@ List do_au_simulate(IntegerVector Status,
                         SupermarketTarget,
                         Resistance,
                         CauchyM,
+                        yday,
                         N,
                         /* check_sa2_key = */ day == 0);
 
 
+    infect_school(Status, InfectedOn, School, Age, yday, N, schoolsIndex);
+
     int n_infected_today = 0;
+
+#pragma omp parallel for reduction(+:n_infected_today)
     for (int i = 0; i < N; ++i) {
       n_infected_today += (Status[i] == 1);
     }
+
     nInfected[day] = n_infected_today;
 
-
+    Statuses.push_back(clone(Status));
   }
 
-  return Rcpp::List::create(Named("nInfected") = nInfected);
+  return Rcpp::List::create(Named("nInfected") = nInfected,
+                            Named("Statuses") = Statuses);
 }
-
-
 
 
 

@@ -9,7 +9,9 @@ simulate_sa2 <- function(days_to_simulate = 300,
                                               critical = 66),
                          CauchyM = integer(0),  # allow changes every day
                          EpiPars = list(),
-                         .population = 25e6) {
+                         .first_day = yday(Sys.Date()),
+                         .population = 25e6,
+                         verbose_timer = TRUE) {
   ## Each day a person can
   ## stay in the household
   ## journey outside
@@ -121,7 +123,14 @@ simulate_sa2 <- function(days_to_simulate = 300,
 
 
   aus[, Status := samp_status]
-  aus[sa2_by_hid, SA2 := i.sa2, on = "hid"]
+  # If infected, they are infected days ago
+  # according to N_by_Duration
+  aus[Status > 0L,
+      InfectedOn := .first_day - wsamp(N_by_Duration$Duration,
+                                       size = .N,
+                                       w = N_by_Duration$N)]
+
+  aus[sa2_by_hid, sa2 := i.sa2, on = "hid"]
   aus[demo_by_person, Age := i.age, on = "pid"]
   aus[, Resistance := rep_len(sample(1:1000, size = 13381L, replace = TRUE), .N)]
 
@@ -151,35 +160,50 @@ simulate_sa2 <- function(days_to_simulate = 300,
 
   # aus must be keyed by SA2 so that households
   # from the same sa2 are contiguous
-  setkey(aus, SA2)
-  stopifnot(haskey(aus), identical(first(key(aus)), "SA2"))
+  setkey(aus, sa2)
+  stopifnot(haskey(aus), identical(first(key(aus)), "sa2"))
   aus[, stopifnot(is.integer(Status),
-                  is.integer(SA2))]
+                  is.integer(sa2))]
+
+  # Quicker to do it this way(!)
+  aus[nSupermarkets_by_sa2, nSupermarketsAvbl := i.nSupermarkets, on = "sa2"]
+
+  # Turn School Id into short id to use for school id
+  aus[complete.cases(school_id),
+      short_school_id := match(school_id, sort(unique(school_id), na.last = TRUE))]
+
+
 
   EpiPars <- set_epipars_defaults(EpiPars)
 
-  with(aus,
-       do_au_simulate(Status,
-                      InfectedOn,
-                      SA2,
-                      Age,
-                      PlaceTypeBySA2 = integer(0),
-                      Employment = Age, # not implemented
-                      Resistance,
-                      CauchyM = CauchyM,
-                      nPlacesByDestType = nPlacesByDestType,
-                      FreqsByDestType = FreqsByDestType,
-                      Epi = EpiPars,
-                      yday_start = 1L,
-                      days_to_sim = days_to_simulate,
-                      N = nrow(aus)))
+  out <-
+    with(aus,
+         do_au_simulate(Status,
+                        InfectedOn,
+                        sa2,
+                        Age = Age,
+                        School = short_school_id,
+                        PlaceTypeBySA2 = integer(0),
+                        Employment = Age, # not implemented
+                        Resistance = Resistance,
+                        CauchyM = CauchyM,
+                        nPlacesByDestType = nPlacesByDestType,
+                        FreqsByDestType = FreqsByDestType,
+                        Epi = EpiPars,
+                        nSupermarketsAvbl = nSupermarketsAvbl,
+                        yday_start = .first_day,
+                        days_to_sim = days_to_simulate,
+                        N = nrow(aus)))
+
+  hh_ss("final")
+  out
 }
 
 
 set_epipars_defaults <- function(EpiPars,
                                  .asympto = 0.48,
                                  .duration_active = 13L,
-                                 .lambda_infectious = 9L) {
+                                 .lambda_infectious = 10L) {
   if (!length(EpiPars)) {
     return(list(CHECKED = TRUE,
                 asympto = .asympto,

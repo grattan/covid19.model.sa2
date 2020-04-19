@@ -9,7 +9,9 @@ simulate_sa2(
   InitialStatus = list(dead = 63, healed = 3747, active = 2592, critical = 66),
   CauchyM = integer(0),
   EpiPars = list(),
-  .population = 2.5e+07
+  .first_day = yday(Sys.Date()),
+  .population = 2.5e+07,
+  verbose_timer = TRUE
 )
 }
 \description{

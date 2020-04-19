@@ -9,6 +9,7 @@ distr2status <- function(N, dead, healed, active, critical) {
 #' @description Simulate the experience of everyone's interactions
 #' at supermarkets in a single day
 #' @param Status \code{integer(N)}: Whether each individual is infected or not etc.
+#' @param InfectedOn The day on which the individual was infected.
 #' @param SA2 The 2016 SA2 code of each individual. Must be sorted.
 #' @param Age The age of every individual.
 #' @param Employment Information about employment of each individual.
@@ -30,8 +31,12 @@ distr2status <- function(N, dead, healed, active, critical) {
 #' @noRd
 NULL
 
-do_au_simulate <- function(Status, SA2, Age, PlaceTypeBySA2, Employment, Resistance, CauchyM, nPlacesByDestType, FreqsByDestType, Epi, yday_start, days_to_sim, N = 25e6L) {
-    .Call(`_covid19_model_sa2_do_au_simulate`, Status, SA2, Age, PlaceTypeBySA2, Employment, Resistance, CauchyM, nPlacesByDestType, FreqsByDestType, Epi, yday_start, days_to_sim, N)
+fast_basic_rand <- function(i, d) {
+    .Call(`_covid19_model_sa2_fast_basic_rand`, i, d)
+}
+
+do_au_simulate <- function(Status, InfectedOn, SA2, Age, School, PlaceTypeBySA2, Employment, Resistance, CauchyM, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, yday_start, days_to_sim, N = 25e6L) {
+    .Call(`_covid19_model_sa2_do_au_simulate`, Status, InfectedOn, SA2, Age, School, PlaceTypeBySA2, Employment, Resistance, CauchyM, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, yday_start, days_to_sim, N)
 }
 
 short_sa2 <- function(sa2) {

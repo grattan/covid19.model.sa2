@@ -520,6 +520,9 @@ try({
 
   fread("https://github.com/pappubahry/AU_COVID19/raw/master/time_series_recovered.csv") %>%
     fwrite(provide.file("data-raw/pappubahry/AU_COVID19/time_series_recovered.csv"))
+
+  fread("https://github.com/pappubahry/AU_COVID19/raw/master/time_series_deaths.csv") %>%
+    fwrite(provide.file("data-raw/pappubahry/AU_COVID19/time_series_deaths.csv"))
 })
 
 # // data-raw/google/sa2_by_place_id.fst
