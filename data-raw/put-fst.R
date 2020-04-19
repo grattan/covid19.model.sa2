@@ -567,5 +567,15 @@ read_fst("data-raw/google/TypeInt_by_place_id.fst") %>%
   .[]
 
 
+move_fst_to_inst <- function() {
+  sapply(dir(path = "data-raw/int", pattern = "\\.fst$", full.names = TRUE),
+         function(file.fst) {
+           file.rename(file.fst,
+                       provide.file(paste0("inst/extdata/", basename(file.fst))))
+         })
+}
+move_fst_to_inst()
+
+
 
 

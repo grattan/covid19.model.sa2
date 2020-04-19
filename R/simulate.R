@@ -53,20 +53,30 @@ simulate_sa2 <- function(days_to_simulate = 300,
   }
   hh_ss("Start\t")
 
-  read_fst <- function(...) fst::read_fst(..., as.data.table = TRUE)
+  read_sys <- function(file) {
+    if (file.exists(file)) {
+      return(fst::read_fst(file, as.data.table = TRUE))
+    }
+    sys_file <- system.file("extdata", file, package = "covid19.model.sa2")
+    if (!nzchar(sys_file)) {
+      stop(glue::glue("`file = {file}`, yet this file does not exist, "),
+           "either by path or in the package system file.")
+    }
+    fst::read_fst(sys_file, as.data.table = TRUE)
+  }
 
-  aus <- read_fst("data-raw/int/australia.fst")
+  aus <- read_sys("australia.fst")
   nSupermarkets_by_sa2 <- read_fst("data-raw/google/tmp/nSupermarkets_by_sa2.fst")
 
   sa2_by_hid <-
-    read_fst("data-raw/int/house.fst") %>%
-    .[read_fst("data-raw/int/sa2_codes.fst", columns = c("sa2_name", "sa2")),
+    read_sys("house.fst") %>%
+    .[read_sys("sa2_codes.fst", columns = c("sa2_name", "sa2")),
       sa2 := as.integer(i.sa2),
       on = "sa2_name"] %>%
     .[, sa2_name := NULL] %>%
     .[]
 
-  demo_by_person <- read_fst("data-raw/int/person_demography.fst")
+  demo_by_person <- read_sys("person_demography.fst")
 
   Cases.csv <- fread("data-raw/pappubahry/AU_COVID19/time_series_cases.csv", key = "Date")
   Recovered.csv <- fread("data-raw/pappubahry/AU_COVID19/time_series_recovered.csv", key = "Date")
