@@ -227,7 +227,7 @@ List do_au_simulate(IntegerVector Status,
                     IntegerVector PlaceTypeBySA2,
                     IntegerVector Employment,
                     IntegerVector Resistance,
-                    IntegerVector CauchyM,
+                    List Policy,
                     List nPlacesByDestType,
                     List FreqsByDestType,
                     List Epi, /* Epidemiological parameters */
