@@ -176,6 +176,13 @@ simulate_sa2 <- function(days_to_simulate = 300,
     .[YdayIn > 33] %>%
     .[, .N, keyby = .(Duration)]
 
+  Policy  <- set_policy_defaults(PolicyPars)
+  EpiPars <- set_epipars_defaults(EpiPars)
+
+
+  asympto <- EpiPars$asympto
+   sympto <- 1 - asympto
+
   # weighted sample (rather than prob)
   wsamp <- function(x, size, w) {
     probs <- w / sum(w)
@@ -285,13 +292,17 @@ set_epipars_defaults <- function(EpiPars = list()) {
   get_epi_arg("lambda_infectious", 10L)
   get_epi_arg("cau_l", 2)
   get_epi_arg("cau_s", 0.01)
+  get_epi_arg("incubation_m", 5)
+  get_epi_arg("illness_m", 15)
 
   list(CHECKED = TRUE,
        asympto = .asympto,
        duration_active = .duration_active,
        lambda_infectious = .lambda_infectious,
        cau_l = .cau_l,
-       cau_s = .cau_s)
+       cau_s = .cau_s,
+       incubation_m = .incubation_m,
+       illness_m = .illness_m)
 }
 
 get_epi_arg <- function(nom, default, List) {
