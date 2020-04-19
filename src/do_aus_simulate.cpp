@@ -197,6 +197,10 @@ void infect_school(IntegerVector Status,
     if (Status[i]) continue;
     int schooli = School[i] - 1;
     int Agei = (Age[i] > 20) ? 20 : Age[i];
+    if (only_Year12 && Agei > 17) {
+      continue;
+    }
+
     // N.B. This logic means the 'first' people in the table get infected
     // first.  We could randomize this, but I don't think it matters.
 
@@ -249,6 +253,23 @@ List do_au_simulate(IntegerVector Status,
   if (PlaceTypeBySA2.length() > 1) {
     stop("Internal error: PlaceTypeBySA2 not implemented yet.");
   }
+
+  // attach policy changes
+
+  bool schools_open = false;
+  bool only_Year12  = false;
+  if (Policy.length() && Policy.containsElementNamed("schools_open")) {
+    schools_open = Policy["schools_open"];
+  }
+  if (Policy.length() && Policy.containsElementNamed("only_Year12")) {
+    only_Year12 = Policy["only_Year12"];
+  }
+
+
+
+  // attach epipars
+  // TODO: redundant if using set_epi_pars at R level?
+  bool useEpi = Epi.length() > 0;
   double asympto = 0.48;
   int duration_active = 13;
   int lambda_infectious = 9;
@@ -365,7 +386,10 @@ List do_au_simulate(IntegerVector Status,
                         /* check_sa2_key = */ day == 0);
 
 
-    infect_school(Status, InfectedOn, School, Age, yday, N, schoolsIndex);
+    if (schools_open) {
+      infect_school(Status, InfectedOn, School, Age, yday, N, schoolsIndex, cau_l, cau_s,
+                    only_Year12);
+    }
 
     int n_infected_today = 0;
 
