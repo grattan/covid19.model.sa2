@@ -253,6 +253,11 @@ simulate_sa2 <- function(days_to_simulate = 300,
 
   EpiPars <- set_epipars_defaults(EpiPars)
 
+  # from Stevenson-Lancet-COVID19.md
+  # aus[, Incubation := dq_rnlorm(.N, m = EpiPars[["incubation_m"]], s = 0.44)]
+  # aus[, Illness := dq_rnlorm(.N, m = EpiPars[["illness_m"]], s = 0.99)]
+
+  hh_ss("pre-C++")
   out <-
     with(aus,
          do_au_simulate(Status,
