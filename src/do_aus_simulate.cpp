@@ -173,7 +173,8 @@ void infect_school(IntegerVector Status,
   // Cube: number of visits by School x Age
   // First array index is the total, following indices are the age-based infections
   // Teachers are all aged '20'.
-  int i_visits[n_schools][20];
+  int s_visits[n_schools][21];
+  int i_visits[n_schools][21];
   memset(s_visits, 0, sizeof s_visits);
   memset(i_visits, 0, sizeof i_visits);
 
