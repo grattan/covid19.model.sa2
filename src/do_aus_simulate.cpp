@@ -234,7 +234,8 @@ List do_au_simulate(IntegerVector Status,
                     IntegerVector nSupermarketsAvbl,
                     int yday_start,
                     int days_to_sim,
-                    int N = 25e6) {
+                    int N = 25e6,
+                    bool display_progress = true) {
 
   Progress p(days_to_sim, display_progress);
   if (FreqsByDestType.length() <= 98 ||
