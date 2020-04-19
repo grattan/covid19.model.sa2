@@ -277,6 +277,8 @@ simulate_sa2 <- function(days_to_simulate = 300,
                         days_to_sim = days_to_simulate,
                         N = nrow(aus)))
 
+  # Rcpp doesn't put (any) names on the push_back
+  setnames(setDT(out[[2]]), paste0("V", seq_along(out[[2]])))
   hh_ss("final")
   out
 }
