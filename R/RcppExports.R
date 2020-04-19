@@ -16,9 +16,6 @@ distr2status <- function(N, dead, healed, active, critical) {
 #' @param SupermarketTarget The supermarket that the person visits,
 #' equal to zero for each individual who doesn't visit a supermarket.
 #' @param Resistance For each individual, inherent resistance to being infected.
-#' @param CauchyM A pool of random numbers integers cauchy distributed,
-#' the contagiousness of the individual if infected and an epheremal
-#' element of resistance if not.
 #' @param N \code{int} Population of Australia.
 #' @param check_sa2_key \code{bool} Whether to check SA2 is sorted, defaults to \code{true}.
 #' @param returner Used to return other elements. By default 0, i.e. just return Status.
@@ -31,16 +28,24 @@ distr2status <- function(N, dead, healed, active, critical) {
 #' @noRd
 NULL
 
-fast_basic_rand <- function(i, d) {
-    .Call(`_covid19_model_sa2_fast_basic_rand`, i, d)
-}
-
-do_au_simulate <- function(Status, InfectedOn, SA2, Age, School, PlaceTypeBySA2, Employment, Resistance, CauchyM, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, yday_start, days_to_sim, N = 25e6L) {
-    .Call(`_covid19_model_sa2_do_au_simulate`, Status, InfectedOn, SA2, Age, School, PlaceTypeBySA2, Employment, Resistance, CauchyM, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, yday_start, days_to_sim, N)
+do_au_simulate <- function(Status, InfectedOn, SA2, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, yday_start, days_to_sim, N = 25e6L, display_progress = TRUE) {
+    .Call(`_covid19_model_sa2_do_au_simulate`, Status, InfectedOn, SA2, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, yday_start, days_to_sim, N, display_progress)
 }
 
 do_exp_dbl2int <- function(x, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_exp_dbl2int`, x, nThread)
+}
+
+prlnorm_dbl <- function(n, a, b, nThread = 1L) {
+    .Call(`_covid19_model_sa2_prlnorm_dbl`, n, a, b, nThread)
+}
+
+prlnorm_int <- function(n, a, b, nThread = 1L) {
+    .Call(`_covid19_model_sa2_prlnorm_int`, n, a, b, nThread)
+}
+
+prcauchy <- function(n, a, b, nThread = 1L) {
+    .Call(`_covid19_model_sa2_prcauchy`, n, a, b, nThread)
 }
 
 short_sa2 <- function(sa2) {
