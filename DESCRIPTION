@@ -9,11 +9,12 @@ Authors@R:
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: What the package does (one paragraph).
 License: GPL-2
-LinkingTo: Rcpp
+LinkingTo: Rcpp, dqrng
 Imports:
-    Rcpp,
+    Rcpp, 
     checkmate,
     data.table,
+    dqrng,
     fst,
     hutils
 Encoding: UTF-8

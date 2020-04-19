@@ -39,6 +39,10 @@ do_au_simulate <- function(Status, InfectedOn, SA2, Age, School, PlaceTypeBySA2,
     .Call(`_covid19_model_sa2_do_au_simulate`, Status, InfectedOn, SA2, Age, School, PlaceTypeBySA2, Employment, Resistance, CauchyM, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, yday_start, days_to_sim, N)
 }
 
+do_exp_dbl2int <- function(x, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_exp_dbl2int`, x, nThread)
+}
+
 short_sa2 <- function(sa2) {
     .Call(`_covid19_model_sa2_short_sa2`, sa2)
 }
