@@ -320,9 +320,5 @@ set_epipars_defaults <- function(EpiPars = list()) {
        illness_m = .illness_m)
 }
 
-get_epi_arg <- function(nom, default, List) {
-  assign(nom, value = List[[paste0(".", nom)]] %||% default, envir = parent.frame())
-}
-
 set_policy_defaults <- identity ## temp
 
