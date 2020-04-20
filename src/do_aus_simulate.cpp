@@ -108,7 +108,7 @@ void do_1day_supermarket(IntegerVector Status,
                          int resistance2 = 3,
                          bool verbose = false,
                          int nThread = 1) {
-  const int PERSONS_PER_SUPERMARKET = N / N_SUPERMARKETS;
+  // const int PERSONS_PER_SUPERMARKET = N / N_SUPERMARKETS;
 
   Timer timer;
 
@@ -632,8 +632,3 @@ List do_au_simulate(IntegerVector Status,
   return Rcpp::List::create(Named("nInfected") = nInfected,
                             Named("Statuses") = Statuses);
 }
-
-
-
-
-
