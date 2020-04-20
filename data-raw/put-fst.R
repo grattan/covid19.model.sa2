@@ -58,19 +58,6 @@ hw_sa2_dzn <- read_csv("data-raw/abs/sa2_live_dzn_work.zip", skip = 9) %>%
 write_fst(hw_sa2_dzn, "inst/extdata/hw_sa2_dzn.fst")
 
 
-# Non-private facilities -------------------------------------------------------
-
-nonprivate_sa1 <- read_csv("data-raw/abs/sa1-residential-facilities.zip",
-                           skip = 9, col_types = "_ccd_",
-                           col_names = c("residence", "sa1", "n")) %>%
-  filter(!is.na(n),
-         residence != "Total",
-         sa1 != "Total")
-
-write_fst(nonprivate_sa1, "inst/extdata/nonprivate_sa1.fst")
-
-
-
 # Households -------------------------------------------------------------------
 households_raw <- read_csv("data-raw/abs/sa2-households-families-persons.zip",
                            skip = 9, col_types = "_cccd_",
@@ -207,10 +194,10 @@ if (rebuild_people) {
     rename(sa2_name = sa2) %>%
     mutate_at(vars(sa2_name, edu, lfs, occ), ~as_factor(.)) # reduce file size
 
-  write_fst(people, "inst/extdata/people.fst", compress = 100)
+  write_fst(people, "data-raw/int/people.fst", compress = 100)
 }
 
-people <- read_fst("inst/extdata/people.fst")
+people <- read_fst("data-raw/int/people.fst")
 
 # to do: should assume that people > 65 don't (or low prob) live with kids
 
