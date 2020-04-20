@@ -254,14 +254,16 @@ void infect_household(IntegerVector Status,
       continue;
     }
     if (HouseholdSize[i] == 1) {
-      // single-person household can't infect anyone else
+      // no transmission in single-person household
       continue;
     }
-    if (Status[i]) {
-      // if not susceptible
-      continue;
-    }
+
     if (HouseholdSize[i] == 2) {
+      if (Status[i]) {
+        // if not susceptible
+        continue;
+      }
+
       // in this case, we only need to check adjacent
       int household_infected = 0;
       if (seqN[i] == 1) {
@@ -292,7 +294,9 @@ void infect_household(IntegerVector Status,
 
     int nh = HouseholdSize[i];
     int household_infected = 0;
-    for (int j = 0; j < nh; ++j) {
+    int j = 1;
+    // loop through the household, stop once an infection detected
+    for (; j < nh && household_infected == 0; ++j) {
       household_infected += Status[i + j] > 0;
     }
     if (household_infected) {
@@ -432,9 +436,11 @@ List do_au_simulate(IntegerVector Status,
 
 #pragma omp parallel for num_threads(nThread)
     for (int i = 0; i < N; ++i) {
-      if (Status[i] > 0 && (InfectedOn[i] + dbl2int(3 * lnormRand(incubation_mu, 0.44)) > yday)) {
+      // Healed if day of infection + (duration of infection) has already occurred
+      if (Status[i] > 0 && (InfectedOn[i] + dbl2int(3 * lnormRand(incubation_mu, 0.44)) < yday)) {
         Status[i] = -1;
       }
+
       // did they go outside
       // 1 -> infectious but showing no symptoms
       // -1 healed potentially go outside (but not to infect or be infected)
@@ -503,8 +509,10 @@ List do_au_simulate(IntegerVector Status,
 
     int maxHouseholdSize = -1;
     // finally
+
     infect_household(Status, InfectedOn, hid, seqN, HouseholdSize, Resistance, Age, yday,
                      N, maxHouseholdSize, nThread);
+
 
     int n_infected_today = 0;
 
@@ -521,7 +529,6 @@ List do_au_simulate(IntegerVector Status,
   return Rcpp::List::create(Named("nInfected") = nInfected,
                             Named("Statuses") = Statuses);
 }
-
 
 
 
