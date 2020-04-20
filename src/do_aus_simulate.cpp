@@ -293,11 +293,11 @@ void infect_household(IntegerVector Status,
     }
 
     int nh = HouseholdSize[i];
-    int household_infected = 0;
+    bool household_infected = Status[i] > 0;
     int j = 1;
     // loop through the household, stop once an infection detected
-    for (; j < nh && household_infected == 0; ++j) {
-      household_infected += Status[i + j] > 0;
+    for (; j < nh && !household_infected; ++j) {
+      household_infected = Status[i + j] > 0;
     }
     if (household_infected) {
       // return to first person and infect as appropriate
