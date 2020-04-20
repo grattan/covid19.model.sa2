@@ -289,52 +289,5 @@ simulate_sa2 <- function(days_to_simulate = 300,
   out
 }
 
-epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
-                    incubation_mean = 5,
-                    incubation_sigma = 0.44,
-                    illness_distribution = c("pois", "lnorm", "dirac"),
-                    illness_mean = 15,
-                    illness_sigma = 1,
-                    r_distribution = c("cauchy", "lnorm", "pois", "dirac"),
-                    r_location = 2,
-                    r_scale = 1,
-                    asympto = 0.48,
-                    p_critical = 0.02,
-                    p_death = 0.01) {
-  incubation_distribution <- match.arg(incubation_distribution)
-  illness_distribution <- match.arg(illness_distribution)
-  r_distribution <- match.arg(r_distribution)
-  mget(ls())
-}
-
-
-set_epipars_defaults <- function(EpiPars = list()) {
-  "%||%" <- function(a, b) if (is.null(a)) b else a
-  get_epi_arg <- function(nom, default) {
-    v <- EpiPars[[nom]] %||% default
-    if (is.integer(default)) {
-      checkmate::assert_integerish(v, any.missing = FALSE, len = 1L)
-      v <- as.integer(v)
-    }
-    assign(paste0(".", nom), value = v, envir = parent.frame())
-  }
-  get_epi_arg("asympto", 0.48)
-  get_epi_arg("duration_active", 13L)
-  get_epi_arg("lambda_infectious", 10L)
-  get_epi_arg("cau_l", 2)
-  get_epi_arg("cau_s", 0.01)
-  get_epi_arg("incubation_m", 5)
-  get_epi_arg("illness_m", 15)
-
-  list(CHECKED = TRUE,
-       asympto = .asympto,
-       duration_active = .duration_active,
-       lambda_infectious = .lambda_infectious,
-       cau_l = .cau_l,
-       cau_s = .cau_s,
-       incubation_m = .incubation_m,
-       illness_m = .illness_m)
-}
-
 set_policy_defaults <- identity ## temp
 
