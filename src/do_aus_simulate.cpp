@@ -237,7 +237,7 @@ void infect_school(IntegerVector Status,
     s_visits[schooli][Agei] += 1;
     // rcauchy relates to the single day
     if (Status[i] == 1) {
-      int infectedi = rcauchy_int(2, 0.01);
+      int infectedi = r_Rand(r_location, r_scale, r_d);
       i_visits[schooli][0] += infectedi;
       i_visits[schooli][Agei] += infectedi;
     }
@@ -415,27 +415,19 @@ List do_au_simulate(IntegerVector Status,
 
 
   // attach epipars
-  // TODO: redundant if using set_epi_pars at R level?
-  bool useEpi = Epi.length() > 0;
-  double asympto = 0.48;
-  int duration_active = 13;
-  int lambda_infectious = 9;
-  if (useEpi && Epi.containsElementNamed("asympto")) {
-    asympto = Epi["asympto"];
-  }
-  if (useEpi && Epi.containsElementNamed("duration_active")) {
-    duration_active = Epi["duration_active"];
-  }
-  if (useEpi && Epi.containsElementNamed("lambda_infectious")) {
-    lambda_infectious = Epi["lambda_infectious"];
-  }
+  double incubation_m = Epi["incubation_mean"];
+  double incubation_s = Epi["incubation_sigma"];
+  double illness_m = Epi["illness_mean"];
+  double illness_s = Epi["illness_sigma"];
+  double r_location = Epi["r_location"];
+  double r_scale = Epi["r_scale"];
+  int p_asympto = Epi["p_asympto"];
+  int p_critical = Epi["p_critical"];
+  int p_death = Epi["p_death"];
 
-  double cau_l = 2;
-  double cau_s = 0.01;
-  cau_l = (useEpi && Epi.containsElementNamed("cau_l") ? Epi["cau_l"] : cau_l);
-  cau_s = (useEpi && Epi.containsElementNamed("cau_s") ? Epi["cau_s"] : cau_s);
-
-  double incubation_m = Epi["incubation_m"];
+  int incubation_d = Epi["incubation_distribution"];
+  int illness_d = Epi["illness_distribution"];
+  int r_d = Epi["r_distribution"];
 
   std::vector<int> schoolsIndex;
   schoolsIndex.reserve(N);
