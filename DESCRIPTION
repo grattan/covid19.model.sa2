@@ -16,6 +16,7 @@ Imports:
     checkmate,
     data.table,
     dqrng,
+    fastmatch,
     fst,
     hutils
 Encoding: UTF-8
