@@ -15,6 +15,7 @@ library(data.table)
 library(tidyverse)
 library(readxl)
 library(absmapsdata) # remotes::install_github("wfmackey/absmapsdata")
+library(abscorr) # remotes::install_github("wfmackey/abscorr")
 library(sf)
 library(fst)
 library(janitor)
@@ -55,34 +56,6 @@ hw_sa2_dzn <- read_csv("data-raw/abs/sa2_live_dzn_work.zip", skip = 9) %>%
          work_dzn != "Total")
 
 write_fst(hw_sa2_dzn, "inst/extdata/hw_sa2_dzn.fst")
-
-
-hw_sa2_sa2 <- read_csv("data-raw/abs/sa2-sa2-work.zip", skip = 9,
-                       col_types = "_ccd_",
-                       col_names = c("sa2_name", "work_sa2_name", "n")) %>%
-  filter(!is.na(n),
-         n > 0, # drop file size
-         sa2_name != "Total",
-         work_sa2_name != "Total")
-
-write_fst(hw_sa2_sa2, "inst/extdata/hw_sa2_sa2.fst")
-
-
-# Non-private facilities -------------------------------------------------------
-
-nonprivate_sa1 <- read_csv("data-raw/abs/sa1-residential-facilities.zip",
-                           skip = 9, col_types = "_ccd_",
-                           col_names = c("residence", "sa1", "n")) %>%
-  filter(!is.na(n),
-         residence != "Total",
-         sa1 != "Total")
-
-write_fst(nonprivate_sa1, "inst/extdata/nonprivate_sa1.fst")
-
-# Schools ----------------------------------------------------------------------
-
-
-schools_vars <- read_excel("data-raw/acara/school-profile.xlsx")
 
 
 # Households -------------------------------------------------------------------
@@ -221,10 +194,10 @@ if (rebuild_people) {
     rename(sa2_name = sa2) %>%
     mutate_at(vars(sa2_name, edu, lfs, occ), ~as_factor(.)) # reduce file size
 
-  write_fst(people, "inst/extdata/people.fst", compress = 100)
+  write_fst(people, "data-raw/int/people.fst", compress = 100)
 }
 
-people <- read_fst("inst/extdata/people.fst")
+people <- read_fst("data-raw/int/people.fst")
 
 # to do: should assume that people > 65 don't (or low prob) live with kids
 
@@ -500,6 +473,12 @@ australia_spine <- people %>%
 write_fst(australia_spine, "inst/extdata/australia.fst", compress = 100)
 
 
+australia_spine <- read_fst("inst/extdata/australia.fst")
+
+australia_spine %>%
+  left_join(person)
+
+
 person_demography <- people %>%
   select(hid, pid, age, edu, lfs)
 
@@ -563,6 +542,9 @@ occ_ind_raw <- read_csv("data-raw/abs/occ4_ind4.zip", skip = 9,
   filter(across(c(occ, ind), ~ . %nin% c("Total", "Not applicable")))
 
 
+# Inflate on two levels:
+# to distribute `, nfd` occupations among subgroups
+
 occ_inflate <- occ_ind_raw %>%
   group_by(occ) %>%
   summarise(n2016 = sum(n2016)) %>%
@@ -571,11 +553,29 @@ occ_inflate <- occ_ind_raw %>%
          scale2019 = n2019 / n2016) %>%
   select(occ, scale2019)
 
+join_anzsco <- abscorr::anzsco %>%
+  select(occ = anzsco4, occ_code = anzsco4_code) %>%
+  mutate(occ_code = as.integer(occ_code)) %>%
+  group_by(occ) %>%
+  summarise(occ_code = min(occ_code))
+
+join_anzsic <- abscorr::anzsic %>%
+  select(ind = anzsic_class_title, ind_code = anzsic_class_code) %>%
+  group_by(ind) %>%
+  summarise(ind_code = min(ind_code))
+
 
 occ_ind <- occ_ind_raw %>%
   left_join(occ_inflate) %>%
+  left_join(join_anzsco) %>%
+  left_join(join_anzsic) %>%
   mutate(n2019 = round(n2016 * scale2019)) %>%
-  select(-scale2019)
+  select(occ = occ_code, ind = ind_code, n2016, n2019) %>%
+  group_by(occ, ind) %>%
+  summarise(n2016 = sum(n2016),
+            n2019 = sum(n2019)) %>%
+  mutate(across(is.double, as.integer))
+
 
 write_fst(occ_ind, "inst/extdata/occ_ind.fst")
 
