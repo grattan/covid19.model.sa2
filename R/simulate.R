@@ -177,10 +177,9 @@ simulate_sa2 <- function(days_to_simulate = 300,
     .[, .N, keyby = .(Duration)]
 
   Policy  <- set_policy_defaults(PolicyPars)
-  EpiPars <- set_epipars_defaults(EpiPars)
 
 
-  asympto <- EpiPars$asympto
+  asympto <- EpiPars$p_asympto / 1000
    sympto <- 1 - asympto
 
   # weighted sample (rather than prob)
