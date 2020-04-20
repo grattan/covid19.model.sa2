@@ -291,6 +291,24 @@ simulate_sa2 <- function(days_to_simulate = 300,
   out
 }
 
+epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
+                    incubation_mean = 5,
+                    incubation_sigma = 0.44,
+                    illness_distribution = c("pois", "lnorm", "dirac"),
+                    illness_mean = 15,
+                    illness_sigma = 1,
+                    r_distribution = c("cauchy", "lnorm", "pois", "dirac"),
+                    r_location = 2,
+                    r_scale = 1,
+                    asympto = 0.48,
+                    p_critical = 0.02,
+                    p_death = 0.01) {
+  incubation_distribution <- match.arg(incubation_distribution)
+  illness_distribution <- match.arg(illness_distribution)
+  r_distribution <- match.arg(r_distribution)
+  mget(ls())
+}
+
 
 set_epipars_defaults <- function(EpiPars = list()) {
   "%||%" <- function(a, b) if (is.null(a)) b else a
