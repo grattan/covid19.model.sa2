@@ -202,11 +202,12 @@ void infect_school(IntegerVector Status,
                    IntegerVector Age,
                    int yday,
                    int N,
-                   std::vector<int> schoolIndices,
-                   double cauchy_loc,
-                   double cauchy_scale,
-                   bool only_Year12 = false,
-                   int n_schools = -1) {
+                   const std::vector<int> &schoolIndices,
+                   double r_location,
+                   double r_scale,
+                   int r_d,
+                   bool only_Year12,
+                   int &n_schools) {
   // void function so this run at most once
   if (n_schools < 0) {
     std::set<int> SchoolSet;
@@ -225,7 +226,7 @@ void infect_school(IntegerVector Status,
   memset(s_visits, 0, sizeof s_visits);
   memset(i_visits, 0, sizeof i_visits);
 
-  for (int k = 0; k < schoolIndices.size(); ++k) {
+  for (unsigned int k = 0; k < schoolIndices.size(); ++k) {
     int i = schoolIndices[k];
     int schooli = School[i] - 1;
     int Agei = (Age[i] > 20) ? 20 : Age[i];
@@ -241,7 +242,7 @@ void infect_school(IntegerVector Status,
       i_visits[schooli][Agei] += infectedi;
     }
   }
-  for (int k = 0; k < schoolIndices.size(); ++k) {
+  for (unsigned int k = 0; k < schoolIndices.size(); ++k) {
     int i = schoolIndices[k];
     if (Status[i]) continue;
     int schooli = School[i] - 1;
@@ -274,7 +275,7 @@ void infect_household(IntegerVector Status,
                       IntegerVector Age,
                       int yday,
                       int N,
-                      int maxHouseholdSize = -1,
+                      int &maxHouseholdSize,
                       int nThread = 1,
                       int resistance1 = 400,
                       int resistance_penalty = 100) {
@@ -437,9 +438,14 @@ List do_au_simulate(IntegerVector Status,
   double incubation_m = Epi["incubation_m"];
 
   std::vector<int> schoolsIndex;
+  schoolsIndex.reserve(N);
   for (int i = 0; i < N; ++i) {
     if (School[i] > 0) schoolsIndex.push_back(i);
   }
+
+  // variables which will be updated on day = 0
+  int n_schools = -1;
+  int maxHouseholdSize = -1;
 
   IntegerVector nInfected = no_init(days_to_sim);
   DataFrame Statuses = DataFrame::create(Named("Status") = clone(Status));
@@ -542,11 +548,13 @@ List do_au_simulate(IntegerVector Status,
 
 
     if (schools_open) {
-      infect_school(Status, InfectedOn, School, Age, yday, N, schoolsIndex, cau_l, cau_s,
-                    only_Year12);
+      infect_school(Status, InfectedOn, School, Age, yday, N, schoolsIndex,
+                    r_location, r_scale, r_d,
+                    only_Year12,
+                    n_schools);
     }
 
-    int maxHouseholdSize = -1;
+
     // finally
 
     infect_household(Status, InfectedOn, hid, seqN, HouseholdSize, Resistance, Age, yday,
