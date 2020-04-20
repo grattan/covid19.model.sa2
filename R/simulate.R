@@ -280,6 +280,13 @@ simulate_sa2 <- function(days_to_simulate = 300,
 
   # Rcpp doesn't put (any) names on the push_back
   setnames(setDT(out[[2]]), paste0("V", seq_along(out[[2]])))
+
+  # Put aus back into the statuses
+  for (j in names(aus)) {
+    set(out[[2]], j = j, value = aus[[j]])
+  }
+  hutils::set_cols_first(out[[2]], names(aus))
+
   hh_ss("final")
   out
 }
