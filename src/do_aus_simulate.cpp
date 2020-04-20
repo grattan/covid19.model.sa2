@@ -399,7 +399,7 @@ List do_au_simulate(IntegerVector Status,
   }
 
   IntegerVector nInfected = no_init(days_to_sim);
-  DataFrame Statuses = DataFrame::create(Named("Status") = Status);
+  DataFrame Statuses = DataFrame::create(Named("Status") = clone(Status));
   for (int day = 0; day < days_to_sim; ++day) {
     int yday = yday_start + day;
     p.increment();
