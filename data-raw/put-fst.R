@@ -15,6 +15,7 @@ library(data.table)
 library(tidyverse)
 library(readxl)
 library(absmapsdata) # remotes::install_github("wfmackey/absmapsdata")
+library(abscorr) # remotes::install_github("wfmackey/abscorr")
 library(sf)
 library(fst)
 library(janitor)
@@ -563,6 +564,9 @@ occ_ind_raw <- read_csv("data-raw/abs/occ4_ind4.zip", skip = 9,
   filter(across(c(occ, ind), ~ . %nin% c("Total", "Not applicable")))
 
 
+# Inflate on two levels:
+# to distribute `, nfd` occupations among subgroups
+
 occ_inflate <- occ_ind_raw %>%
   group_by(occ) %>%
   summarise(n2016 = sum(n2016)) %>%
@@ -571,11 +575,28 @@ occ_inflate <- occ_ind_raw %>%
          scale2019 = n2019 / n2016) %>%
   select(occ, scale2019)
 
+join_anzsco <- abscorr::anzsco %>%
+  select(occ = anzsco4, occ_code = anzsco4_code) %>%
+  mutate(occ_code = as.integer(occ_code)) %>%
+  group_by(occ) %>%
+  summarise(occ_code = min(occ_code))
+
+join_anzsic <- abscorr::anzsic %>%
+  select(ind = anzsic_class_title, ind_code = anzsic_class_code) %>%
+  group_by(ind) %>%
+  summarise(ind_code = min(ind_code))
+
 
 occ_ind <- occ_ind_raw %>%
   left_join(occ_inflate) %>%
+  left_join(join_anzsco) %>%
+  left_join(join_anzsic) %>%
   mutate(n2019 = round(n2016 * scale2019)) %>%
-  select(-scale2019)
+  select(occ = occ_code, ind = ind_code, n2016, n2019) %>%
+  mutate(across())
+
+# both to integers
+
 
 write_fst(occ_ind, "inst/extdata/occ_ind.fst")
 
