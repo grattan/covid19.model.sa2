@@ -237,7 +237,6 @@ simulate_sa2 <- function(days_to_simulate = 300,
   # aus[, Incubation := dq_rnlorm(.N, m = EpiPars[["incubation_m"]], s = 0.44)]
   # aus[, Illness := dq_rnlorm(.N, m = EpiPars[["illness_m"]], s = 0.99)]
 
-  setkey(aus, hid)
   aus[, c("seqN", "HouseholdSize") := do_seqN_N(hid, pid)]
 
 
