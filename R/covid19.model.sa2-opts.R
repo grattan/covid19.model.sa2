@@ -1,4 +1,5 @@
-#' covid19.model.sa2 package options
+#' @title covid19.model.sa2 package options
+#' @name covid19.model.sa2-opts
 #'
 #' @section Options:
 #'
