@@ -3,9 +3,9 @@
 
 
 # Settings ---------------------------------------------------------------------
-rebuild_people <- FALSE
-rebuild_schools <- FALSE
-rebuild_jobs <- FALSE
+rebuild_people <- TRUE
+rebuild_schools <- TRUE
+rebuild_jobs <- TRUE
   rebuild_distance <- FALSE
 
 
@@ -37,8 +37,9 @@ sa2_codes <- absmapsdata::sa22016 %>%
          sa4 = sa4_code_2016,
          state = state_code_2016)
 
-
-write_fst(sa2_codes, "inst/extdata/sa2_codes.fst")
+sa2_codes %>%
+  as.data.table() %>%
+  write_fst("inst/extdata/sa2_codes.fst")
 
 sa2_list <- absmapsdata::sa22016$sa2_name
 
@@ -55,7 +56,9 @@ hw_sa2_dzn <- read_csv("data-raw/abs/sa2_live_dzn_work.zip", skip = 9) %>%
          sa2_name != "Total",
          work_dzn != "Total")
 
-write_fst(hw_sa2_dzn, "inst/extdata/hw_sa2_dzn.fst")
+hw_sa2_dzn %>%
+  as.data.table() %>%
+  write_fst("inst/extdata/hw_sa2_dzn.fst")
 
 
 # Households -------------------------------------------------------------------
@@ -101,6 +104,9 @@ households <- households_raw %>%
       family_count == 1 ~ 1 + couple1, # 1 for singles; 2 for couples
       family_count >  1 ~ 1 + couple1 + family_count),
     kid = persons - adult) %>%
+  left_join(rename(sa2_codes, sa2_code = sa2),
+            by = c(sa2 = "sa2_name")) %>%
+  arrange(state, sa4, sa3, sa2_code) %>%
   # get one observation per household
   uncount(n) %>%
   mutate(hid = row_number()) %>%
@@ -209,10 +215,14 @@ nonprivate_sa1 <- read_csv("data-raw/abs/sa1-residential-facilities.zip",
                            col_names = c("residence", "sa1", "n")) %>%
   filter(!is.na(n),
          n > 0,
-         residence != "Total",
-         sa1 != "Total")
+         residence %in% c("Hospital", "Prison"),
+         sa1 != "Total") %>%
+  mutate(sa1 = as.integer(sa1))
 
-write_fst(nonprivate_sa1, "inst/extdata/nonprivate_sa1.fst")
+
+nonprivate_sa1 %>%
+  as.data.table() %>%
+  write_fst("inst/extdata/nonprivate_sa1.fst")
 
 
 
@@ -271,10 +281,13 @@ schools <- schools_profile %>%
          takes_primary = from <= 4,
          takes_secondary = from >= 10 | to >= 10,
          primary_n = students_n * takes_primary / (takes_primary + takes_secondary),
-         secondary_n = students_n * takes_secondary / (takes_primary + takes_secondary))
+         secondary_n = students_n * takes_secondary / (takes_primary + takes_secondary)) %>%
+  mutate(school_id = as.integer(school_id))
 
 
-write_fst(schools, "inst/extdata/schools.fst")
+schools %>%
+  as.data.table() %>%
+  write_fst("inst/extdata/schools.fst")
 
 
 
@@ -341,10 +354,14 @@ if (rebuild_schools) {
   school_spine <- map_dfr(unique(kids$sa2_name), find_schools) %>%
     select(pid, school_id)
 
-  write_fst(school_spine, "inst/extdata/school_spine.fst")
+  school_spine %>%
+    as.data.table() %>%
+    write_fst("inst/extdata/school_spine.fst")
 }
 
-school_spine <- read_fst("inst/extdata/school_spine.fst")
+school_spine <- read_fst("inst/extdata/school_spine.fst") %>%
+  as_tibble()
+
 
 
 # Post-secondary study ---------------------------------------------------------
@@ -368,7 +385,9 @@ hw_sa2_dzn <- read_csv("data-raw/abs/sa2-live-dzn-work.zip", skip = 9) %>%
          sa2_name != "Total",
          work_dzn != "Total")
 
-write_fst(hw_sa2_dzn, "inst/extdata/hw_sa2_dzn.fst")
+hw_sa2_dzn %>%
+  as.data.table() %>%
+  write_fst("inst/extdata/hw_sa2_dzn.fst")
 
 # get new data cutting by mode of transport (coming from TableBuilder)
 
@@ -443,21 +462,31 @@ if (rebuild_jobs) {
       mutate(distance_to_work = map_dbl(1:nrow(.), get_distance)) %>%
       select(-ends_with("geom"))
 
-    write_fst(distances, "inst/extdata/distances.fst")
+    distances <- distances %>%
+      left_join(sa2_codes) %>%
+      select(sa2, work_dzn, distance_to_work) %>%
+      mutate(sa2 = as.integer(sa2))
+
+    distances %>%
+      as.data.table() %>%
+    write_fst("inst/extdata/distances.fst")
 
   }
 
-  distances <- read_fst("inst/extdata/distances.fst")
+  distances <- read_fst("inst/extdata/distances.fst") %>%
+    as_tibble()
 
   work_spine <- workers_jobs %>%
-    left_join(distances) %>%
-    select(pid, work_dzn, distance_to_work)
+    select(pid, work_dzn)
 
-  write_fst(work_spine, "inst/extdata/work_spine.fst", compress = 100)
+  work_spine %>%
+    as.data.table() %>%
+    write_fst("inst/extdata/work_spine.fst", compress = 100)
 
 }
 
-work_spine <- read_fst("inst/extdata/work_spine.fst")
+work_spine <- read_fst("inst/extdata/work_spine.fst") %>%
+  as_tibble()
 
 
 
@@ -465,31 +494,35 @@ work_spine <- read_fst("inst/extdata/work_spine.fst")
 # Combine and export Australia -------------------------------------------------
 
 australia_spine <- people %>%
-  select(hid, pid) %>%
+  left_join(sa2_codes) %>%
+  select(state, sa2, hid, pid) %>%
   left_join(school_spine) %>%
-  left_join(work_spine)
-
-
-write_fst(australia_spine, "inst/extdata/australia.fst", compress = 100)
-
-
-australia_spine <- read_fst("inst/extdata/australia.fst")
+  left_join(work_spine) %>%
+  mutate(across(is.character, as.integer))
 
 australia_spine %>%
-  left_join(person)
+  as.data.table() %>%
+  setkey(state, sa2, hid, pid) %>%
+  write_fst("inst/extdata/australia.fst", compress = 100)
 
 
 person_demography <- people %>%
   select(hid, pid, age, edu, lfs)
 
+person_demography %>%
+  as.data.table() %>%
+  setkey(hid, pid) %>%
+  write_fst("inst/extdata/person_demography.fst", compress = 100)
 
-write_fst(person_demography, "inst/extdata/person_demography.fst", compress = 100)
 
+house <- people %>%
+  left_join(sa2_codes) %>%
+  distinct(state, sa3, sa4, sa2, sa2_name, hid)
 
-house <- people %>% distinct(hid, sa2_name)
-
-
-write_fst(house, "inst/extdata/house.fst", compress = 100)
+house %>%
+  as.data.table() %>%
+  setkey(hid) %>%
+  write_fst("inst/extdata/house.fst", compress = 100)
 
 
 
@@ -576,8 +609,9 @@ occ_ind <- occ_ind_raw %>%
             n2019 = sum(n2019)) %>%
   mutate(across(is.double, as.integer))
 
-
-write_fst(occ_ind, "inst/extdata/occ_ind.fst")
+occ_ind %>%
+  as.data.table() %>%
+  write_fst("inst/extdata/occ_ind.fst")
 
 
 
