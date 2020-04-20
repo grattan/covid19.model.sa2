@@ -69,10 +69,6 @@ nonprivate_sa1 <- read_csv("data-raw/abs/sa1-residential-facilities.zip",
 
 write_fst(nonprivate_sa1, "inst/extdata/nonprivate_sa1.fst")
 
-# Schools ----------------------------------------------------------------------
-
-
-schools_vars <- read_excel("data-raw/acara/school-profile.xlsx")
 
 
 # Households -------------------------------------------------------------------
