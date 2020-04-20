@@ -64,7 +64,8 @@ simulate_sa2 <- function(days_to_simulate = 300,
                          .first_day = yday(Sys.Date()),
                          .population = 25e6,
                          verbose_timer = TRUE,
-                         dataEnv = getOption("covid19.model.sa2_dataEnv", new.env())) {
+                         dataEnv = getOption("covid19.model.sa2_dataEnv", new.env()),
+                         nThread = getOption("covid19.model.sa2_nThread", 1L)) {
   ## Each day a person can
   ## stay in the household
   ## journey outside
@@ -234,12 +235,6 @@ simulate_sa2 <- function(days_to_simulate = 300,
     })
 
 
-  # aus must be keyed by SA2 so that households
-  # from the same sa2 are contiguous
-  setkey(aus, sa2)
-  stopifnot(haskey(aus), identical(first(key(aus)), "sa2"))
-  aus[, stopifnot(is.integer(Status),
-                  is.integer(sa2))]
 
   # Quicker to do it this way(!)
   aus[nSupermarkets_by_sa2, nSupermarketsAvbl := i.nSupermarkets, on = "sa2"]
@@ -255,12 +250,19 @@ simulate_sa2 <- function(days_to_simulate = 300,
   # aus[, Incubation := dq_rnlorm(.N, m = EpiPars[["incubation_m"]], s = 0.44)]
   # aus[, Illness := dq_rnlorm(.N, m = EpiPars[["illness_m"]], s = 0.99)]
 
+  setkey(aus, hid)
+  aus[, c("seqN", "HouseholdSize") := do_seqN_N(hid, pid)]
+
+
   hh_ss("pre-C++")
   out <-
     with(aus,
          do_au_simulate(Status,
                         InfectedOn,
                         sa2,
+                        hid = hid,
+                        seqN = seqN,
+                        HouseholdSize = HouseholdSize,
                         Age = Age,
                         School = short_school_id,
                         PlaceTypeBySA2 = integer(0),
@@ -273,7 +275,8 @@ simulate_sa2 <- function(days_to_simulate = 300,
                         nSupermarketsAvbl = nSupermarketsAvbl,
                         yday_start = .first_day,
                         days_to_sim = days_to_simulate,
-                        N = nrow(aus)))
+                        N = nrow(aus),
+                        nThread = nThread))
 
   # Rcpp doesn't put (any) names on the push_back
   setnames(setDT(out[[2]]), paste0("V", seq_along(out[[2]])))

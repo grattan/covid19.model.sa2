@@ -5,6 +5,16 @@ using namespace Rcpp;
 
 #define N_SUPERMARKETS 7487
 
+// [[Rcpp::export(rng = false)]]
+int do_max_par_int(IntegerVector x, int nThread = 1) {
+  int N = x.length();
+  int out = x[0];
+#pragma omp parallel for num_threads(nThread) reduction(max:out)
+  for (int i = 0; i < N; ++i) {
+    out = out < x[i] ? x[i] : out;
+  }
+  return out;
+}
 
 // Just a way to get quasi-cauchy distributed nonnegative integer vector
 int rcauchy_int(double l, double s) {
@@ -57,7 +67,8 @@ void do_1day_supermarket(IntegerVector Status,
                          double r0_supermarket = 2.5,
                          int resistance1 = 400,
                          int resistance2 = 3,
-                         bool verbose = false) {
+                         bool verbose = false,
+                         int nThread = 1) {
   const int PERSONS_PER_SUPERMARKET = N / N_SUPERMARKETS;
 
   Timer timer;
@@ -85,9 +96,6 @@ void do_1day_supermarket(IntegerVector Status,
 
   // assume that SA2 is keyed
   timer.step("which_unsorted_int");
-  if (check_sa2_key && which_unsorted_int(SA2)) {
-    stop("Internal error: SA2 not sorted.");
-  }
 
   timer.step("allocate_n_supermarkets");
   IntegerVector nInfectedVisitorsBySupermarket(N_SUPERMARKETS);
@@ -218,10 +226,88 @@ void infect_school(IntegerVector Status,
 }
 
 
+void infect_household(IntegerVector Status,
+                      IntegerVector InfectedOn,
+                      IntegerVector hid,
+                      IntegerVector seqN,
+                      IntegerVector HouseholdSize,
+                      IntegerVector Resistance,
+                      IntegerVector Age,
+                      int yday,
+                      int N,
+                      int maxHouseholdSize = -1,
+                      int nThread = 1,
+                      int resistance1 = 400,
+                      int resistance2 = 3) {
+  if (maxHouseholdSize <= 0) {
+    maxHouseholdSize = do_max_par_int(HouseholdSize, nThread);
+  }
+
+#pragma omp parallel for num_threads(nThread)
+  for (int i = 0; i < N; ++i) {
+    // separate household ids into the same thread
+    if ((hid[i] % omp_get_num_threads()) != omp_get_thread_num()) {
+      continue;
+    }
+    if (HouseholdSize[i] == 1) {
+      // single-person household can't infect anyone else
+      continue;
+    }
+    if (Status[i]) {
+      // if not susceptible
+      continue;
+    }
+    if (HouseholdSize[i] == 2) {
+      // in this case, we only need to check adjacent
+      int household_infected = 0;
+      if (seqN[i] == 1) {
+        household_infected = Status[i + 1] > 0;
+      } else {
+        household_infected = Status[i - 1] > 0;
+      }
+      // Prima facie we have a race condition on Status, but in fact
+      // we have skipped anyone who has Status[i] != 0 so the only way
+      // the following assignment can occur is if the other thread is
+      // skipping
+      if (household_infected) {
+        int r = resistance1 + unifRand(-1, 100);
+        Status[i] = (Resistance[i] < resistance1) + (Resistance[i] < (Age[i] * resistance2));
+        InfectedOn[i] = yday + 1;
+      }
+      continue;
+    }
+
+    // For households larger than 2, we do the entire household
+    // when we first see the house. On subsequent i in the same
+    // household, skip -- we've already calculated it
+    if (seqN[i] != 1) {
+      continue;
+    }
+
+    int nh = HouseholdSize[i];
+    int household_infected = 0;
+    for (int j = 0; j < nh; ++j) {
+      household_infected += Status[i + j] > 0;
+    }
+    if (household_infected) {
+      for (int j = 0; j < nh; ++j) {
+        int r = resistance1 + unifRand(-1, 100);
+        Status[i + j] = (Resistance[i] < resistance1) + (Resistance[i] < (Age[i] * resistance2));
+      }
+    }
+  }
+  // void
+}
+
+
+
 // [[Rcpp::export]]
 List do_au_simulate(IntegerVector Status,
                     IntegerVector InfectedOn,
                     IntegerVector SA2,
+                    IntegerVector hid,
+                    IntegerVector seqN,
+                    IntegerVector HouseholdSize,
                     IntegerVector Age,
                     IntegerVector School,
                     IntegerVector PlaceTypeBySA2,
@@ -235,7 +321,8 @@ List do_au_simulate(IntegerVector Status,
                     int yday_start,
                     int days_to_sim,
                     int N = 25e6,
-                    bool display_progress = true) {
+                    bool display_progress = true,
+                    int nThread = 1) {
 
   Progress p(days_to_sim, display_progress);
   if (FreqsByDestType.length() <= 98 ||
@@ -298,7 +385,6 @@ List do_au_simulate(IntegerVector Status,
     if (School[i] > 0) schoolsIndex.push_back(i);
   }
 
-
   IntegerVector nInfected = no_init(days_to_sim);
   DataFrame Statuses = DataFrame::create(Named("Status") = Status);
   for (int day = 0; day < days_to_sim; ++day) {
@@ -329,7 +415,9 @@ List do_au_simulate(IntegerVector Status,
     int supermarket_cumj = 0;
     int n_supermarkets_avbl = 0;
 
-#pragma omp parallel for
+    double incubation_mu = m2mu(incubation_m, 0.44);
+
+#pragma omp parallel for num_threads(nThread)
     for (int i = 0; i < N; ++i) {
       if (Status[i] > 0 && (InfectedOn[i] + dbl2int(3 * lnormRand(incubation_mu, 0.44)) > yday)) {
         Status[i] = -1;
@@ -363,9 +451,9 @@ List do_au_simulate(IntegerVector Status,
           // don't get infected
           SA2[i] = new_sa2;
         } else {
-          bool commutes = false; // goes to work
-          bool is_pupil = false;
-          int destination_type = 0; // 1-106
+          // bool commutes = false; // goes to work
+          // bool is_pupil = false;
+          // int destination_type = 0; // 1-106
 
           // TODO: n_supermarkets_avbl needs to be loosened
           if (n_supermarkets_avbl && SupermarketFreq[i] > TodaysHz[i]) {
@@ -400,9 +488,14 @@ List do_au_simulate(IntegerVector Status,
                     only_Year12);
     }
 
+    int maxHouseholdSize = -1;
+    // finally
+    infect_household(Status, InfectedOn, hid, seqN, HouseholdSize, Resistance, Age, yday,
+                     N, maxHouseholdSize, nThread);
+
     int n_infected_today = 0;
 
-#pragma omp parallel for reduction(+:n_infected_today)
+#pragma omp parallel for num_threads(nThread) reduction(+:n_infected_today)
     for (int i = 0; i < N; ++i) {
       n_infected_today += (Status[i] == 1);
     }
@@ -415,6 +508,9 @@ List do_au_simulate(IntegerVector Status,
   return Rcpp::List::create(Named("nInfected") = nInfected,
                             Named("Statuses") = Statuses);
 }
+
+
+
 
 
 

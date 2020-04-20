@@ -28,12 +28,20 @@ distr2status <- function(N, dead, healed, active, critical) {
 #' @noRd
 NULL
 
-do_au_simulate <- function(Status, InfectedOn, SA2, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, yday_start, days_to_sim, N = 25e6L, display_progress = TRUE) {
-    .Call(`_covid19_model_sa2_do_au_simulate`, Status, InfectedOn, SA2, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, yday_start, days_to_sim, N, display_progress)
+do_max_par_int <- function(x, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_max_par_int`, x, nThread)
+}
+
+do_au_simulate <- function(Status, InfectedOn, SA2, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, yday_start, days_to_sim, N = 25e6L, display_progress = TRUE, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_au_simulate`, Status, InfectedOn, SA2, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, yday_start, days_to_sim, N, display_progress, nThread)
 }
 
 do_exp_dbl2int <- function(x, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_exp_dbl2int`, x, nThread)
+}
+
+do_seqN_N <- function(hid, pid, check_hid_sorted = TRUE) {
+    .Call(`_covid19_model_sa2_do_seqN_N`, hid, pid, check_hid_sorted)
 }
 
 prlnorm_dbl <- function(n, a, b, nThread = 1L) {

@@ -12,7 +12,8 @@ simulate_sa2(
   .first_day = yday(Sys.Date()),
   .population = 2.5e+07,
   verbose_timer = TRUE,
-  dataEnv = getOption("covid19.model.sa2_dataEnv", new.env())
+  dataEnv = getOption("covid19.model.sa2_dataEnv", new.env()),
+  nThread = getOption("covid19.model.sa2_nThread", 1L)
 )
 }
 \arguments{
