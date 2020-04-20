@@ -58,17 +58,6 @@ hw_sa2_dzn <- read_csv("data-raw/abs/sa2_live_dzn_work.zip", skip = 9) %>%
 write_fst(hw_sa2_dzn, "inst/extdata/hw_sa2_dzn.fst")
 
 
-hw_sa2_sa2 <- read_csv("data-raw/abs/sa2-sa2-work.zip", skip = 9,
-                       col_types = "_ccd_",
-                       col_names = c("sa2_name", "work_sa2_name", "n")) %>%
-  filter(!is.na(n),
-         n > 0, # drop file size
-         sa2_name != "Total",
-         work_sa2_name != "Total")
-
-write_fst(hw_sa2_sa2, "inst/extdata/hw_sa2_sa2.fst")
-
-
 # Non-private facilities -------------------------------------------------------
 
 nonprivate_sa1 <- read_csv("data-raw/abs/sa1-residential-facilities.zip",
@@ -501,6 +490,12 @@ australia_spine <- people %>%
 write_fst(australia_spine, "inst/extdata/australia.fst", compress = 100)
 
 
+australia_spine <- read_fst("inst/extdata/australia.fst")
+
+australia_spine %>%
+  left_join(person)
+
+
 person_demography <- people %>%
   select(hid, pid, age, edu, lfs)
 
@@ -593,9 +588,10 @@ occ_ind <- occ_ind_raw %>%
   left_join(join_anzsic) %>%
   mutate(n2019 = round(n2016 * scale2019)) %>%
   select(occ = occ_code, ind = ind_code, n2016, n2019) %>%
-  mutate(across())
-
-# both to integers
+  group_by(occ, ind) %>%
+  summarise(n2016 = sum(n2016),
+            n2019 = sum(n2019)) %>%
+  mutate(across(is.double, as.integer))
 
 
 write_fst(occ_ind, "inst/extdata/occ_ind.fst")
