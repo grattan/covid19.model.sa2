@@ -440,6 +440,16 @@ List do_au_simulate(IntegerVector Status,
   int maxHouseholdSize = -1;
 
   IntegerVector nInfected = no_init(days_to_sim);
+  IntegerVector Incubation = no_init(N);
+  IntegerVector Illness = no_init(N);
+#pragma omp parallel for num_threads(nThread)
+  for (int i = 0; i < N; ++i) {
+    Incubation[i] = 0;
+    Illness[i] = 0;
+  }
+
+
+
   DataFrame Statuses = DataFrame::create(Named("Status") = clone(Status));
   for (int day = 0; day < days_to_sim; ++day) {
     int yday = yday_start + day;
@@ -469,13 +479,67 @@ List do_au_simulate(IntegerVector Status,
     int supermarket_cumj = 0;
     int n_supermarkets_avbl = 0;
 
-    double incubation_mu = m2mu(incubation_m, 0.44);
+
 
 #pragma omp parallel for num_threads(nThread)
     for (int i = 0; i < N; ++i) {
-      // Healed if day of infection + (duration of infection) has already occurred
-      if (Status[i] > 0 && (InfectedOn[i] + dbl2int(3 * lnormRand(incubation_mu, 0.44)) < yday)) {
-        Status[i] = -1;
+
+      // First, examine all individuals infected last night
+      // and move them accordingly.
+      if (Status[i] > 0) {
+        int statusi = Status[i];
+        // So the person is either
+        //   1  Incubation period
+        //   2  Illness period
+        //   3  Critical
+
+        //  Each position has three possibilities
+        //   1  -->  -1   2 -->  -1   3 -->  -2
+        //   1  -->   1   2 -->   2   3 -->  -1
+        //   1  -->   2   2 -->   3   3 -->   3
+        //
+
+
+
+        // If the incubation period is zero, it has not been evaluated
+        // for this individual. Draw from the distribution (once)
+        if (Incubation[i] == 0) {
+          Incubation[i] = incubRand(incubation_m, incubation_s, incubation_d);
+        }
+        int incubation = Incubation[i];
+
+
+        if (yday <= InfectedOn[i] + incubation) {
+          // Today is before the incubation period is over
+          // nothing to do -- keep whatever the status is
+        } else {
+          // This is reevaluated each day, but because they are uniform
+          // this is okay. Nonetheless we don't second-guess the original
+          // statusi
+          bool becomes_symptomatic = statusi >= 2 || (unifRand(0, 1000) > p_asympto);
+          bool becomes_critical = statusi == 3 || (becomes_symptomatic && unifRand(0, 1000) < p_critical);
+          bool dies = becomes_critical && unifRand(0, 1000) < p_death;
+
+          // As before with incubation
+          if (Illness[i] == 0) {
+            Illness[i] = illRand(illness_m, illness_s, illness_d);
+          }
+          int illness = Illness[i];
+          // Today is after the incubation, during the illness.
+          // Assumption: if the person becomes critical, it happens immediately.
+          if (yday <= InfectedOn[i] + incubation + illness) {
+            if (becomes_symptomatic) {
+              Status[i] = 2 + becomes_critical;
+            } else {
+              // nothing to do: they're still ill, but at Status 1.
+            }
+          } else {
+            // Today is after the illness has run its course
+            Status[i] = -1 - dies;
+            // interactions no longer relevant
+            continue;
+          }
+        }
       }
 
       // did they go outside
