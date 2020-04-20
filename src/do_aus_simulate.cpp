@@ -28,6 +28,45 @@ int rpois_int(int l) {
   return Rcpp::rpois(1, l)[0];
 }
 
+int incubRand(double m, double s, int d) {
+  // 1: Poisson  2: lognormal  3: dirac
+  if (d == 1)
+    return poisRand(m);
+  if (d == 2)
+    return lnormRand(m2mu(m, s), s);
+  if (d == 3)
+    return m;
+
+  return m;
+}
+
+int illRand(double m, double s, int d) {
+  if (d == 1)
+    return poisRand(m);
+  if (d == 2)
+    return lnormRand(m2mu(m, s), s);
+  if (d == 3)
+    return m;
+  if (d == 4)
+    return cauchyRand(m, s);
+
+  return m;
+}
+
+int r_Rand(double m, double s, int d) {
+  if (d == 1)
+    return poisRand(m);
+  if (d == 2)
+    return lnormRand(m2mu(m, s), s);
+  if (d == 3)
+    return m;
+  if (d == 4)
+    return cauchyRand(m, s);
+
+  return m;
+}
+
+
 // https://stackoverflow.com/questions/1577475/c-sorting-and-keeping-track-of-indexes
 
 
