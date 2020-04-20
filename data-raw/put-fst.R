@@ -19,6 +19,7 @@ library(sf)
 library(fst)
 library(janitor)
 library(purrr)
+library(zoo)
 
 `%nin%` <- Negate(`%in%`)
 pm <- function(...) {message(paste(...))}
@@ -36,7 +37,7 @@ sa2_codes <- absmapsdata::sa22016 %>%
          state = state_code_2016)
 
 
-write_fst(sa2_codes, "data-raw/int/sa2_codes.fst")
+write_fst(sa2_codes, "inst/extdata/sa2_codes.fst")
 
 sa2_list <- absmapsdata::sa22016$sa2_name
 
@@ -53,7 +54,7 @@ hw_sa2_dzn <- read_csv("data-raw/abs/sa2_live_dzn_work.zip", skip = 9) %>%
          sa2_name != "Total",
          work_dzn != "Total")
 
-write_fst(hw_sa2_dzn, "data-raw/int/hw_sa2_dzn.fst")
+write_fst(hw_sa2_dzn, "inst/extdata/hw_sa2_dzn.fst")
 
 
 hw_sa2_sa2 <- read_csv("data-raw/abs/sa2-sa2-work.zip", skip = 9,
@@ -64,7 +65,7 @@ hw_sa2_sa2 <- read_csv("data-raw/abs/sa2-sa2-work.zip", skip = 9,
          sa2_name != "Total",
          work_sa2_name != "Total")
 
-write_fst(hw_sa2_sa2, "data-raw/int/hw_sa2_sa2.fst")
+write_fst(hw_sa2_sa2, "inst/extdata/hw_sa2_sa2.fst")
 
 
 # Non-private facilities -------------------------------------------------------
@@ -76,7 +77,7 @@ nonprivate_sa1 <- read_csv("data-raw/abs/sa1-residential-facilities.zip",
          residence != "Total",
          sa1 != "Total")
 
-write_fst(nonprivate_sa1, "data-raw/int/nonprivate_sa1.fst")
+write_fst(nonprivate_sa1, "inst/extdata/nonprivate_sa1.fst")
 
 # Schools ----------------------------------------------------------------------
 
@@ -220,10 +221,10 @@ if (rebuild_people) {
     rename(sa2_name = sa2) %>%
     mutate_at(vars(sa2_name, edu, lfs, occ), ~as_factor(.)) # reduce file size
 
-  write_fst(people, "data-raw/int/people.fst", compress = 100)
+  write_fst(people, "inst/extdata/people.fst", compress = 100)
 }
 
-people <- read_fst("data-raw/int/people.fst")
+people <- read_fst("inst/extdata/people.fst")
 
 # to do: should assume that people > 65 don't (or low prob) live with kids
 
@@ -238,7 +239,7 @@ nonprivate_sa1 <- read_csv("data-raw/abs/sa1-residential-facilities.zip",
          residence != "Total",
          sa1 != "Total")
 
-write_fst(nonprivate_sa1, "data-raw/int/nonprivate_sa1.fst")
+write_fst(nonprivate_sa1, "inst/extdata/nonprivate_sa1.fst")
 
 
 
@@ -300,7 +301,7 @@ schools <- schools_profile %>%
          secondary_n = students_n * takes_secondary / (takes_primary + takes_secondary))
 
 
-write_fst(schools, "data-raw/int/schools.fst")
+write_fst(schools, "inst/extdata/schools.fst")
 
 
 
@@ -367,10 +368,10 @@ if (rebuild_schools) {
   school_spine <- map_dfr(unique(kids$sa2_name), find_schools) %>%
     select(pid, school_id)
 
-  write_fst(school_spine, "data-raw/int/school_spine.fst")
+  write_fst(school_spine, "inst/extdata/school_spine.fst")
 }
 
-school_spine <- read_fst("data-raw/int/school_spine.fst")
+school_spine <- read_fst("inst/extdata/school_spine.fst")
 
 
 # Post-secondary study ---------------------------------------------------------
@@ -394,7 +395,7 @@ hw_sa2_dzn <- read_csv("data-raw/abs/sa2-live-dzn-work.zip", skip = 9) %>%
          sa2_name != "Total",
          work_dzn != "Total")
 
-write_fst(hw_sa2_dzn, "data-raw/int/hw_sa2_dzn.fst")
+write_fst(hw_sa2_dzn, "inst/extdata/hw_sa2_dzn.fst")
 
 # get new data cutting by mode of transport (coming from TableBuilder)
 
@@ -469,21 +470,21 @@ if (rebuild_jobs) {
       mutate(distance_to_work = map_dbl(1:nrow(.), get_distance)) %>%
       select(-ends_with("geom"))
 
-    write_fst(distances, "data-raw/int/distances.fst")
+    write_fst(distances, "inst/extdata/distances.fst")
 
   }
 
-  distances <- read_fst("data-raw/int/distances.fst")
+  distances <- read_fst("inst/extdata/distances.fst")
 
   work_spine <- workers_jobs %>%
     left_join(distances) %>%
     select(pid, work_dzn, distance_to_work)
 
-  write_fst(work_spine, "data-raw/int/work_spine.fst", compress = 100)
+  write_fst(work_spine, "inst/extdata/work_spine.fst", compress = 100)
 
 }
 
-work_spine <- read_fst("data-raw/int/work_spine.fst")
+work_spine <- read_fst("inst/extdata/work_spine.fst")
 
 
 
@@ -496,20 +497,90 @@ australia_spine <- people %>%
   left_join(work_spine)
 
 
-write_fst(australia_spine, "data-raw/int/australia.fst", compress = 100)
+write_fst(australia_spine, "inst/extdata/australia.fst", compress = 100)
 
 
 person_demography <- people %>%
   select(hid, pid, age, edu, lfs)
 
 
-write_fst(person_demography, "data-raw/int/person_demography.fst", compress = 100)
+write_fst(person_demography, "inst/extdata/person_demography.fst", compress = 100)
 
 
 house <- people %>% distinct(hid, sa2_name)
 
 
-write_fst(house, "data-raw/int/house.fst", compress = 100)
+write_fst(house, "inst/extdata/house.fst", compress = 100)
+
+
+
+
+# Census occupation and industry counts + inflation to 2019 with LFS ------------
+
+# LFS
+download_lfs <- FALSE
+
+lfs_url <- "https://www.abs.gov.au/AUSSTATS/subscriber.nsf/log?openagent&eq08.xlsx&6291.0.55.003&Data%20Cubes&E60C5BD0531CEFF9CA2584D6000F5A4A&0&Nov%202019&23.12.2019&Latest"
+lfs_path <- "data-raw/abs/lfs_eq08.xlsx"
+
+if (download_lfs) download.file(lfs_url, lfs_path)
+
+lfs_raw <- read_excel(lfs_path, sheet = "Data 1", skip = 3)
+
+lfs <- lfs_raw %>%
+  select(date = 1,
+         sex = 2,
+         state = 3,
+         occ = 4,
+         employed_000 = 5) %>%
+  mutate(year = year(date),
+         quarter = quarter(date),
+         occ_code = parse_number(occ) %>% as.character(),
+         occ = substring(occ, 6) %>%
+           str_replace(" nfd", ", nfd") %>%
+           str_replace("\\\\", "/") %>%
+           str_replace("  ", " ")) %>%
+  arrange(occ, occ_code, year, quarter) %>%
+  group_by(occ, occ_code, year, quarter) %>%
+  summarise(employed = 1000 * sum(employed_000, na.rm = TRUE)) %>%
+  # 4q rolling
+  group_by(occ) %>%
+  arrange(year, quarter) %>%
+  mutate(employed4q = rollmean(employed, 4, align = "right", fill = 0)) %>%
+  select(-employed)
+
+
+lfs_inflate <- lfs %>%
+  filter(year == 2019 & quarter == 4) %>%
+  select(occ, n2019 = employed4q)
+
+
+# Read Census 6 digit occupation X 4 digit industry
+occ_ind_raw <- read_csv("data-raw/abs/occ4_ind4.zip", skip = 9,
+                    col_types = "__ccd_",
+                    col_names = c("occ", "ind", "n2016")) %>%
+  drop_na(n2016) %>%
+  filter(across(c(occ, ind), ~ . %nin% c("Total", "Not applicable")))
+
+
+occ_inflate <- occ_ind_raw %>%
+  group_by(occ) %>%
+  summarise(n2016 = sum(n2016)) %>%
+  left_join(lfs_inflate) %>%
+  mutate(n2019 = if_else(is.na(n2019), n2016, n2019),
+         scale2019 = n2019 / n2016) %>%
+  select(occ, scale2019)
+
+
+occ_ind <- occ_ind_raw %>%
+  left_join(occ_inflate) %>%
+  mutate(n2019 = round(n2016 * scale2019)) %>%
+  select(-scale2019)
+
+write_fst(occ_ind, "inst/extdata/occ_ind.fst")
+
+
+
 
 
 ## Maybe it should be a submodule?
@@ -561,7 +632,7 @@ read_fst("data-raw/google/TypeInt_by_place_id.fst") %>%
   write_fst(provide.file("data-raw/google/tmp/seqN-sa2--supermarket.fst")) %>%
   # right join so that SA2s that have no supermarkets appear (as zero)
   # instead of being absent
-  .[read_fst("data-raw/int/sa2_codes.fst")[, sa2 := as.integer(sa2)], on = "sa2"] %>%
+  .[read_fst("inst/extdata/sa2_codes.fst")[, sa2 := as.integer(sa2)], on = "sa2"] %>%
   .[, .(nSupermarkets = uniqueN(place_id, na.rm = TRUE)), keyby = .(sa2)] %T>%
   write_fst(provide.file("data-raw/google/tmp/nSupermarkets_by_sa2.fst")) %>%
   .[]
