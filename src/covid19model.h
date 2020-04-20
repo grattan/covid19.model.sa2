@@ -22,6 +22,8 @@ int short_sa2(int sa2);
 
 double m2mu(double m, double s);
 
+int poisRand(const int & lambda);
+
 int unifRand(const int & a, const int & b);
 
 double lnormRand(const double & a, const double & b);

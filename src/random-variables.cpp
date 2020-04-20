@@ -15,6 +15,12 @@ int unifRand(const int & a, const int & b) {
   return distribution(generator);
 }
 
+int poisRand(const int & lambda) {
+  static thread_local std::mt19937 generator;
+  std::poisson_distribution<int> distribution(lambda);
+  return distribution(generator);
+}
+
 
 double lnormRand(const double & a, const double & b) {
   static thread_local std::mt19937 generator;
