@@ -238,7 +238,11 @@ void infect_household(IntegerVector Status,
                       int maxHouseholdSize = -1,
                       int nThread = 1,
                       int resistance1 = 400,
-                      int resistance2 = 3) {
+                      int resistance_penalty = 100) {
+  // resistance_penalty = penalty against Resistance[i]
+  // that makes infection more likely. Higher penalties
+  // make infection more likely among otherwise resistant
+  // individuals
   if (maxHouseholdSize <= 0) {
     maxHouseholdSize = do_max_par_int(HouseholdSize, nThread);
   }
@@ -270,9 +274,11 @@ void infect_household(IntegerVector Status,
       // the following assignment can occur is if the other thread is
       // skipping
       if (household_infected) {
-        int r = resistance1 + unifRand(-1, 100);
-        Status[i] = (Resistance[i] < resistance1) + (Resistance[i] < (Age[i] * resistance2));
-        InfectedOn[i] = yday + 1;
+        int r = resistance1 + unifRand(-1, resistance_penalty);
+        if (Resistance[i] < r) {
+          Status[i] = 1;
+          InfectedOn[i] = yday + 1;
+        }
       }
       continue;
     }
@@ -290,9 +296,16 @@ void infect_household(IntegerVector Status,
       household_infected += Status[i + j] > 0;
     }
     if (household_infected) {
-      for (int j = 0; j < nh; ++j) {
-        int r = resistance1 + unifRand(-1, 100);
-        Status[i + j] = (Resistance[i] < resistance1) + (Resistance[i] < (Age[i] * resistance2));
+      // return to first person and infect as appropriate
+      // (don't infect already infected)
+      j = 0;
+      for (; j < nh; ++j) {
+        int r = resistance1 + unifRand(-1, resistance_penalty);
+        int ij = i + j;
+        if (Status[ij] == 0 && Resistance[ij] < r) {
+          Status[ij] = 1;
+          InfectedOn[ij] = yday + 1;
+        }
       }
     }
   }
