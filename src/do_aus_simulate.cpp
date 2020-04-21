@@ -5,6 +5,12 @@ using namespace Rcpp;
 
 #define N_SUPERMARKETS 7487
 
+// const int NSA2 = 2310;
+//
+// const int NSCHOOLS = 9501;
+//
+// const int NPUPILS = 3135825;
+
 // [[Rcpp::export(rng = false)]]
 int do_max_par_int(IntegerVector x, int nThread = 1) {
   int N = x.length();
@@ -578,7 +584,7 @@ List do_au_simulate(IntegerVector Status,
                     schoolsIndex,
                     r_location, r_scale, r_d,
                     only_Year12,
-                    n_schools,
+                    NSCHOOLS,
                     n_pupils);
     }
 

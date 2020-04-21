@@ -14,7 +14,11 @@ using namespace Rcpp;
 #include <omp.h>
 #endif
 
-#define NSA2 2310
+const int NSA2 = 2310;
+
+const int NSCHOOLS = 9501;
+
+const int NPUPILS = 3135825;
 
 int which_unsorted_int(IntegerVector x);
 
