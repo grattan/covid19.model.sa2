@@ -139,13 +139,32 @@ void infect_supermarkets(IntegerVector Status,
 
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
-    if (Status[i] != 1 || !nSupermarketsAvbl[i] || TodaysHz[i] > SupermarketFreq[i]) {
+    if (Status[i] != 1 || TodaysHz[i] > SupermarketFreq[i]) {
       continue;
     }
-
+    int supermarketi = SupermarketTypical[i];
+    int random32 = unifRand(0, 31);
     int sa2i = shortSA2[i];
+    int k = 0;
 
-    int k = array3k(sa2i, SupermarketTypical[i], SupermarketHour[i], 8, hrs_open);
+    // Mix if supermarket not defined then shift it around
+    if (!nSupermarketsAvbl[i]) {
+      // most of the time we do just assume isolated
+      if ((random32 >> 2)) {
+        continue;
+      }
+      // otherwise we choose the 'central' supermarket
+      k += array3k(sa2i, supermarketi, 0, 0, 0) + random32;
+    } else {
+      k += array3k(sa2i, supermarketi, SupermarketHour[i], 8, hrs_open);
+      if ((random32 >> 4)) {
+        k -= (i % 4) + 1;
+      }
+    }
+
+    if (k >= nInfections_len || k < 0) {
+      continue;
+    }
 
     // threadsafety
     if ((k % omp_get_num_threads()) != omp_get_thread_num()) {
