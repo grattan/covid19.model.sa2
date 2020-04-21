@@ -133,6 +133,9 @@ simulate_sa2 <- function(days_to_simulate = 5,
   Cases.csv <- fread("data-raw/pappubahry/AU_COVID19/time_series_cases.csv", key = "Date")
   Recovered.csv <- fread("data-raw/pappubahry/AU_COVID19/time_series_recovered.csv", key = "Date")
   Deaths.csv <- fread("data-raw/pappubahry/AU_COVID19/time_series_deaths.csv", key = "Date")
+  if (is.null(.first_day)) {
+    .first_day <- Deaths.csv[, yday(last(Date))]
+  }
 
   hh_ss("post-read")
 
