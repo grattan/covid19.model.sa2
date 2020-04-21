@@ -5,12 +5,11 @@
 \title{Simulate the spread of COVID-19 through Australia}
 \usage{
 simulate_sa2(
-  days_to_simulate = 300,
+  days_to_simulate = 5,
   PolicyPars = list(),
-  InitialStatus = list(dead = 70, healed = 4230, active = 2258, critical = 48),
+  InitialStatus = list(dead = 71, healed = 4258, active = 2241, critical = 49),
   EpiPars = set_epipars(),
-  .first_day = yday(Sys.Date()),
-  .population = 2.5e+07,
+  .first_day = NULL,
   verbose_timer = TRUE,
   dataEnv = getOption("covid19.model.sa2_dataEnv", new.env()),
   nThread = getOption("covid19.model.sa2_nThread", 1L)
@@ -37,12 +36,11 @@ number of dead, healed, active, and critical on the day zero.}
 }}
 
 \item{.first_day}{\describe{
-\item{\code{integer(1)}}{The first day to model. By convention, set to the
-day of the year of 2020. Used to predict the outcomes of those presently
+\item{\code{integer(1)}}{The first day to model.
+If \code{NULL}, the default, the day of the year of the most recent date
+in records from Australia. Used to predict the outcomes of those presently
 ill with COVID-19 based on imputed duration of infection.}
 }}
-
-\item{.population}{(Not used.)}
 
 \item{verbose_timer}{Should the time be printed at points during the computation?}
 
