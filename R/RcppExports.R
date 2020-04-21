@@ -40,6 +40,10 @@ do_exp_dbl2int <- function(x, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_exp_dbl2int`, x, nThread)
 }
 
+do_lag_int <- function(s, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_lag_int`, s, nThread)
+}
+
 do_seqN_N <- function(hid, pid, check_hid_sorted = TRUE) {
     .Call(`_covid19_model_sa2_do_seqN_N`, hid, pid, check_hid_sorted)
 }
