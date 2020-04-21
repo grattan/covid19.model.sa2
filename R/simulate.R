@@ -231,9 +231,9 @@ simulate_sa2 <- function(days_to_simulate = 5,
   # Quicker to do it this way(!)
   aus[nSupermarkets_by_sa2, nSupermarketsAvbl := i.nSupermarkets, on = "sa2"]
 
-  unique_school_ids <- read_sys("schools.fst", columns = "school_id")[[1L]]
   # Turn School Id into short id to use for school id
-  aus[, short_school_id := fastmatch::fmatch(school_id, unique_school_ids)]
+  # Crucially, must be dense (no gaps) so can't prepare unique
+  aus[, short_school_id := frank(school_id, ties.method = "dense")]
 
   # from Stevenson-Lancet-COVID19.md
   # aus[, Incubation := dq_rnlorm(.N, m = EpiPars[["incubation_m"]], s = 0.44)]
