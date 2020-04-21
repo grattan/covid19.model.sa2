@@ -34,6 +34,11 @@ double cauchyRand(const double & a, const double & b) {
   return distribution(generator);
 }
 
+int cauchyRand0(const double & a, const double & b) {
+  double out = cauchyRand(a, b);
+  return (out > 1) ? out : 0;
+}
+
 int dbl2int(double x) {
   // if x is NaN then *both* of the following are false
   bool inrange = (x > INT_MIN) && (x < INT_MAX);
