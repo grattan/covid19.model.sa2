@@ -189,14 +189,7 @@ void infect_school(IntegerVector Status,
                    bool only_Year12,
                    int n_schools,
                    int n_pupils) {
-  // void function so this run at most once
-  if (n_schools < 0) {
-    std::set<int> SchoolSet;
-    for (int i = 0; i < N; ++i) {
-      SchoolSet.insert(School[i]);
-    }
-    n_schools = SchoolSet.size();
-  }
+
   // infect people within a school
 
   // Cube: number of visits by School x Age
@@ -430,17 +423,21 @@ List do_au_simulate(IntegerVector Status,
 
   int n_pupils = 0;
   std::vector<int> schoolsIndex;
-  // schoolsIndex.reserve(N);
+  schoolsIndex.reserve(NPUPILS);
   for (int i = 0; i < N; ++i) {
     if (School[i] > 0) {
       ++n_pupils;
       schoolsIndex.push_back(i);
     }
   }
+  if (n_pupils > (2 * NPUPILS)) {
+    Rcout << NPUPILS << "\n";
+    Rcout << n_pupils << "\n";
+    stop("n_pupils much larger than expected: likely an overestimate of schools.");
+  }
 
   // variables which will be updated on day = 0
-  int n_schools = -1;
-  int maxHouseholdSize = -1;
+  // int n_schools = -1;
 
   IntegerVector nInfected = no_init(days_to_sim);
   IntegerVector Incubation = no_init(N);
