@@ -67,7 +67,7 @@ int r_Rand(double m, double s, int d) {
   if (d == 3)
     return m;
   if (d == 4)
-    return cauchyRand(m, s);
+    return max0(cauchyRand(m, s));
 
   return m;
 }
