@@ -115,6 +115,7 @@ void infect_supermarkets(IntegerVector Status,
                          IntegerVector SupermarketHour,
                          double r_location,
                          double r_scale,
+                         int r_d,
                          IntegerVector SupermarketFreq,
                          IntegerVector TodaysHz,
                          int hrs_open = 8,
@@ -174,7 +175,7 @@ void infect_supermarkets(IntegerVector Status,
     double loc = r_location / r_div;
     double sca = r_scale / r_div;
 
-    nInfections[k] += cauchyRand0(loc, sca);
+    nInfections[k] += r_Rand(loc, sca, r_d);
   }
 
 #pragma omp parallel for num_threads(nThread)
