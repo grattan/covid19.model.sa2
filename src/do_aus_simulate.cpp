@@ -250,7 +250,6 @@ void infect_household(IntegerVector Status,
                       IntegerVector Age,
                       int yday,
                       int N,
-                      int &maxHouseholdSize,
                       int nThread = 1,
                       int resistance1 = 400,
                       int resistance_penalty = 100) {
@@ -258,9 +257,6 @@ void infect_household(IntegerVector Status,
   // that makes infection more likely. Higher penalties
   // make infection more likely among otherwise resistant
   // individuals
-  if (maxHouseholdSize <= 0) {
-    maxHouseholdSize = do_max_par_int(HouseholdSize, nThread);
-  }
 
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
@@ -589,8 +585,8 @@ List do_au_simulate(IntegerVector Status,
 
     // finally
 
-    infect_household(Status, InfectedOn, hid, seqN, HouseholdSize, Resistance, Age, yday,
-                     N, maxHouseholdSize, nThread);
+    infect_household(Status, InfectedOn, hid, seqN, HouseholdSize, Resistance, Age,
+                     yday, N, nThread);
   }
 
   return Rcpp::List::create(Named("nInfected") = nInfected,
