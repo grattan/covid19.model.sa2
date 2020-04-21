@@ -98,7 +98,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
   ### next day
   hh_ss <- function (x. = "", form = "%H:%M:%S") {
     if (verbose_timer) {
-      cat(x., as.character(format(Sys.time(), format = form)), "\n")
+      cat(as.character(format(Sys.time(), format = form)), x., "\n")
     } else {
       invisible(NULL)
     }
