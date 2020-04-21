@@ -180,7 +180,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
   # weighted sample (rather than prob)
   wsamp <- function(x, size, w) {
     probs <- w / sum(w)
-    samp(x, size = size, prob = probs, loud = FALSE)
+    samp(x, size = size, prob = probs)
   }
 
   # For text width
@@ -229,7 +229,12 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
 
   # Quicker to do it this way(!)
-  aus[nSupermarkets_by_sa2, nSupermarketsAvbl := i.nSupermarkets, on = "sa2"]
+  aus[nSupermarkets_by_sa2, nSupermarketsAvbl := pmin.int(8L, i.nSupermarkets), on = "sa2"]
+
+  # Choose a default supermarket for each person
+  aus[, SupermarketTypical := if (.BY[[1]]) samp(seq_len(.BY[[1]]) - 1L, size = .N) else 0L,
+      by = "nSupermarketsAvbl"]
+  aus[, SupermarketHour := rep_len(samp(0:7), .N)]
 
   # Turn School Id into short id to use for school id
   # Crucially, must be dense (no gaps) so can't prepare unique
@@ -261,6 +266,8 @@ simulate_sa2 <- function(days_to_simulate = 5,
                         FreqsByDestType = FreqsByDestType,
                         Epi = EpiPars,
                         nSupermarketsAvbl = nSupermarketsAvbl,
+                        SupermarketTypical = SupermarketTypical,
+                        SupermarketHour = SupermarketHour,
                         yday_start = .first_day,
                         days_to_sim = days_to_simulate,
                         N = nrow(aus),

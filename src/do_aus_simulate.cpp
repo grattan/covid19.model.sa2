@@ -66,7 +66,7 @@ int r_Rand(double m, double s, int d) {
   return m;
 }
 
-int array3k(int x, int y, int z, int nx, int ny, int nz) {
+int array3k(int x, int y, int z, int ny, int nz) {
   return x * (ny + nz) + y * (nz) + z;
 }
 
@@ -95,7 +95,7 @@ int array3k(int x, int y, int z, int nx, int ny, int nz) {
 
 void infect_supermarkets(IntegerVector Status,
                          IntegerVector InfectedOn,
-                         IntegerVector SA2,
+                         IntegerVector shortSA2,
                          int nThread,
                          IntegerVector Age,
                          IntegerVector Employment,
@@ -105,6 +105,8 @@ void infect_supermarkets(IntegerVector Status,
                          IntegerVector Resistance,
                          int yday,
                          int N,
+                         IntegerVector SupermarketTypical,
+                         IntegerVector SupermarketHour,
                          double r_location,
                          double r_scale,
                          IntegerVector SupermarketFreq,
@@ -117,76 +119,59 @@ void infect_supermarkets(IntegerVector Status,
   // array of supermarkets: SA2 x Supermarkets each SA2 x hour
   // (some sa2s have 17 supermarkets; others will just record 0 there)
 
-  int i_supermarkets[NSA2][maxSupermarketsBySA2][hrs_open];
-  memset(i_supermarkets, 0, sizeof i_supermarkets);
+  // int i_supermarkets[NSA2][maxSupermarketsBySA2][hrs_open];
+  // memset(i_supermarkets, 0, sizeof i_supermarkets);
 
-  // for early return in second loop
-  int new_infections = 0;
+  int nInfections_len = NSA2 * hrs_open;
+  nInfections_len *= 8;
+  IntegerVector nInfections = no_init(nInfections_len);
 
-  // for each person i the number they infect
-  IntegerVector nInfection = no_init(N);
+#pragma omp parallel for num_threads(nThread)
+  for (int k = 0; k < nInfections_len; ++k) {
+    nInfections[k] = 0;
+  }
 
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
-    nInfection[i] = 0;
-    if (Status[i] == 1 &&
-        nSupermarketsAvbl[i] &&
-        TodaysHz[i] > SupermarketFreq[i]) {
-      nInfection[i] = cauchyRand0(r_location / r_div, r_scale / r_div);
+    if (Status[i] != 1 || !nSupermarketsAvbl[i] || TodaysHz[i] > SupermarketFreq[i]) {
+      continue;
     }
+
+    int sa2i = shortSA2[i];
+
+    int k = array3k(sa2i, SupermarketTypical[i], SupermarketHour[i], 8, hrs_open);
+
+    // threadsafety
+    if ((k % omp_get_num_threads()) != omp_get_thread_num()) {
+      continue;
+    }
+
+    double loc = r_location / r_div;
+    double sca = r_scale / r_div;
+
+    nInfections[k] += cauchyRand0(loc, sca);
   }
 
-
+#pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
-    if (!nInfection[i]) {
-      continue;
-    }
-    int sa2i = short_sa2(SA2[i]);
-    int n_supermarkets_avbl = nSupermarketsAvbl[i];
-    int sj = 0;
-    if (n_supermarkets_avbl > 1) {
-      // Generally (7/8) times a person goes to the same supermarket
-      // every day. We add a bit of mixing
-      sj = (yday % 8) ? (i % n_supermarkets_avbl) : unifRand(0, n_supermarkets_avbl - 1);
-    }
-    // hour of visit today
-    int hr = unifRand(0, hrs_open - 1);
-
-    // derived index of SA2SupermarketHour
-    //
-    // int k = cumSupermarketsBySA2[sa2i] * 24 + sj * 24 + hr;
-    int infections_from_i = nInfection[i];
-    i_supermarkets[sa2i][sj][hr] += infections_from_i;
-    new_infections += infections_from_i;
-  }
-
-  for (int i = 0; i < N; ++i) {
-    // if no new infections or the person is not susceptible, move on
-    if (!new_infections || Status[i]) {
-      continue;
-    }
-    int sa2i = short_sa2(SA2[i]);
-
-    int n_supermarkets_avbl = nSupermarketsAvbl[i];
-    if (!n_supermarkets_avbl) {
+    if (Status[i] || !nSupermarketsAvbl[i] || TodaysHz[i] > SupermarketFreq[i]) {
       continue;
     }
 
-    int sj = 0;
-    if (n_supermarkets_avbl > 1) {
-      // sj = unifRand(0, n_supermarkets_avbl - 1);
-      sj = i % n_supermarkets_avbl;
+    int sa2i = shortSA2[i];
+
+    int k = array3k(sa2i, SupermarketTypical[i], SupermarketHour[i], 8, hrs_open);
+
+    // threadsafety
+    if ((k % omp_get_num_threads()) != omp_get_thread_num()) {
+      continue;
     }
-    // hour of visit today
-    int hr = unifRand(0, hrs_open - 1);
-    // int k = cumSupermarketsBySA2[sa2i] * 24 + sj * 24 + hr;
-    if (i_supermarkets[sa2i][sj][hr]) {
+    if (nInfections[k]) {
+      nInfections[k] -= 1;
       if (Resistance[i] < resistance1) {
         Status[i] = 1;
         InfectedOn[i] = yday;
       }
-      i_supermarkets[sa2i][sj][hr] -= -1;
-      --new_infections;
     }
   }
 }
@@ -372,6 +357,8 @@ List do_au_simulate(IntegerVector Status,
                     List FreqsByDestType,
                     List Epi, /* Epidemiological parameters */
                     IntegerVector nSupermarketsAvbl,
+                    IntegerVector SupermarketTypical,
+                    IntegerVector SupermarketHour,
                     int yday_start,
                     int days_to_sim,
                     int N = 25e6,
@@ -399,14 +386,13 @@ List do_au_simulate(IntegerVector Status,
   }
 
 
-  int maxSupermarketsBySA2 = 1;
+  int maxSupermarketsBySA2 = 8;
   int nSupermarkets = nSupermarketsBySA2[0];
 
 
-  for (int i = 1; i < NSA2; ++i) {
-    maxSupermarketsBySA2 = maxii(maxSupermarketsBySA2, nSupermarketsBySA2[i]);
-    nSupermarkets += nSupermarketsBySA2[i];
-  }
+  // for (int i = 1; i < NSA2; ++i) {
+  //   maxSupermarketsBySA2 = maxii(maxSupermarketsBySA2, nSupermarketsBySA2[i]);
+  // }
 
 
   // attach policy changes
@@ -460,6 +446,7 @@ List do_au_simulate(IntegerVector Status,
   IntegerVector Incubation = no_init(N);
   IntegerVector Illness = no_init(N);
   IntegerVector SupermarketTarget = no_init(N);
+
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
     Incubation[i] = 0;
@@ -467,6 +454,10 @@ List do_au_simulate(IntegerVector Status,
     SupermarketTarget[i] = 0;
   }
 
+  if (which_unsorted_int(SA2)) {
+    stop("SA2 was unsorted.");
+  }
+  IntegerVector shortSA2 = shorten_sa2s_ordered(SA2);
 
   DataFrame Statuses = DataFrame::create(Named("Status") = clone(Status));
   for (int day = 0; day < days_to_sim; ++day) {
@@ -565,7 +556,7 @@ List do_au_simulate(IntegerVector Status,
     if (supermarkets_open) {
       infect_supermarkets(Status,
                           InfectedOn,
-                          SA2,
+                          shortSA2,
                           nThread,
                           Age,
                           Employment,
@@ -575,6 +566,8 @@ List do_au_simulate(IntegerVector Status,
                           Resistance,
                           yday,
                           N,
+                          SupermarketTypical,
+                          SupermarketHour,
                           r_location,
                           r_scale,
                           SupermarketFreq,

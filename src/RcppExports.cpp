@@ -32,8 +32,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // do_au_simulate
-List do_au_simulate(IntegerVector Status, IntegerVector InfectedOn, IntegerVector SA2, IntegerVector hid, IntegerVector seqN, IntegerVector HouseholdSize, IntegerVector Age, IntegerVector School, IntegerVector PlaceTypeBySA2, IntegerVector Employment, IntegerVector Resistance, List Policy, List nPlacesByDestType, List FreqsByDestType, List Epi, /* Epidemiological parameters */                     IntegerVector nSupermarketsAvbl, int yday_start, int days_to_sim, int N, bool display_progress, int nThread);
-RcppExport SEXP _covid19_model_sa2_do_au_simulate(SEXP StatusSEXP, SEXP InfectedOnSEXP, SEXP SA2SEXP, SEXP hidSEXP, SEXP seqNSEXP, SEXP HouseholdSizeSEXP, SEXP AgeSEXP, SEXP SchoolSEXP, SEXP PlaceTypeBySA2SEXP, SEXP EmploymentSEXP, SEXP ResistanceSEXP, SEXP PolicySEXP, SEXP nPlacesByDestTypeSEXP, SEXP FreqsByDestTypeSEXP, SEXP EpiSEXP, SEXP nSupermarketsAvblSEXP, SEXP yday_startSEXP, SEXP days_to_simSEXP, SEXP NSEXP, SEXP display_progressSEXP, SEXP nThreadSEXP) {
+List do_au_simulate(IntegerVector Status, IntegerVector InfectedOn, IntegerVector SA2, IntegerVector hid, IntegerVector seqN, IntegerVector HouseholdSize, IntegerVector Age, IntegerVector School, IntegerVector PlaceTypeBySA2, IntegerVector Employment, IntegerVector Resistance, List Policy, List nPlacesByDestType, List FreqsByDestType, List Epi, /* Epidemiological parameters */                     IntegerVector nSupermarketsAvbl, IntegerVector SupermarketTypical, IntegerVector SupermarketHour, int yday_start, int days_to_sim, int N, bool display_progress, int nThread);
+RcppExport SEXP _covid19_model_sa2_do_au_simulate(SEXP StatusSEXP, SEXP InfectedOnSEXP, SEXP SA2SEXP, SEXP hidSEXP, SEXP seqNSEXP, SEXP HouseholdSizeSEXP, SEXP AgeSEXP, SEXP SchoolSEXP, SEXP PlaceTypeBySA2SEXP, SEXP EmploymentSEXP, SEXP ResistanceSEXP, SEXP PolicySEXP, SEXP nPlacesByDestTypeSEXP, SEXP FreqsByDestTypeSEXP, SEXP EpiSEXP, SEXP nSupermarketsAvblSEXP, SEXP SupermarketTypicalSEXP, SEXP SupermarketHourSEXP, SEXP yday_startSEXP, SEXP days_to_simSEXP, SEXP NSEXP, SEXP display_progressSEXP, SEXP nThreadSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -53,12 +53,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type FreqsByDestType(FreqsByDestTypeSEXP);
     Rcpp::traits::input_parameter< List >::type Epi(EpiSEXP);
     Rcpp::traits::input_parameter< /* Epidemiological parameters */                     IntegerVector >::type nSupermarketsAvbl(nSupermarketsAvblSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type SupermarketTypical(SupermarketTypicalSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type SupermarketHour(SupermarketHourSEXP);
     Rcpp::traits::input_parameter< int >::type yday_start(yday_startSEXP);
     Rcpp::traits::input_parameter< int >::type days_to_sim(days_to_simSEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
     Rcpp::traits::input_parameter< bool >::type display_progress(display_progressSEXP);
     Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
-    rcpp_result_gen = Rcpp::wrap(do_au_simulate(Status, InfectedOn, SA2, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, yday_start, days_to_sim, N, display_progress, nThread));
+    rcpp_result_gen = Rcpp::wrap(do_au_simulate(Status, InfectedOn, SA2, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, SupermarketHour, yday_start, days_to_sim, N, display_progress, nThread));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -147,11 +149,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// shorten_sa2s_ordered
+IntegerVector shorten_sa2s_ordered(IntegerVector SA2);
+RcppExport SEXP _covid19_model_sa2_shorten_sa2s_ordered(SEXP SA2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type SA2(SA2SEXP);
+    rcpp_result_gen = Rcpp::wrap(shorten_sa2s_ordered(SA2));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_distr2status", (DL_FUNC) &_covid19_model_sa2_distr2status, 5},
     {"_covid19_model_sa2_do_max_par_int", (DL_FUNC) &_covid19_model_sa2_do_max_par_int, 2},
-    {"_covid19_model_sa2_do_au_simulate", (DL_FUNC) &_covid19_model_sa2_do_au_simulate, 21},
+    {"_covid19_model_sa2_do_au_simulate", (DL_FUNC) &_covid19_model_sa2_do_au_simulate, 23},
     {"_covid19_model_sa2_do_exp_dbl2int", (DL_FUNC) &_covid19_model_sa2_do_exp_dbl2int, 2},
     {"_covid19_model_sa2_do_lag_int", (DL_FUNC) &_covid19_model_sa2_do_lag_int, 2},
     {"_covid19_model_sa2_do_seqN_N", (DL_FUNC) &_covid19_model_sa2_do_seqN_N, 3},
@@ -159,6 +171,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_prlnorm_int", (DL_FUNC) &_covid19_model_sa2_prlnorm_int, 4},
     {"_covid19_model_sa2_prcauchy", (DL_FUNC) &_covid19_model_sa2_prcauchy, 4},
     {"_covid19_model_sa2_short_sa2", (DL_FUNC) &_covid19_model_sa2_short_sa2, 1},
+    {"_covid19_model_sa2_shorten_sa2s_ordered", (DL_FUNC) &_covid19_model_sa2_shorten_sa2s_ordered, 1},
     {NULL, NULL, 0}
 };
 

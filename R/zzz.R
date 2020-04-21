@@ -12,6 +12,10 @@
     options("covid19.model.sa2_nThread" = 1L)
   }
 
+  if (is.null(getOption("covid19.model.sa2.fst2_progress"))) {
+    options("covid19.model.sa2.fst2_progress" = interactive())
+  }
+
   invisible(NULL)
 }
 

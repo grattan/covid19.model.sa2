@@ -20,6 +20,8 @@ int which_unsorted_int(IntegerVector x);
 
 int short_sa2(int sa2);
 
+IntegerVector shorten_sa2s_ordered(IntegerVector SA2);
+
 double m2mu(double m, double s);
 
 int poisRand(const int & lambda);
