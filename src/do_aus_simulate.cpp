@@ -66,8 +66,9 @@ int r_Rand(double m, double s, int d) {
   return m;
 }
 
-
-// https://stackoverflow.com/questions/1577475/c-sorting-and-keeping-track-of-indexes
+int array3k(int x, int y, int z, int nx, int ny, int nz) {
+  return x * (ny + nz) + y * (nz) + z;
+}
 
 
 //' @name do_1day_supermarket
@@ -108,8 +109,7 @@ void infect_supermarkets(IntegerVector Status,
                          double r_scale,
                          IntegerVector SupermarketFreq,
                          IntegerVector TodaysHz,
-                         int hr_open = 9,
-                         int hr_close = 22,
+                         int hrs_open = 8,
                          int resistance1 = 400,
                          int resistance2 = 3,
                          double r_div = 36, // divide r_ by this // TODO: model is highly sensitive to this par!
@@ -117,48 +117,60 @@ void infect_supermarkets(IntegerVector Status,
   // array of supermarkets: SA2 x Supermarkets each SA2 x hour
   // (some sa2s have 17 supermarkets; others will just record 0 there)
 
-  int i_supermarkets[NSA2][maxSupermarketsBySA2][24];
+  int i_supermarkets[NSA2][maxSupermarketsBySA2][hrs_open];
   memset(i_supermarkets, 0, sizeof i_supermarkets);
 
   // for early return in second loop
   int new_infections = 0;
 
+  // for each person i the number they infect
+  IntegerVector nInfection = no_init(N);
+
+#pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
-    if (Status[i] != 1) {
+    nInfection[i] = 0;
+    if (Status[i] == 1 &&
+        nSupermarketsAvbl[i] &&
+        TodaysHz[i] > SupermarketFreq[i]) {
+      nInfection[i] = cauchyRand0(r_location / r_div, r_scale / r_div);
+    }
+  }
+
+
+  for (int i = 0; i < N; ++i) {
+    if (!nInfection[i]) {
       continue;
     }
     int sa2i = short_sa2(SA2[i]);
     int n_supermarkets_avbl = nSupermarketsAvbl[i];
-    if (!n_supermarkets_avbl || TodaysHz[i] > SupermarketFreq[i]) {
-      continue;
-    }
     int sj = 0;
     if (n_supermarkets_avbl > 1) {
-      // sj = unifRand(0, n_supermarkets_avbl - 1);
-      sj = (yday % 8) ? i % n_supermarkets_avbl : unifRand(0, n_supermarkets_avbl - 1);
+      // Generally (7/8) times a person goes to the same supermarket
+      // every day. We add a bit of mixing
+      sj = (yday % 8) ? (i % n_supermarkets_avbl) : unifRand(0, n_supermarkets_avbl - 1);
     }
     // hour of visit today
-    int hr = unifRand(hr_open, hr_close);
+    int hr = unifRand(0, hrs_open - 1);
 
     // derived index of SA2SupermarketHour
     //
     // int k = cumSupermarketsBySA2[sa2i] * 24 + sj * 24 + hr;
-    int infections_from_i = cauchyRand0(r_location / r_div, r_scale / r_div);
+    int infections_from_i = nInfection[i];
     i_supermarkets[sa2i][sj][hr] += infections_from_i;
     new_infections += infections_from_i;
   }
 
   for (int i = 0; i < N; ++i) {
-    // if no new infections or the person is not susceptible, keep playing
+    // if no new infections or the person is not susceptible, move on
     if (!new_infections || Status[i]) {
       continue;
     }
     int sa2i = short_sa2(SA2[i]);
+
     int n_supermarkets_avbl = nSupermarketsAvbl[i];
     if (!n_supermarkets_avbl) {
       continue;
     }
-    // This time we skip if the person is infected.
 
     int sj = 0;
     if (n_supermarkets_avbl > 1) {
@@ -166,7 +178,7 @@ void infect_supermarkets(IntegerVector Status,
       sj = i % n_supermarkets_avbl;
     }
     // hour of visit today
-    int hr = unifRand(hr_open, hr_close);
+    int hr = unifRand(0, hrs_open - 1);
     // int k = cumSupermarketsBySA2[sa2i] * 24 + sj * 24 + hr;
     if (i_supermarkets[sa2i][sj][hr]) {
       if (Resistance[i] < resistance1) {
