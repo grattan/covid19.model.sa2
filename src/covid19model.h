@@ -29,8 +29,13 @@ int unifRand(const int & a, const int & b);
 double lnormRand(const double & a, const double & b);
 
 double cauchyRand(const double & a, const double & b);
+int cauchyRand0(const double & a, const double & b);
 
 int dbl2int(double x);
+
+int maxii(int a, int b);
+
+IntegerVector do_lag_int(IntegerVector s, int nThread);
 
 
 #endif
