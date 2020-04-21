@@ -92,108 +92,91 @@ int r_Rand(double m, double s, int d) {
 //' the likelihood of both critical and active cases among the elderly.
 //' @noRd
 
-void do_1day_supermarket(IntegerVector Status,
+void infect_supermarkets(IntegerVector Status,
                          IntegerVector InfectedOn,
                          IntegerVector SA2,
+                         int nThread,
                          IntegerVector Age,
                          IntegerVector Employment,
-                         IntegerVector SupermarketTarget,
+                         IntegerVector nSupermarketsBySA2,
+                         int maxSupermarketsBySA2,
+                         IntegerVector nSupermarketsAvbl,
                          IntegerVector Resistance,
                          int yday,
-                         int N = 25e6,
-                         bool check_sa2_key = true,
-                         int returner = 0,
-                         double r0_supermarket = 2.5,
+                         int N,
+                         double r_location,
+                         double r_scale,
+                         IntegerVector SupermarketFreq,
+                         IntegerVector TodaysHz,
+                         int hr_open = 9,
+                         int hr_close = 22,
                          int resistance1 = 400,
                          int resistance2 = 3,
-                         bool verbose = false,
-                         int nThread = 1) {
-  // const int PERSONS_PER_SUPERMARKET = N / N_SUPERMARKETS;
+                         double r_div = 36, // divide r_ by this // TODO: model is highly sensitive to this par!
+                         bool verbose = false) {
+  // array of supermarkets: SA2 x Supermarkets each SA2 x hour
+  // (some sa2s have 17 supermarkets; others will just record 0 there)
 
-  Timer timer;
+  int i_supermarkets[NSA2][maxSupermarketsBySA2][24];
+  memset(i_supermarkets, 0, sizeof i_supermarkets);
 
-  // Idea: First, count number of people and infected people
-  // who visited each supermarket.  Then, if these numbers
-  // are large enough, create new infections among the
-  // susceptible.
+  // for early return in second loop
+  int new_infections = 0;
 
-  if (N != Status.length() ||
-      N != SA2.length() ||
-      N != Age.length() ||
-      N != Employment.length() ||
-      N != SupermarketTarget.length() ||
-      N != Resistance.length()) {
-    Rcout << "SupermarketTarget " << SupermarketTarget.length() << "\n";
-    Rcout << "N " << N << "\n";
-    Rcout << "Status " << Status.length() << "\n";
-    Rcout << "SA2 " << SA2.length() << "\n";
-    Rcout << "Age " << Age.length() << "\n";
-    Rcout << "Employment " << Employment.length() << "\n";
-    Rcout << "Resistance " << Resistance.length() << "\n";
-    stop("Internal error: lengths differ.");
-  }
-
-  // assume that SA2 is keyed
-  timer.step("which_unsorted_int");
-
-  timer.step("allocate_n_supermarkets");
-  IntegerVector nInfectedVisitorsBySupermarket(N_SUPERMARKETS);
-  IntegerVector nVisitorsBySupermarket(N_SUPERMARKETS);
-
-  timer.step("supermarket_j");
-  // supermarket_j is the shift from
-  int supermarket_j = 0;
-  int infected_visitors = 0;
   for (int i = 0; i < N; ++i) {
-    int supermarket_target = SupermarketTarget[i];
-    if (supermarket_target > 0) {
-      // SupermarketTarget is 1-indexed.
-      nVisitorsBySupermarket[supermarket_target - 1] += 1;
-      nInfectedVisitorsBySupermarket[supermarket_target - 1] += (Status[i] > 0) ? rcauchy_int(2, 0.001) : 0;
+    if (Status[i] != 1) {
+      continue;
     }
+    int sa2i = short_sa2(SA2[i]);
+    int n_supermarkets_avbl = nSupermarketsAvbl[i];
+    if (!n_supermarkets_avbl || TodaysHz[i] > SupermarketFreq[i]) {
+      continue;
+    }
+    int sj = 0;
+    if (n_supermarkets_avbl > 1) {
+      // sj = unifRand(0, n_supermarkets_avbl - 1);
+      sj = (yday % 8) ? i % n_supermarkets_avbl : unifRand(0, n_supermarkets_avbl - 1);
+    }
+    // hour of visit today
+    int hr = unifRand(hr_open, hr_close);
+
+    // derived index of SA2SupermarketHour
+    //
+    // int k = cumSupermarketsBySA2[sa2i] * 24 + sj * 24 + hr;
+    int infections_from_i = cauchyRand0(r_location / r_div, r_scale / r_div);
+    i_supermarkets[sa2i][sj][hr] += infections_from_i;
+    new_infections += infections_from_i;
   }
 
-  IntegerVector NewInfectionsBySupermarket = no_init(N_SUPERMARKETS);
-  for (int k = 0; k < N_SUPERMARKETS; ++k) {
-    NewInfectionsBySupermarket[k] = (int)(r0_supermarket * nInfectedVisitorsBySupermarket[k]);
-  }
-
-  IntegerVector nInfected = no_init(N);
-  timer.step("reinfect");
-  // reinfect
   for (int i = 0; i < N; ++i) {
-    if (Status[i]) {
-      continue; // already infected
+    // if no new infections or the person is not susceptible, keep playing
+    if (!new_infections || Status[i]) {
+      continue;
     }
+    int sa2i = short_sa2(SA2[i]);
+    int n_supermarkets_avbl = nSupermarketsAvbl[i];
+    if (!n_supermarkets_avbl) {
+      continue;
+    }
+    // This time we skip if the person is infected.
 
-    int supermarket_target = SupermarketTarget[i];
-    // if the person visited a supermarket they become infected
-    // probablistically
-    if (supermarket_target > 0) {
-      int n_new_cases = NewInfectionsBySupermarket[supermarket_target - 1];
-      if (n_new_cases) {
-        // Resistance determines infections and Age determines criticality
-        Status[i] = (Resistance[i] < resistance1) + (Resistance[i] < (Age[i] * resistance2));
-        if (Status[i] > 0) {
-          InfectedOn[i] = yday;
-        }
-        // Used
-        NewInfectionsBySupermarket[supermarket_target - 1] -= 1;
+    int sj = 0;
+    if (n_supermarkets_avbl > 1) {
+      // sj = unifRand(0, n_supermarkets_avbl - 1);
+      sj = i % n_supermarkets_avbl;
+    }
+    // hour of visit today
+    int hr = unifRand(hr_open, hr_close);
+    // int k = cumSupermarketsBySA2[sa2i] * 24 + sj * 24 + hr;
+    if (i_supermarkets[sa2i][sj][hr]) {
+      if (Resistance[i] < resistance1) {
+        Status[i] = 1;
+        InfectedOn[i] = yday;
       }
-
+      i_supermarkets[sa2i][sj][hr] -= -1;
+      --new_infections;
     }
   }
-  timer.step("finish");
-  if (verbose) {
-    DoubleVector res(timer);
-    for (int i = 0; i < res.size(); ++i) {
-      res[i] = res[i] / 1e6;
-    }
-
-    Rcout << res << std::endl;
-  }
-
-  // void
 }
 
 void infect_school(IntegerVector Status,
@@ -202,12 +185,13 @@ void infect_school(IntegerVector Status,
                    IntegerVector Age,
                    int yday,
                    int N,
-                   const std::vector<int> &schoolIndices,
+                   const std::vector<int>& schoolIndices,
                    double r_location,
                    double r_scale,
                    int r_d,
                    bool only_Year12,
-                   int &n_schools) {
+                   int n_schools,
+                   int n_pupils) {
   // void function so this run at most once
   if (n_schools < 0) {
     std::set<int> SchoolSet;
@@ -226,7 +210,7 @@ void infect_school(IntegerVector Status,
   memset(s_visits, 0, sizeof s_visits);
   memset(i_visits, 0, sizeof i_visits);
 
-  for (unsigned int k = 0; k < schoolIndices.size(); ++k) {
+  for (int k = 0; k < n_pupils; ++k) {
     int i = schoolIndices[k];
     int schooli = School[i] - 1;
     int Agei = (Age[i] > 20) ? 20 : Age[i];
@@ -242,7 +226,8 @@ void infect_school(IntegerVector Status,
       i_visits[schooli][Agei] += infectedi;
     }
   }
-  for (unsigned int k = 0; k < schoolIndices.size(); ++k) {
+
+  for (int k = 0; k < n_pupils; ++k) {
     int i = schoolIndices[k];
     if (Status[i]) continue;
     int schooli = School[i] - 1;
@@ -401,7 +386,23 @@ List do_au_simulate(IntegerVector Status,
     stop("Internal error: PlaceTypeBySA2 not implemented yet.");
   }
 
+
+  int maxSupermarketsBySA2 = 1;
+  int nSupermarkets = nSupermarketsBySA2[0];
+
+
+  for (int i = 1; i < NSA2; ++i) {
+    maxSupermarketsBySA2 = maxii(maxSupermarketsBySA2, nSupermarketsBySA2[i]);
+    nSupermarkets += nSupermarketsBySA2[i];
+  }
+
+
   // attach policy changes
+
+  bool supermarkets_open = true;
+  if (Policy.length() && Policy.containsElementNamed("supermarkets_open")) {
+    supermarkets_open = Policy["supermarkets_open"];
+  }
 
   bool schools_open = false;
   bool only_Year12  = false;
@@ -429,10 +430,14 @@ List do_au_simulate(IntegerVector Status,
   int illness_d = Epi["illness_distribution"];
   int r_d = Epi["r_distribution"];
 
+  int n_pupils = 0;
   std::vector<int> schoolsIndex;
-  schoolsIndex.reserve(N);
+  // schoolsIndex.reserve(N);
   for (int i = 0; i < N; ++i) {
-    if (School[i] > 0) schoolsIndex.push_back(i);
+    if (School[i] > 0) {
+      ++n_pupils;
+      schoolsIndex.push_back(i);
+    }
   }
 
   // variables which will be updated on day = 0
@@ -442,12 +447,13 @@ List do_au_simulate(IntegerVector Status,
   IntegerVector nInfected = no_init(days_to_sim);
   IntegerVector Incubation = no_init(N);
   IntegerVector Illness = no_init(N);
+  IntegerVector SupermarketTarget = no_init(N);
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
     Incubation[i] = 0;
     Illness[i] = 0;
+    SupermarketTarget[i] = 0;
   }
-
 
 
   DataFrame Statuses = DataFrame::create(Named("Status") = clone(Status));
@@ -455,29 +461,29 @@ List do_au_simulate(IntegerVector Status,
     int yday = yday_start + day;
     p.increment();
 
+    int n_infected_today = 0;
+
+#pragma omp parallel for num_threads(nThread) reduction(+:n_infected_today)
+    for (int i = 0; i < N; ++i) {
+      n_infected_today += (Status[i] >= 1);
+    }
+
+    nInfected[day] = n_infected_today;
+
+    Statuses.push_back(clone(Status));
+
+    // no more infections?
+    if (n_infected_today == 0) {
+      continue;
+    }
+
+
     // For example, SupermarketFreq[i] = 365  => every day
     // SupermarketFreq[i] = 1 every year.  So we create a vector
     // of 1:366 and compare that to the individual's tendency to
     // visit. So if TodaysHz[i] = 366 they will not visit anything
     // regardless; if TodaysHz[i] = 1 they will visit everything.
     IntegerVector TodaysHz = Rcpp::rep_len(Rcpp::sample(365, 365, true), N);
-
-
-    // Need to initalize with zeroes as it will get too unwiedly
-    // to write a case for each branch.
-    IntegerVector SupermarketTarget(N);
-
-
-    // ------------------------------------------------
-    // SA2
-    // |==============|========|========================|
-    //                <--nsu-->                         // n_supermarkets_avbl
-    // cum_j ----------------->
-    // (Vertical pipes indicate the first person in a SA2)
-
-
-    int supermarket_cumj = 0;
-    int n_supermarkets_avbl = 0;
 
 
 
@@ -541,73 +547,34 @@ List do_au_simulate(IntegerVector Status,
           }
         }
       }
-
-      // did they go outside
-      // 1 -> infectious but showing no symptoms
-      // -1 healed potentially go outside (but not to infect or be infected)
-      bool goes_outside = Status[i] == 0 || Status[i] == 1;
-      // goes_outside = true;
-      // bool contagious = Status[i] > 0;
-
-      // int ssa2 = short_sa2(SA2[i]);
-      // bool sa2_change = ((i > 0) && SA2[i] != SA2[i - 1]);
-      // if (sa2_change) {
-      //   // on the sa2 change we incremenent supermarket_cumj
-      //   // by the previous SA2's number of supermarket
-      //   // This moves along the array of supermarkets
-      //   // so that rand % n_supermarkets_avbl moves within
-      //   // the SA2's supermarket index for SupermarketTarget.
-      //   supermarket_cumj += n_supermarkets_avbl;
-      //   n_supermarkets_avbl = nSupermarketsBySA2[ssa2];
-      // }
-      int n_supermarkets_avbl = nSupermarketsAvbl[i];
-
-
-
-      if (goes_outside) {
-        bool moves_sa2 = false;
-        if (moves_sa2) {
-          int new_sa2 = 0;
-          // don't get infected
-          SA2[i] = new_sa2;
-        } else {
-          // bool commutes = false; // goes to work
-          // bool is_pupil = false;
-          // int destination_type = 0; // 1-106
-
-          // TODO: n_supermarkets_avbl needs to be loosened
-          if (n_supermarkets_avbl && SupermarketFreq[i] > TodaysHz[i]) {
-            // they will visit a supermarket
-            // fast_basic_rand is both deterministic and non-uniform
-            // but neither is important here: we just want some allocation
-            // to one of the supermarkets that allows mixing.
-            int supermarket_visited = unifRand(0, n_supermarkets_avbl - 1);
-            SupermarketTarget[i] = supermarket_visited + supermarket_cumj;
-          }
-
-        }
-
-      }
     }
 
     // This function actually performs the interactions and infections
-    do_1day_supermarket(Status,
-                        InfectedOn,
-                        SA2,
-                        Age,
-                        Employment,
-                        SupermarketTarget,
-                        Resistance,
-                        yday,
-                        N,
-                        /* check_sa2_key = */ day == 0);
-
+    if (supermarkets_open) {
+      infect_supermarkets(Status,
+                          InfectedOn,
+                          SA2,
+                          nThread,
+                          Age,
+                          Employment,
+                          nSupermarketsBySA2,
+                          maxSupermarketsBySA2,
+                          nSupermarketsAvbl,
+                          Resistance,
+                          yday,
+                          N,
+                          r_location,
+                          r_scale,
+                          SupermarketFreq,
+                          TodaysHz);
+    }
 
     if (schools_open) {
       infect_school(Status, InfectedOn, School, Age, yday, N, schoolsIndex,
                     r_location, r_scale, r_d,
                     only_Year12,
-                    n_schools);
+                    n_schools,
+                    n_pupils);
     }
 
 
@@ -615,18 +582,6 @@ List do_au_simulate(IntegerVector Status,
 
     infect_household(Status, InfectedOn, hid, seqN, HouseholdSize, Resistance, Age, yday,
                      N, maxHouseholdSize, nThread);
-
-
-    int n_infected_today = 0;
-
-#pragma omp parallel for num_threads(nThread) reduction(+:n_infected_today)
-    for (int i = 0; i < N; ++i) {
-      n_infected_today += (Status[i] == 1);
-    }
-
-    nInfected[day] = n_infected_today;
-
-    Statuses.push_back(clone(Status));
   }
 
   return Rcpp::List::create(Named("nInfected") = nInfected,
