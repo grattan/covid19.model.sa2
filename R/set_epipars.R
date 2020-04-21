@@ -59,7 +59,7 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
            checkmate::assert_int(illness_mean, lower = 1)
          },
          "lnorm" = {
-           checkmate::assert_number(illness_mean, finite = TRUE, lower = 1)
+           checkmate::assert_number(illness_mean, finite = TRUE, lower = 0)
            checkmate::assert_number(illness_sigma, finite = TRUE, lower = 0)
          },
          "dirac" = {
@@ -67,8 +67,8 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
          })
 
   r_distribution <- match.arg(r_distribution)
-  if (r_distribution == "lnorm") {
-    checkmate::assert_number(r_location, finite = TRUE, lower = 1)
+  if (r_distribution != "pois" || r_distribution != "dirac") {
+    checkmate::assert_number(r_location, finite = TRUE, lower = 0)
     checkmate::assert_number(r_scale, finite = TRUE, lower = 0)
   } else {
     # integerish
