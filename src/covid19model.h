@@ -40,6 +40,8 @@ int cauchyRand0(const double & a, const double & b);
 int dbl2int(double x);
 
 int maxii(int a, int b);
+int max0(int x);
+int max0(double x);
 
 IntegerVector do_lag_int(IntegerVector s, int nThread);
 
