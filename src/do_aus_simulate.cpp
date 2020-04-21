@@ -459,6 +459,11 @@ List do_au_simulate(IntegerVector Status,
   DataFrame Statuses = DataFrame::create(Named("Status") = clone(Status));
   for (int day = 0; day < days_to_sim; ++day) {
     int yday = yday_start + day;
+
+    const int wday_2020[7] = {3, 4, 5, 6, 7, 1, 2};
+    int wday = wday_2020[(yday % 7)];
+    bool is_weekday = wday != 0 && wday != 7;
+
     p.increment();
 
     int n_infected_today = 0;
@@ -571,8 +576,10 @@ List do_au_simulate(IntegerVector Status,
                           TodaysHz);
     }
 
-    if (schools_open) {
-      infect_school(Status, InfectedOn, School, Age, yday, N, schoolsIndex,
+    if (is_weekday && schools_open) {
+      infect_school(Status, InfectedOn, School, Age,
+                    yday, N,
+                    schoolsIndex,
                     r_location, r_scale, r_d,
                     only_Year12,
                     n_schools,
