@@ -167,9 +167,11 @@ void infect_supermarkets(IntegerVector Status,
     }
 
     // threadsafety
+#ifdef _OPENMP
     if ((k % omp_get_num_threads()) != omp_get_thread_num()) {
       continue;
     }
+#endif
 
     double loc = r_location / r_div;
     double sca = r_scale / r_div;
@@ -187,10 +189,14 @@ void infect_supermarkets(IntegerVector Status,
 
     int k = array3k(sa2i, SupermarketTypical[i], SupermarketHour[i], 8, hrs_open);
 
+
     // threadsafety
+#ifdef _OPENMP
     if ((k % omp_get_num_threads()) != omp_get_thread_num()) {
       continue;
     }
+#endif
+
     if (nInfections[k]) {
       nInfections[k] -= 1;
       if (Resistance[i] < resistance1) {
@@ -286,9 +292,12 @@ void infect_household(IntegerVector Status,
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
     // separate household ids into the same thread
+#ifdef _OPENMP
     if ((hid[i] % omp_get_num_threads()) != omp_get_thread_num()) {
       continue;
     }
+#endif
+
     if (HouseholdSize[i] == 1) {
       // no transmission in single-person household
       continue;
