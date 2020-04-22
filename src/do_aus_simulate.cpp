@@ -477,7 +477,9 @@ List do_au_simulate(IntegerVector Status,
   }
   IntegerVector shortSA2 = shorten_sa2s_ordered(SA2);
 
-  DataFrame Statuses = DataFrame::create(Named("Status") = clone(Status));
+  DataFrame Statuses = DataFrame::create(Named("InitialStatus") = clone(Status));
+
+
   for (int day = 0; day < days_to_sim; ++day) {
     int yday = yday_start + day;
 
