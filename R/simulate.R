@@ -30,6 +30,10 @@
 #' @param dataEnv An environment into which the data will be saved and
 #' retrieved. Used to save time reading after the first time.
 #'
+#' @param nThread \describe{
+#' \item{\code{integer(1)}}{Number of threads to use in the C++ code.}
+#' }
+#'
 #' @return
 #' A list of \code{days_to_simulate + 1} components. The first
 #' component is the inital status of each individual and
@@ -56,8 +60,8 @@
 simulate_sa2 <- function(days_to_simulate = 5,
                          PolicyPars = list(),
                          InitialStatus = list(dead = 71,
-                                              healed = 4258,
-                                              active = 2241,
+                                              healed = 4685,
+                                              active = 1840,
                                               critical = 49),
                          EpiPars = set_epipars(),
                          .first_day = NULL,

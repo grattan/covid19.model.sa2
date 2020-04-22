@@ -7,7 +7,7 @@
 simulate_sa2(
   days_to_simulate = 5,
   PolicyPars = list(),
-  InitialStatus = list(dead = 71, healed = 4258, active = 2241, critical = 49),
+  InitialStatus = list(dead = 71, healed = 4685, active = 1840, critical = 49),
   EpiPars = set_epipars(),
   .first_day = NULL,
   verbose_timer = TRUE,
@@ -46,6 +46,10 @@ ill with COVID-19 based on imputed duration of infection.}
 
 \item{dataEnv}{An environment into which the data will be saved and
 retrieved. Used to save time reading after the first time.}
+
+\item{nThread}{\describe{
+\item{\code{integer(1)}}{Number of threads to use in the C++ code.}
+}}
 }
 \value{
 A list of \code{days_to_simulate + 1} components. The first
