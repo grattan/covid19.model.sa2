@@ -36,6 +36,8 @@ another way to select columns from
 If \code{NULL}, the default, no additional columns are selected.
 }}}
 
+\item{fst2_progress}{Whether to write progress to the console.}
+
 \item{...}{Arguments passed to \code{read_fst}.}
 }
 \description{

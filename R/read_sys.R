@@ -27,6 +27,8 @@
 #' If \code{NULL}, the default, no additional columns are selected.
 #' }}
 #'
+#' @param fst2_progress Whether to write progress to the console.
+#'
 #' @param ... Arguments passed to \code{read_fst}.
 #'
 #'
