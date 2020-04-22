@@ -181,12 +181,6 @@ simulate_sa2 <- function(days_to_simulate = 5,
   asympto <- EpiPars$p_asympto / 1000
    sympto <- 1 - asympto
 
-  # weighted sample (rather than prob)
-  wsamp <- function(x, size, w) {
-    probs <- w / sum(w)
-    samp(x, size = size, prob = probs)
-  }
-
   # For text width
   IS <- InitialStatus
   n_status0 <- nrow(aus) - sum(unlist(IS))
