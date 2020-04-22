@@ -11,7 +11,10 @@
 #' @importFrom fst read_fst
 #' @importFrom hutils coalesce
 #' @importFrom hutils weight2rows
+#' @importFrom fastmatch fmatch
 #' @importFrom magrittr %>%
+#' @importFrom stats rbeta
+#' @importFrom utils packageName
 #'
 #' @useDynLib covid19.model.sa2, .registration = TRUE
 ## usethis namespace: end
