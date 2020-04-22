@@ -136,9 +136,9 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
   demo_by_person <- read_sys("person_demography.fst")
 
-  Cases.csv <- fread("data-raw/pappubahry/AU_COVID19/time_series_cases.csv", key = "Date")
-  Recovered.csv <- fread("data-raw/pappubahry/AU_COVID19/time_series_recovered.csv", key = "Date")
-  Deaths.csv <- fread("data-raw/pappubahry/AU_COVID19/time_series_deaths.csv", key = "Date")
+  Cases.csv <- read_sys("time_series_cases.fst")
+  Recovered.csv <- read_sys("time_series_recovered.fst")
+  Deaths.csv <- fread("time_series_deaths.fst")
   if (is.null(.first_day)) {
     .first_day <- Deaths.csv[, yday(last(Date))]
   }

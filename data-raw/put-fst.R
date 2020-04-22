@@ -620,14 +620,23 @@ occ_ind %>%
 ## Maybe it should be a submodule?
 try({
   # Not fst because it's small and insertions are easier on git and useful to see
-  fread("https://github.com/pappubahry/AU_COVID19/raw/master/time_series_cases.csv") %>%
-    fwrite(provide.file("data-raw/pappubahry/AU_COVID19/time_series_cases.csv"))
+  fread("https://github.com/pappubahry/AU_COVID19/raw/master/time_series_cases.csv") %T>%
+    fwrite(provide.file("data-raw/pappubahry/AU_COVID19/time_series_cases.csv")) %>%
+    .[, Date := as.Date(Date)] %>%
+    setkey(Date) %>%
+    write_fst("inst/extdata/time_series_cases.fst", compress = 100)
 
-  fread("https://github.com/pappubahry/AU_COVID19/raw/master/time_series_recovered.csv") %>%
-    fwrite(provide.file("data-raw/pappubahry/AU_COVID19/time_series_recovered.csv"))
+  fread("https://github.com/pappubahry/AU_COVID19/raw/master/time_series_recovered.csv") %T>%
+    fwrite(provide.file("data-raw/pappubahry/AU_COVID19/time_series_recovered.csv")) %>%
+    .[, Date := as.Date(Date)] %>%
+    setkey(Date) %>%
+    write_fst("inst/extdata/time_series_recovered.fst", compress = 100)
 
-  fread("https://github.com/pappubahry/AU_COVID19/raw/master/time_series_deaths.csv") %>%
-    fwrite(provide.file("data-raw/pappubahry/AU_COVID19/time_series_deaths.csv"))
+  fread("https://github.com/pappubahry/AU_COVID19/raw/master/time_series_deaths.csv") %T>%
+    fwrite(provide.file("data-raw/pappubahry/AU_COVID19/time_series_deaths.csv")) %>%
+    .[, Date := as.Date(Date)] %>%
+    setkey(Date) %>%
+    write_fst("inst/extdata/time_series_deaths.fst", compress = 100)
 })
 
 # // data-raw/google/sa2_by_place_id.fst
