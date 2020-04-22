@@ -100,6 +100,8 @@ simulate_sa2 <- function(days_to_simulate = 5,
   ### add up all the interactions
   ### sleep!
   ### next day
+  nThread <- checkmate::assert_int(nThread, lower = 1L, coerce = TRUE)
+
   hh_ss <- function (x. = "", form = "%H:%M:%S") {
     if (verbose_timer) {
       cat(as.character(format(Sys.time(), format = form)), x., "\n")
