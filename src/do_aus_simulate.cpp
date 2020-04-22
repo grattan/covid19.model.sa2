@@ -592,8 +592,7 @@ List do_au_simulate(IntegerVector Status,
                           N,
                           SupermarketTypical,
                           SupermarketHour,
-                          r_location,
-                          r_scale,
+                          r_location, r_scale, r_d,
                           SupermarketFreq,
                           TodaysHz);
     }
