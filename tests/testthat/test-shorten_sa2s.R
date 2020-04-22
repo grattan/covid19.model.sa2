@@ -9,6 +9,6 @@ test_that("shorten_sa2 works", {
   expect_false(aus[, is.unsorted(sa2)])
   aus[, short_sa2 := shorten_sa2s_ordered(sa2)]
   expect_equal(aus[, first(short_sa2)], 0L)
-  expect_equal(aus[, last(short_sa2)], aus[, uniqueN(short_sa2)] + 1L)
+  expect_equal(aus[, last(short_sa2)], aus[, short_sa2(last(sa2))])
   expect_equal(aus[, min(diff(short_sa2))], 0L)
 })
