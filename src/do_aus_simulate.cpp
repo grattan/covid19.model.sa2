@@ -24,8 +24,7 @@ int do_max_par_int(IntegerVector x, int nThread = 1) {
 
 // Just a way to get quasi-cauchy distributed nonnegative integer vector
 int rcauchy_int(double l, double s) {
-  NumericVector o = Rcpp::rcauchy(1, l, s);
-  double out = o[0];
+  double out = cauchyRand(l, s);
   out = (out < -1 || out > 1000) ? 0 : out;
   return out;
 }
