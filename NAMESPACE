@@ -3,6 +3,7 @@
 export(attachme)
 export(read_sys)
 export(set_epipars)
+export(set_initial_by_state)
 export(simulate_sa2)
 import(data.table)
 importFrom(Rcpp,evalCpp)

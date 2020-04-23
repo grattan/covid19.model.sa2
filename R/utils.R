@@ -14,3 +14,19 @@ wsamp <- function(x, size, w) {
 isnt_testing <- function() {
   !requireNamespace("testthat", quietly = TRUE) || !testthat::is_testing()
 }
+
+"%||%" <- function(a, b) if (is.null(a)) b else a
+
+"%<=%" <- function(a, b) {
+  if (is.null(a)) {
+    eval.parent(substitute(a <- b))
+  }
+}
+
+accel <- function(x, FUN) {
+  FUN <- match.fun(FUN)
+  if (length(x) <= 1L) {
+    return(FUN(x))
+  }
+  setDT(list(x = x))[, "ans" := FUN(.BY[[1]]), by = "x"][["ans"]]
+}
