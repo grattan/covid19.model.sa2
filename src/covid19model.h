@@ -24,6 +24,7 @@ const int STATUS_SUSCEP =  0;
 const int STATUS_NOSYMP =  1;
 const int STATUS_INSYMP =  2;
 const int STATUS_CRITIC =  3;
+
 const int ISOLATED_PLUS = 32;
 
 // We want to avoid branching and prefer + or - to if statements
@@ -33,6 +34,9 @@ const int ISOLATED_PLUS = 32;
 const int HEALED_MINUS_KILLED = 1;
 const int INSYMP_MINUS_NOSYMP = 1;
 const int CRITIC_MINUS_INSYMP = 1;
+
+const int SPECIFICITY = 992;
+const int SENSITIVITY = 800;
 
 int which_unsorted_int(IntegerVector x);
 
@@ -44,6 +48,7 @@ double m2mu(double m, double s);
 
 int poisRand(const int & lambda);
 
+IntegerVector dqsample_int2(int m, int n);
 int unifRand(const int & a, const int & b);
 
 double lnormRand(const double & a, const double & b);
