@@ -60,6 +60,10 @@ prcauchy <- function(n, a, b, nThread = 1L) {
     .Call(`_covid19_model_sa2_prcauchy`, n, a, b, nThread)
 }
 
+lemire_rand <- function(n, d, s32, q, nThread = 1L) {
+    .Call(`_covid19_model_sa2_lemire_rand`, n, d, s32, q, nThread)
+}
+
 short_sa2 <- function(sa2) {
     .Call(`_covid19_model_sa2_short_sa2`, sa2)
 }

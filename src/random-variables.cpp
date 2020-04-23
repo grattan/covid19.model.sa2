@@ -1,6 +1,7 @@
 #include "covid19model.h"
 #include <random>
 #include <Rcpp.h>
+#include <stdint.h>
 using namespace Rcpp;
 
 
@@ -76,3 +77,40 @@ DoubleVector prcauchy(int n, double a, double b, int nThread = 1) {
   }
   return out;
 }
+
+/**
+ * D. H. Lehmer, Mathematical methods in large-scale computing units.
+ * Proceedings of a Second Symposium on Large Scale Digital Calculating
+ * Machinery;
+ * Annals of the Computation Laboratory, Harvard Univ. 26 (1951), pp. 141-146.
+ *
+ * P L'Ecuyer,  Tables of linear congruential generators of different sizes and
+ * good lattice structure. Mathematics of Computation of the American
+ * Mathematical
+ * Society 68.225 (1999): 249-260.
+ */
+
+__uint128_t g_lehmer64_state;
+
+uint64_t lehmer64() {
+  g_lehmer64_state *= 0xda942042e4dd58b5;
+  return g_lehmer64_state >> 64;
+}
+
+// [[Rcpp::export]]
+IntegerVector lemire_rand(int n, int d, int s32, int q, int nThread = 1) {
+  uint64_t s = s32;
+  for (int i = 0; i < q; ++i) {
+    s = lehmer64();
+  }
+  IntegerVector out = no_init(n);
+#pragma omp parallel for num_threads(nThread) private(s)
+  for (int i = 0; i < n; ++i) {
+    s *= 0xda942042e4dd58b5;
+    out[i] = s % d;
+  }
+  return out;
+}
+
+
+
