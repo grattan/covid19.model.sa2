@@ -72,6 +72,14 @@ do_seqN_N <- function(hid, pid, check_hid_sorted = TRUE) {
     .Call(`_covid19_model_sa2_do_seqN_N`, hid, pid, check_hid_sorted)
 }
 
+punif_int <- function(n, a, b, nThread = 1L) {
+    .Call(`_covid19_model_sa2_punif_int`, n, a, b, nThread)
+}
+
+dqsample_int2 <- function(m, n) {
+    .Call(`_covid19_model_sa2_dqsample_int2`, m, n)
+}
+
 prlnorm_dbl <- function(n, a, b, nThread = 1L) {
     .Call(`_covid19_model_sa2_prlnorm_dbl`, n, a, b, nThread)
 }
@@ -86,6 +94,10 @@ prcauchy <- function(n, a, b, nThread = 1L) {
 
 lemire_rand <- function(n, d, s32, nThread = 1L, q2 = 0L) {
     .Call(`_covid19_model_sa2_lemire_rand`, n, d, s32, nThread, q2)
+}
+
+modulo <- function(x, m, d, nThread = 10L) {
+    .Call(`_covid19_model_sa2_modulo`, x, m, d, nThread)
 }
 
 short_sa2 <- function(sa2) {

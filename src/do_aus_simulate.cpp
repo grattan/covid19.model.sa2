@@ -95,19 +95,29 @@ int array3k(int x, int y, int z, int ny, int nz) {
   return x * (ny + nz) + y * (nz) + z;
 }
 
-/*
+
 void contact_tracing(IntegerVector Status,
                      IntegerVector InfectedOn,
                      IntegerVector Incubation,
                      int yday,
                      IntegerVector seqN,
+                     IntegerVector HouseholdSize,
                      int tests_avbl,
                      IntegerVector hid,
                      IntegerVector HouseholdInfectedToday,
                      int N,
                      IntegerVector School,
                      IntegerVector PlaceId,
-                     int nThread) {
+                     int ptest_per_mille_sympto,
+                     int ptest_per_mille_asympto,
+                     IntegerVector Todays2B,
+                     int days_to_notify = 3,
+                     int nThread = 1) {
+  if (nThread < 1 || nThread > omp_get_num_procs()) {
+    // lots of large ints nearby!
+    stop("Internal error: nThread out of range");
+  }
+
   // isTested -> isIdentified -> responseReq -> LockdownTomorrw
 
   // loop through each person who has been infected
@@ -116,33 +126,68 @@ void contact_tracing(IntegerVector Status,
   // is the person part of a household
   // are any tests left?
   // test each person in the household
-  IntegerVector getTest = no_init(N);
 
+  // TestedOn = Day at which the person is tested and notified
+  IntegerVector TestedOn = no_init(N);
+  const int test_array[3] = {0, ptest_per_mille_asympto, ptest_per_mille_sympto};
+  int tests_performed = 0;
+#pragma omp parallel for num_threads(nThread) reduction(+:tests_performed)
+  for (int i = 0; i < N; ++i) {
+    int test_k = ((Status[i] == STATUS_NOSYMP) + (Status[i] == STATUS_INSYMP));
+    int ptest_per_mille = test_array[test_k];
 
-  // Assume for now everyone who gets infected gets noticed
-  // at the end of their incubation period
-  IntegerVector HouseholdRequiresTesting = no_init(N);
+    // test_outcome = -1 (negative), 0 (no test), 1 (positive)
+    int test_outcome = (Todays2B[i] % 1000) < ptest_per_mille;
+    tests_performed += test_outcome;
+
+    test_outcome -= 2 * (((Todays2B[i] / 13) % 1000) > SENSITIVITY);
+
+    // encode negative and time of test in one variable
+    TestedOn[i] = (yday + days_to_notify) * test_outcome;
+  }
+
+  // At this point we know how many tests have been performed
+  // and who has been identified.
+
+  // Isolate everyone who is in the same household
+  // as a person who is 'TestedOn' today
   for (int i = 0; i < N; ++i) {
     if (seqN[i] != 1) {
       continue;
     }
-    if (!HouseholdInfectedToday[i]) {
+
+    bool notified_positive_today = TestedOn[i] == yday;
+
+    if (HouseholdSize[i] == 1) {
+      if (notified_positive_today) {
+        Status[i] += ISOLATED_PLUS;
+      }
+      // no household tracing for single person
       continue;
     }
+
+
 
     // at the head of househodl seqN = 1,
+    // and at least one of the household is infected
 
-
-    if (Incubation[i] && (InfectedOn[i] + Incubation[i] == yday)) {
-      // mark the
-      int seqn = seqN[i] - 1;
-      int hid = hid[i];
-      HouseholdRequiresTesting[i] = 0;
-      continue;
+    int nh = HouseholdSize[i];
+    for (int j = 1; j < nh; ++j) {
+      if (notified_positive_today) {
+        break;
+      }
+      notified_positive_today = TestedOn[i + j] == yday;
+    }
+    if (notified_positive_today) {
+      for (int j = 0; j < nh; ++j) {
+        Status[i + j] += ISOLATED_PLUS;
+      }
     }
   }
+
+  // void
 }
-*/
+
 
 
 //' @name do_1day_supermarket
@@ -353,7 +398,7 @@ void infect_household(IntegerVector Status,
                       IntegerVector HouseholdInfectedToday,
                       int nThread = 1,
                       int resistance1 = 400,
-                      int resistance_penalty = 100) {
+                      int resistance_penalty = 400) {
   // resistance_penalty = penalty against Resistance[i]
   // that makes infection more likely. Higher penalties
   // make infection more likely among otherwise resistant
@@ -362,41 +407,30 @@ void infect_household(IntegerVector Status,
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
     // separate household ids into the same thread
-#ifdef _OPENMP
-    if ((hid[i] % omp_get_num_threads()) != omp_get_thread_num()) {
+    if (seqN[i] != 1) {
       continue;
     }
-#endif
-
     if (HouseholdSize[i] == 1) {
       // no transmission in single-person household
       continue;
     }
 
     if (HouseholdSize[i] == 2) {
-      if (Status[i]) {
-        // if not susceptible
-        continue;
-      }
-
       // in this case, we only need to check adjacent
-      int household_infected = 0;
-      if (seqN[i] == 1) {
-        household_infected = Status[i + 1] > 0;
-        HouseholdInfectedToday[i] = 1;
-      } else {
-        household_infected = Status[i - 1] > 0;
-        HouseholdInfectedToday[i - 1] = 1;
-      }
+      bool household_infected = Status[i] > 0 || Status[i + 1] > 0;
       // Prima facie we have a race condition on Status, but in fact
       // we have skipped anyone who has Status[i] != 0 so the only way
       // the following assignment can occur is if the other thread is
       // skipping
       if (household_infected) {
         int r = resistance1 + unifRand(-1, resistance_penalty);
-        if (Resistance[i] < r) {
+        if (Status[i] == 0 && Resistance[i] < r) {
           Status[i] = STATUS_NOSYMP;
           InfectedOn[i] = yday + 1;
+        }
+        if (Status[i + 1] == 0 && Resistance[i + 1] < r) {
+          Status[i + 1] = STATUS_NOSYMP;
+          InfectedOn[i + 1] = yday + 1;
         }
       }
       continue;
@@ -412,20 +446,21 @@ void infect_household(IntegerVector Status,
     int nh = HouseholdSize[i];
     bool household_infected = Status[i] > 0;
 
-    int j = 1;
     // loop through the household, stop once an infection detected
-    for (; j < nh && !household_infected; ++j) {
-      household_infected = Status[i + j] > 0;
+    for (int j = 1; j < nh; ++j) {
+      if (Status[i + j] > 0) {
+        household_infected = true;
+      }
     }
+
     if (household_infected) {
       // return to first person and infect as appropriate
       // (don't infect already infected)
-      j = 0;
-      for (; j < nh; ++j) {
+      for (int j = 0; j < nh; ++j) {
         int r = resistance1 + unifRand(-1, resistance_penalty);
         int ij = i + j;
         if (Status[ij] == 0 && Resistance[ij] < r) {
-          Status[ij] = 1;
+          Status[ij] = STATUS_NOSYMP;
           InfectedOn[ij] = yday + 1;
         }
       }
@@ -484,7 +519,7 @@ List do_au_simulate(IntegerVector Status,
 
 
   int maxSupermarketsBySA2 = 8;
-  int nSupermarkets = nSupermarketsBySA2[0];
+
 
 
   // for (int i = 1; i < NSA2; ++i) {
@@ -508,6 +543,16 @@ List do_au_simulate(IntegerVector Status,
     only_Year12 = Policy["only_Year12"];
   }
 
+  bool do_contact_tracing = true;
+  if (Policy.length() && Policy.containsElementNamed("do_contact_tracing")) {
+    do_contact_tracing = Policy["do_contact_tracing"];
+  }
+
+  // TODO: make user-avbl
+  int ptest_per_mille_sympto = 1000; // 100%
+  int ptest_per_mille_asympto = 10; // 1%
+  int days_to_notify = 3;
+  int tests_avbl = 100e3;
 
 
   // attach epipars
@@ -566,6 +611,9 @@ List do_au_simulate(IntegerVector Status,
 
   DataFrame Statuses = DataFrame::create(Named("InitialStatus") = clone(Status));
 
+  IntegerVector PlaceId = clone(SupermarketTarget);
+
+
 
   for (int day = 0; day < days_to_sim; ++day) {
     int yday = yday_start + day;
@@ -580,7 +628,8 @@ List do_au_simulate(IntegerVector Status,
 
 #pragma omp parallel for num_threads(nThread) reduction(+:n_infected_today)
     for (int i = 0; i < N; ++i) {
-      n_infected_today += (Status[i] > 0);
+      int statusi = Status[i];
+      n_infected_today += (statusi > 0) && (statusi != ISOLATED_PLUS);
     }
 
     nInfected[day] = n_infected_today;
@@ -598,8 +647,13 @@ List do_au_simulate(IntegerVector Status,
     // of 1:366 and compare that to the individual's tendency to
     // visit. So if TodaysHz[i] = 366 they will not visit anything
     // regardless; if TodaysHz[i] = 1 they will visit everything.
-    IntegerVector TodaysHz = Rcpp::rep_len(Rcpp::sample(365, 365, true), N);
+    IntegerVector TodaysHz = rep_len(dqsample_int2(365, wday * 23456), N);
 
+    // We also want to draw quickly from a sample every day
+    IntegerVector TodaysK = rep_len(dqsample_int2(1000, wday * 54321), N);
+
+    // Use this with modulo
+    IntegerVector Todays2B = rep_len(dqsample_int2(2e9, wday * 54321), N);
 
 
 #pragma omp parallel for num_threads(nThread)
@@ -700,6 +754,26 @@ List do_au_simulate(IntegerVector Status,
 
     infect_household(Status, InfectedOn, hid, seqN, HouseholdSize, Resistance, Age,
                      yday, N, HouseholdInfectedToday, nThread);
+
+    if (do_contact_tracing) {
+      contact_tracing(Status,
+                      InfectedOn,
+                      Incubation,
+                      yday,
+                      seqN,
+                      HouseholdSize,
+                      tests_avbl,
+                      hid,
+                      HouseholdInfectedToday,
+                      N,
+                      School,
+                      PlaceId,
+                      ptest_per_mille_asympto,
+                      ptest_per_mille_sympto,
+                      Todays2B,
+                      days_to_notify,
+                      nThread);
+    }
   }
 
   return Rcpp::List::create(Named("nInfected") = nInfected,

@@ -2,6 +2,7 @@
 #include <random>
 #include <Rcpp.h>
 #include <stdint.h>
+#include <dqrng.h>
 using namespace Rcpp;
 
 
@@ -48,7 +49,23 @@ int dbl2int(double x) {
 
 // use this for thread safety checks
 
-// [[Rcpp::export(rng = false)]]
+// [[Rcpp::export]]
+IntegerVector punif_int(int n, int a, int b, int nThread = 1) {
+  IntegerVector out = no_init(n);
+#pragma omp parallel for num_threads(nThread)
+  for (int i = 0; i < n; ++i) {
+    out[i] = unifRand(a, b);
+  }
+  return out;
+}
+
+// [[Rcpp::export]]
+IntegerVector dqsample_int2(int m, int n) {
+  return dqrng::dqsample_int(m, n, true, R_NilValue, 0);
+}
+
+
+// [[Rcpp::export]]
 DoubleVector prlnorm_dbl(int n, double a, double b, int nThread = 1) {
   DoubleVector out = no_init(n);
 #pragma omp parallel for num_threads(nThread)
@@ -58,7 +75,7 @@ DoubleVector prlnorm_dbl(int n, double a, double b, int nThread = 1) {
   return out;
 }
 
-// [[Rcpp::export(rng = false)]]
+// [[Rcpp::export]]
 IntegerVector prlnorm_int(int n, double a, double b, int nThread = 1) {
   IntegerVector out = no_init(n);
 #pragma omp parallel for num_threads(nThread)
@@ -68,7 +85,7 @@ IntegerVector prlnorm_int(int n, double a, double b, int nThread = 1) {
   return out;
 }
 
-// [[Rcpp::export(rng = false)]]
+// [[Rcpp::export]]
 DoubleVector prcauchy(int n, double a, double b, int nThread = 1) {
   DoubleVector out = no_init(n);
 #pragma omp parallel for num_threads(nThread)
@@ -125,4 +142,21 @@ IntegerVector lemire_rand(int n, int d, int s32, int nThread = 1, unsigned int q
 }
 
 
+// [[Rcpp::export]]
+IntegerVector modulo(IntegerVector x, int m, int d, int nThread = 10) {
+  if (m < 1) {
+    return x;
+  }
+  int n = x.length();
+  IntegerVector out = no_init(n);
+  if (d <= 0) {
+    d = 1;
+  }
+
+#pragma omp parallel for num_threads(nThread)
+  for (int i = 0; i < n; ++i) {
+    out[i] = (x[i] / d) % m;
+  }
+  return out;
+}
 
