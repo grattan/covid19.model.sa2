@@ -10,6 +10,7 @@ set_initial_by_state(
   healed = NULL,
   active = NULL,
   critical = NULL,
+  cases = NULL,
   cases_by_state = "time_series_cases.fst",
   deaths_by_state = "time_series_deaths.fst",
   recovered_by_state = "time_series_recovered.fst",
@@ -31,6 +32,9 @@ If \code{dead = NULL} then \code{state_id} must be length-one.}
 and have not recovered, died, or been admitted to intensive care.}
 
 \item{critical}{The number of patients in intensive care.}
+
+\item{cases}{Optionally, the number of cumulative cases. That is,
+\code{dead + healed + active + critical}.}
 
 \item{cases_by_state}{A table of total cases (cumulative) by date,
 ordered by date, and having columns matching the states in \code{state_id}.
