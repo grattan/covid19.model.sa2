@@ -10,7 +10,7 @@ simulate_sa2(
   InitialStatus = list(dead = 71, healed = 4685, active = 1840, critical = 49),
   EpiPars = set_epipars(),
   .first_day = NULL,
-  verbose_timer = TRUE,
+  verbose_timer = interactive(),
   by_state = TRUE,
   dataEnv = getOption("covid19.model.sa2_dataEnv", new.env()),
   nThread = getOption("covid19.model.sa2_nThread", 1L),
