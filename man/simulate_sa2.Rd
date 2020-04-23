@@ -11,8 +11,10 @@ simulate_sa2(
   EpiPars = set_epipars(),
   .first_day = NULL,
   verbose_timer = TRUE,
+  by_state = TRUE,
   dataEnv = getOption("covid19.model.sa2_dataEnv", new.env()),
-  nThread = getOption("covid19.model.sa2_nThread", 1L)
+  nThread = getOption("covid19.model.sa2_nThread", 1L),
+  myaus = NULL
 )
 }
 \arguments{
@@ -44,12 +46,18 @@ ill with COVID-19 based on imputed duration of infection.}
 
 \item{verbose_timer}{Should the time be printed at points during the computation?}
 
+\item{by_state}{Set the initial status by state.}
+
 \item{dataEnv}{An environment into which the data will be saved and
 retrieved. Used to save time reading after the first time.}
 
 \item{nThread}{\describe{
 \item{\code{integer(1)}}{Number of threads to use in the C++ code.}
 }}
+
+\item{myaus}{A prepared \code{data.table} with a column \code{status}
+that has the desired distribution (including perhaps over SA2). This
+formal is experimental and may be removed without notice.}
 }
 \value{
 A list of \code{days_to_simulate + 1} components. The first
