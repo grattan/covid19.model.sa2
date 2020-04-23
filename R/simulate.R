@@ -27,12 +27,18 @@
 #' ill with COVID-19 based on imputed duration of infection.}
 #' }
 #' @param verbose_timer Should the time be printed at points during the computation?
+#' @param by_state Set the initial status by state.
+#'
 #' @param dataEnv An environment into which the data will be saved and
 #' retrieved. Used to save time reading after the first time.
 #'
 #' @param nThread \describe{
 #' \item{\code{integer(1)}}{Number of threads to use in the C++ code.}
 #' }
+#'
+#' @param myaus A prepared \code{data.table} with a column \code{status}
+#' that has the desired distribution (including perhaps over SA2). This
+#' formal is experimental and may be removed without notice.
 #'
 #' @return
 #' A list of \code{days_to_simulate + 1} components. The first
@@ -66,8 +72,10 @@ simulate_sa2 <- function(days_to_simulate = 5,
                          EpiPars = set_epipars(),
                          .first_day = NULL,
                          verbose_timer = TRUE,
+                         by_state = TRUE,
                          dataEnv = getOption("covid19.model.sa2_dataEnv", new.env()),
-                         nThread = getOption("covid19.model.sa2_nThread", 1L)) {
+                         nThread = getOption("covid19.model.sa2_nThread", 1L),
+                         myaus = NULL) {
   ## Each day a person can
   ## stay in the household
   ## journey outside
@@ -138,7 +146,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
   Cases.csv <- read_sys("time_series_cases.fst")
   Recovered.csv <- read_sys("time_series_recovered.fst")
-  Deaths.csv <- fread("time_series_deaths.fst")
+  Deaths.csv <- read_sys("time_series_deaths.fst")
   if (is.null(.first_day)) {
     .first_day <- Deaths.csv[, yday(last(Date))]
   }
@@ -191,8 +199,13 @@ simulate_sa2 <- function(days_to_simulate = 5,
            size = nrow(aus),
            w = c(IS$dead, IS$healed, n_status0, IS$active * c(asympto, sympto), IS$critical))
 
-
-  aus[, Status := samp_status]
+  if (is.data.table(myaus)) {
+    aus <- copy(myaus)
+  } else if (by_state) {
+    aus[, Status := set_initial_by_state(state)]
+  } else  {
+    aus[, Status := samp_status]
+  }
   # If infected, they are infected days ago
   # according to N_by_Duration
   aus[Status > 0L,
