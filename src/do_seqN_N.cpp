@@ -22,7 +22,7 @@ List do_seqN_N(IntegerVector hid, IntegerVector pid, bool check_hid_sorted = tru
   }
   HouseholdSize[N - 1] = seqN[N - 1];
   // so that the final
-  for (int i = N - 1; i >= 0; --i) {
+  for (int i = N - 2; i >= 0; --i) {
     // index j is just i for the last person (which records the household)
     // size; otherwise it is the 'next' person in the household (which
     // by induction must have recorded the household size too)
@@ -31,8 +31,11 @@ List do_seqN_N(IntegerVector hid, IntegerVector pid, bool check_hid_sorted = tru
     // 1st  1  2  3  1  2  1  1  2  3  4
     // 2nd                          4<-4  (first iter)
     //                           4<-4  4
-    int j = i + (hid[i] == hid[i + 1]);
-    HouseholdSize[i] = seqN[j];
+    if (hid[i] == hid[i + 1]) {
+      HouseholdSize[i] = HouseholdSize[i + 1];
+    } else {
+      HouseholdSize[i] = seqN[i];
+    }
 
   }
   return List::create(Named("seqN") = seqN, Named("N") = HouseholdSize);
