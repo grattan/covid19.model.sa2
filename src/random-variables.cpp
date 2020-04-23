@@ -90,7 +90,8 @@ DoubleVector prcauchy(int n, double a, double b, int nThread = 1) {
  * Society 68.225 (1999): 249-260.
  */
 
-__uint128_t g_lehmer64_state;
+
+__uint128_t g_lehmer64_state = 353;
 
 uint64_t lehmer64() {
   g_lehmer64_state *= 0xda942042e4dd58b5;
@@ -98,16 +99,27 @@ uint64_t lehmer64() {
 }
 
 // [[Rcpp::export]]
-IntegerVector lemire_rand(int n, int d, int s32, int q, int nThread = 1) {
-  uint64_t s = s32;
-  for (int i = 0; i < q; ++i) {
+IntegerVector lemire_rand(int n, int d, int s32, int nThread = 1, unsigned int q2 = 0) {
+  uint64_t s = s32 + d;
+  for (unsigned int i = 0; i < q2; ++i) {
     s = lehmer64();
+  }
+
+  if (s == q2) {
+    s = 359;
   }
   IntegerVector out = no_init(n);
 #pragma omp parallel for num_threads(nThread) private(s)
   for (int i = 0; i < n; ++i) {
-    s *= 0xda942042e4dd58b5;
-    out[i] = s % d;
+    //   0xFFFFFFFF0xFFFFFFFF
+    out[i] = static_cast<int>(lehmer64());
+  }
+  if (d) {
+#pragma omp parallel for num_threads(nThread)
+    for (int i = 0; i < n; ++i) {
+      int m = out[i] % d;
+      out[i] = (m < 0) ? -m : m;
+    }
   }
   return out;
 }
