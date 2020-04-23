@@ -53,7 +53,7 @@ int illRand(double m, double s, int d) {
   if (d == 3)
     return m;
   if (d == 4)
-    return cauchyRand(m, s);
+    return cauchyRand0(m, s);
 
   return m;
 }
@@ -66,7 +66,7 @@ int r_Rand(double m, double s, int d) {
   if (d == 3)
     return m;
   if (d == 4)
-    return max0(cauchyRand(m, s));
+    return cauchyRand0(m, s);
 
   return m;
 }
@@ -264,7 +264,7 @@ void infect_school(IntegerVector Status,
     if (i_visits[schooli][0]) {
       Status[i] = 1;
       InfectedOn[i] = yday;
-      i_visits[schooli][Agei] -= i_visits[schooli][Agei] > 0;
+      // i_visits[schooli][Agei] -= i_visits[schooli][Agei] > 0;
       i_visits[schooli][0] -= 1;
     }
   }
