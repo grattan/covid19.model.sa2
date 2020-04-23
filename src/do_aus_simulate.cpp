@@ -95,16 +95,54 @@ int array3k(int x, int y, int z, int ny, int nz) {
   return x * (ny + nz) + y * (nz) + z;
 }
 
-
+/*
 void contact_tracing(IntegerVector Status,
+                     IntegerVector InfectedOn,
+                     IntegerVector Incubation,
+                     int yday,
+                     IntegerVector seqN,
                      int tests_avbl,
                      IntegerVector hid,
+                     IntegerVector HouseholdInfectedToday,
+                     int N,
                      IntegerVector School,
                      IntegerVector PlaceId,
                      int nThread) {
-  // Assume for now everyone who gets infected gets noticed
-}
+  // isTested -> isIdentified -> responseReq -> LockdownTomorrw
 
+  // loop through each person who has been infected
+  // does the person get a test?
+  // is the test positive?
+  // is the person part of a household
+  // are any tests left?
+  // test each person in the household
+  IntegerVector getTest = no_init(N);
+
+
+  // Assume for now everyone who gets infected gets noticed
+  // at the end of their incubation period
+  IntegerVector HouseholdRequiresTesting = no_init(N);
+  for (int i = 0; i < N; ++i) {
+    if (seqN[i] != 1) {
+      continue;
+    }
+    if (!HouseholdInfectedToday[i]) {
+      continue;
+    }
+
+    // at the head of househodl seqN = 1,
+
+
+    if (Incubation[i] && (InfectedOn[i] + Incubation[i] == yday)) {
+      // mark the
+      int seqn = seqN[i] - 1;
+      int hid = hid[i];
+      HouseholdRequiresTesting[i] = 0;
+      continue;
+    }
+  }
+}
+*/
 
 
 //' @name do_1day_supermarket
@@ -312,6 +350,7 @@ void infect_household(IntegerVector Status,
                       IntegerVector Age,
                       int yday,
                       int N,
+                      IntegerVector HouseholdInfectedToday,
                       int nThread = 1,
                       int resistance1 = 400,
                       int resistance_penalty = 100) {
@@ -344,8 +383,10 @@ void infect_household(IntegerVector Status,
       int household_infected = 0;
       if (seqN[i] == 1) {
         household_infected = Status[i + 1] > 0;
+        HouseholdInfectedToday[i] = 1;
       } else {
         household_infected = Status[i - 1] > 0;
+        HouseholdInfectedToday[i - 1] = 1;
       }
       // Prima facie we have a race condition on Status, but in fact
       // we have skipped anyone who has Status[i] != 0 so the only way
@@ -370,6 +411,7 @@ void infect_household(IntegerVector Status,
 
     int nh = HouseholdSize[i];
     bool household_infected = Status[i] > 0;
+
     int j = 1;
     // loop through the household, stop once an infection detected
     for (; j < nh && !household_infected; ++j) {
@@ -387,6 +429,7 @@ void infect_household(IntegerVector Status,
           InfectedOn[ij] = yday + 1;
         }
       }
+      HouseholdInfectedToday[i] = 1;
     }
   }
   // void
@@ -505,11 +548,15 @@ List do_au_simulate(IntegerVector Status,
   IntegerVector Illness = no_init(N);
   IntegerVector SupermarketTarget = no_init(N);
 
+  // These could potentially be smaller vectors
+  IntegerVector HouseholdInfectedToday = no_init(N); // was the household infected today?
+
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
     Incubation[i] = 0;
     Illness[i] = 0;
     SupermarketTarget[i] = 0;
+    HouseholdInfectedToday[i] = 0;
   }
 
   if (which_unsorted_int(SA2)) {
@@ -652,7 +699,7 @@ List do_au_simulate(IntegerVector Status,
     // finally
 
     infect_household(Status, InfectedOn, hid, seqN, HouseholdSize, Resistance, Age,
-                     yday, N, nThread);
+                     yday, N, HouseholdInfectedToday, nThread);
   }
 
   return Rcpp::List::create(Named("nInfected") = nInfected,

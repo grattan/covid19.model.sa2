@@ -200,17 +200,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // lemire_rand
-IntegerVector lemire_rand(int n, int d, int s32, int q, int nThread);
-RcppExport SEXP _covid19_model_sa2_lemire_rand(SEXP nSEXP, SEXP dSEXP, SEXP s32SEXP, SEXP qSEXP, SEXP nThreadSEXP) {
+IntegerVector lemire_rand(int n, int d, int s32, int nThread, unsigned int q2);
+RcppExport SEXP _covid19_model_sa2_lemire_rand(SEXP nSEXP, SEXP dSEXP, SEXP s32SEXP, SEXP nThreadSEXP, SEXP q2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type n(nSEXP);
     Rcpp::traits::input_parameter< int >::type d(dSEXP);
     Rcpp::traits::input_parameter< int >::type s32(s32SEXP);
-    Rcpp::traits::input_parameter< int >::type q(qSEXP);
     Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
-    rcpp_result_gen = Rcpp::wrap(lemire_rand(n, d, s32, q, nThread));
+    Rcpp::traits::input_parameter< unsigned int >::type q2(q2SEXP);
+    rcpp_result_gen = Rcpp::wrap(lemire_rand(n, d, s32, nThread, q2));
     return rcpp_result_gen;
 END_RCPP
 }
