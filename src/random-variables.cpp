@@ -36,7 +36,7 @@ double cauchyRand(const double & a, const double & b) {
 
 int cauchyRand0(const double & a, const double & b) {
   double out = cauchyRand(a, b);
-  return (out > 1) ? out : 0;
+  return (out > 1 && out < 1024) ? out : 0;
 }
 
 int dbl2int(double x) {
