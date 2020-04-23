@@ -73,6 +73,7 @@ file_fst <- function(file.fst) {
     return(out)
   }
 
+
   regexpr_colon <- regexpr(":", file.fst, fixed = TRUE)
   #
   # Don't match on regexp_colon =
@@ -86,9 +87,9 @@ file_fst <- function(file.fst) {
            substr(file.fst, 0L, regexpr_colon - 1L),
            "' but this is unset.", call. = FALSE)
     }
-    out <- file.path(the_sys_getenv, substring(file.fst, regexpr_colon + 1L))
+    return(file.path(the_sys_getenv, substring(file.fst, regexpr_colon + 1L)))
   }
-  out
+  file.fst
 }
 
 start_progress <- function(fst2_progress, file.fst) {
