@@ -56,6 +56,8 @@
 #' |      1 | Infected, not showing symptoms |
 #' |      2 | Infected, showing symptoms     |
 #' |      3 | Critical                       |
+#' |     32 | 0 but isolated                 |
+#' |     33 | 1 but isolated                 |
 #'
 #' @md
 #'

@@ -78,5 +78,7 @@ The \strong{Status} of an individual is\tabular{rl}{
    1 \tab Infected, not showing symptoms \cr
    2 \tab Infected, showing symptoms \cr
    3 \tab Critical \cr
+   32 \tab 0 but isolated \cr
+   33 \tab 1 but isolated \cr
 }
 }
