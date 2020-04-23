@@ -15,10 +15,24 @@ using namespace Rcpp;
 #endif
 
 const int NSA2 = 2310;
-
 const int NSCHOOLS = 9501;
-
 const int NPUPILS = 3135825;
+
+const int STATUS_KILLED = -2;
+const int STATUS_HEALED = -1;
+const int STATUS_SUSCEP =  0;
+const int STATUS_NOSYMP =  1;
+const int STATUS_INSYMP =  2;
+const int STATUS_CRITIC =  3;
+const int ISOLATED_PLUS = 32;
+
+// We want to avoid branching and prefer + or - to if statements
+// e.g.
+//  status = if (dies) -2 else -1;
+//  status = -1 - dies;
+const int HEALED_MINUS_KILLED = 1;
+const int INSYMP_MINUS_NOSYMP = 1;
+const int CRITIC_MINUS_INSYMP = 1;
 
 int which_unsorted_int(IntegerVector x);
 

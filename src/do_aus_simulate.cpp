@@ -5,11 +5,31 @@ using namespace Rcpp;
 
 #define N_SUPERMARKETS 7487
 
-// const int NSA2 = 2310;
-//
-// const int NSCHOOLS = 9501;
-//
-// const int NPUPILS = 3135825;
+// [[Rcpp::export]]
+int status_killed() {
+  return STATUS_KILLED;
+}
+// [[Rcpp::export]]
+int status_healed() {
+  return STATUS_HEALED;
+}
+// [[Rcpp::export]]
+int status_suscep() {
+  return STATUS_SUSCEP;
+}
+// [[Rcpp::export]]
+int status_nosymp() {
+  return STATUS_NOSYMP;
+}
+// [[Rcpp::export]]
+int status_insymp() {
+  return STATUS_INSYMP;
+}
+// [[Rcpp::export]]
+int status_critic() {
+  return STATUS_CRITIC;
+}
+
 
 // [[Rcpp::export(rng = false)]]
 int do_max_par_int(IntegerVector x, int nThread = 1) {
@@ -82,7 +102,7 @@ void contact_tracing(IntegerVector Status,
                      IntegerVector School,
                      IntegerVector PlaceId,
                      int nThread) {
-
+  // Assume for now everyone who gets infected gets noticed
 }
 
 
@@ -150,7 +170,7 @@ void infect_supermarkets(IntegerVector Status,
 
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
-    if (Status[i] != 1 || TodaysHz[i] > SupermarketFreq[i]) {
+    if (Status[i] != STATUS_NOSYMP || TodaysHz[i] > SupermarketFreq[i]) {
       continue;
     }
     int supermarketi = SupermarketTypical[i];
@@ -211,7 +231,7 @@ void infect_supermarkets(IntegerVector Status,
     if (nInfections[k]) {
       nInfections[k] -= 1;
       if (Resistance[i] < resistance1) {
-        Status[i] = 1;
+        Status[i] = STATUS_NOSYMP;
         InfectedOn[i] = yday;
       }
     }
@@ -252,7 +272,7 @@ void infect_school(IntegerVector Status,
     s_visits[schooli][0] += 1;
     s_visits[schooli][Agei] += 1;
     // rcauchy relates to the single day
-    if (Status[i] == 1) {
+    if (Status[i] == STATUS_NOSYMP) {
       int infectedi = r_Rand(r_location, r_scale, r_d);
       i_visits[schooli][0] += infectedi;
       i_visits[schooli][Agei] += infectedi;
@@ -273,7 +293,7 @@ void infect_school(IntegerVector Status,
 
     // TODO: make students of the same age more likely/first to be infected
     if (i_visits[schooli][0]) {
-      Status[i] = 1;
+      Status[i] = STATUS_NOSYMP;
       InfectedOn[i] = yday;
       // i_visits[schooli][Agei] -= i_visits[schooli][Agei] > 0;
       i_visits[schooli][0] -= 1;
@@ -334,7 +354,7 @@ void infect_household(IntegerVector Status,
       if (household_infected) {
         int r = resistance1 + unifRand(-1, resistance_penalty);
         if (Resistance[i] < r) {
-          Status[i] = 1;
+          Status[i] = STATUS_NOSYMP;
           InfectedOn[i] = yday + 1;
         }
       }
@@ -513,7 +533,7 @@ List do_au_simulate(IntegerVector Status,
 
 #pragma omp parallel for num_threads(nThread) reduction(+:n_infected_today)
     for (int i = 0; i < N; ++i) {
-      n_infected_today += (Status[i] >= 1);
+      n_infected_today += (Status[i] > 0);
     }
 
     nInfected[day] = n_infected_today;
@@ -570,8 +590,8 @@ List do_au_simulate(IntegerVector Status,
           // This is reevaluated each day, but because they are uniform
           // this is okay. Nonetheless we don't second-guess the original
           // statusi
-          bool becomes_symptomatic = statusi >= 2 || (unifRand(0, 1000) > p_asympto);
-          bool becomes_critical = statusi == 3 || (becomes_symptomatic && unifRand(0, 1000) < p_critical);
+          bool becomes_symptomatic = statusi > STATUS_NOSYMP || (unifRand(0, 1000) > p_asympto);
+          bool becomes_critical = statusi == STATUS_CRITIC || (becomes_symptomatic && unifRand(0, 1000) < p_critical);
           bool dies = becomes_critical && unifRand(0, 1000) < p_death;
 
           // As before with incubation
@@ -583,13 +603,13 @@ List do_au_simulate(IntegerVector Status,
           // Assumption: if the person becomes critical, it happens immediately.
           if (yday <= InfectedOn[i] + incubation + illness) {
             if (becomes_symptomatic) {
-              Status[i] = 2 + becomes_critical;
+              Status[i] = STATUS_INSYMP + becomes_critical * CRITIC_MINUS_INSYMP;
             } else {
               // nothing to do: they're still ill, but at Status 1.
             }
           } else {
             // Today is after the illness has run its course
-            Status[i] = -1 - dies;
+            Status[i] = STATUS_HEALED - dies * HEALED_MINUS_KILLED;
             // interactions no longer relevant
             continue;
           }
