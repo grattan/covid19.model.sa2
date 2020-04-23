@@ -8,6 +8,9 @@
 #' @param active The number of patients who have tested positive
 #' and have not recovered, died, or been admitted to intensive care.
 #' @param critical The number of patients in intensive care.
+#' @param cases Optionally, the number of cumulative cases. That is,
+#' \code{dead + healed + active + critical}.
+#'
 #' @param cases_by_state A table of total cases (cumulative) by date,
 #' ordered by date, and having columns matching the states in \code{state_id}.
 #' Alternatively a string to be read in by \code{\link{read_sys}}, the path
@@ -31,6 +34,7 @@ set_initial_by_state <- function(state_id,
                                  healed = NULL,
                                  active = NULL,
                                  critical = NULL,
+                                 cases = NULL,
                                  cases_by_state = "time_series_cases.fst",
                                  deaths_by_state = "time_series_deaths.fst",
                                  recovered_by_state = "time_series_recovered.fst",
@@ -58,55 +62,91 @@ set_initial_by_state <- function(state_id,
          "These arguments must be all NULL or all integers.",
          " (n_nulls = ", n_nulls, ").")
   }
+  if (n_nulls == 0 && is.null(cases)) {
+    # cases can be left NULL since it's just
+    # the sum of the others.
+    cases <- dead + healed + active + critical
+  }
 
-  if (is.null(dead)) {
-    if (length(state_id) != 1L) {
-      stop("`dead = NULL` but length(state_id) != 1.")
-    }
-    if (is.character(cases_by_state)) {
-      cases_by_state <- read_sys(cases_by_state, fst2_progress = FALSE)
-      deaths_by_state <- read_sys(deaths_by_state, fst2_progress = FALSE)
-      recovered_by_state <- read_sys(recovered_by_state, fst2_progress = FALSE)
-    }
-    # checkmate::assert_list(cases_by_state)
-    # checkmate::assert_list(deaths_by_state)
-    # checkmate::assert_list(recovered_by_state)
+  if (is.character(cases_by_state)) {
+    cases_by_state <- read_sys(cases_by_state, fst2_progress = FALSE)
+    deaths_by_state <- read_sys(deaths_by_state, fst2_progress = FALSE)
+    recovered_by_state <- read_sys(recovered_by_state, fst2_progress = FALSE)
+  }
 
+  if (nrow(cases_by_state) > 1) {
     cases_by_state <- last(cases_by_state)
     deaths_by_state <- last(deaths_by_state)
     recovered_by_state <- last(recovered_by_state)
+  }
 
-    dead <- .subset2(deaths_by_state, .states[state_id])
-    healed <- .subset2(recovered_by_state, .states[state_id])
-    cases <- .subset2(cases_by_state, .states[state_id])
-    active <- cases - healed - dead
-    critical <- p_critical * active
-
-  } else if (length(state_id) != 1L) {
+  if (length(state_id) != 1L) {
     # Perform this function 'by' state_id.
     DT <- setDT(list(x = state_id))
     DT[, out := set_initial_by_state(.BY[[1]],
-                                     dead, healed, active, critical,
+                                     dead = dead,
+                                     healed = healed,
+                                     active = active,
+                                     critical = critical,
+                                     cases = cases,
+                                     cases_by_state = cases_by_state,
+                                     deaths_by_state = deaths_by_state,
+                                     recovered_by_state = recovered_by_state,
                                      asympto = asympto,
                                      .population = .N),
        by = "x"]
     return(DT[["out"]])
   }
 
+  # If the variables are NULL at this point we should be able to consult the tables
+  # to identify them
+  dead %<=% .subset2(deaths_by_state, .states[state_id])
+  healed %<=% .subset2(recovered_by_state, .states[state_id])
+  cases %<=% .subset2(cases_by_state, .states[state_id])
+
+  # Note the precedence
+  active %<=% (cases - healed - dead)
+  # Have to be very careful mixing doubles with ints
+  # as this will causing rounding errors and we have
+  # to get the same length out as in.
+  sympto <- 1 - asympto
+  nosymp <- as.integer(asympto * active)
+
+  # Note that insymp <- sympto * active is wrong because of rounding.
+  insymp <- active - nosymp
+
+  critical %<=% (as.integer(p_critical * insymp))
+
+
   if (.population < (dead + healed + active + critical)) {
     tot_cases <- dead + healed + active + critical
     stop(glue::glue("`.population = {.population}`, yet ",
-                    "(dead + healed + active + critical) = {tot_cases}. "),
+                    "(dead + healed + active + critical) = {tot_cases}. ",
+                    "state_id = {state_id}"),
          "Ensure the population at least the number of total cases.")
   }
-  wsamp_status(dead, healed, active, critical, .population, asympto)
+  dqsamp_status(dead, healed, nosymp, insymp, critical, .population, asympto)
 }
 
-wsamp_status <- function(dead, healed, active, critical, .population, asympto) {
-  n_status0 <- .population - (dead + healed + active + critical)
-  sympto <- 1 - asympto
-  wsamp(c(-2L, -1L, 0L, 1L, 2L, 3L),
-        size = .population,
-        w = c(dead, healed, n_status0, active * c(asympto, sympto), critical))
+dqsamp_status <- function(dead, healed, nosymp, insymp, critical, .population, asympto) {
+  n_status0 <- .population - (dead + healed + nosymp + insymp + critical)
+  status <-
+    rep(c(status_killed(),
+          status_healed(),
+          status_suscep(),
+          status_nosymp(),
+          status_insymp(),
+          status_critic()),
+        times = c(dead,
+                  healed,
+                  n_status0,
+                  nosymp,
+                  insymp,
+                  critical))
+  if (length(status) != .population) {
+    stop("Internal error: length(status) != .population.")
+  }
+
+  dqrng::dqsample(status)
 }
 
