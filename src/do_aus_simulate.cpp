@@ -76,6 +76,17 @@ int array3k(int x, int y, int z, int ny, int nz) {
 }
 
 
+void contact_tracing(IntegerVector Status,
+                     int tests_avbl,
+                     IntegerVector hid,
+                     IntegerVector School,
+                     IntegerVector PlaceId,
+                     int nThread) {
+
+}
+
+
+
 //' @name do_1day_supermarket
 //' @description Simulate the experience of everyone's interactions
 //' at supermarkets in a single day
