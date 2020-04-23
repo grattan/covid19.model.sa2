@@ -20,6 +20,66 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// status_killed
+int status_killed();
+RcppExport SEXP _covid19_model_sa2_status_killed() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(status_killed());
+    return rcpp_result_gen;
+END_RCPP
+}
+// status_healed
+int status_healed();
+RcppExport SEXP _covid19_model_sa2_status_healed() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(status_healed());
+    return rcpp_result_gen;
+END_RCPP
+}
+// status_suscep
+int status_suscep();
+RcppExport SEXP _covid19_model_sa2_status_suscep() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(status_suscep());
+    return rcpp_result_gen;
+END_RCPP
+}
+// status_nosymp
+int status_nosymp();
+RcppExport SEXP _covid19_model_sa2_status_nosymp() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(status_nosymp());
+    return rcpp_result_gen;
+END_RCPP
+}
+// status_insymp
+int status_insymp();
+RcppExport SEXP _covid19_model_sa2_status_insymp() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(status_insymp());
+    return rcpp_result_gen;
+END_RCPP
+}
+// status_critic
+int status_critic();
+RcppExport SEXP _covid19_model_sa2_status_critic() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(status_critic());
+    return rcpp_result_gen;
+END_RCPP
+}
 // do_max_par_int
 int do_max_par_int(IntegerVector x, int nThread);
 RcppExport SEXP _covid19_model_sa2_do_max_par_int(SEXP xSEXP, SEXP nThreadSEXP) {
@@ -177,6 +237,12 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_distr2status", (DL_FUNC) &_covid19_model_sa2_distr2status, 5},
+    {"_covid19_model_sa2_status_killed", (DL_FUNC) &_covid19_model_sa2_status_killed, 0},
+    {"_covid19_model_sa2_status_healed", (DL_FUNC) &_covid19_model_sa2_status_healed, 0},
+    {"_covid19_model_sa2_status_suscep", (DL_FUNC) &_covid19_model_sa2_status_suscep, 0},
+    {"_covid19_model_sa2_status_nosymp", (DL_FUNC) &_covid19_model_sa2_status_nosymp, 0},
+    {"_covid19_model_sa2_status_insymp", (DL_FUNC) &_covid19_model_sa2_status_insymp, 0},
+    {"_covid19_model_sa2_status_critic", (DL_FUNC) &_covid19_model_sa2_status_critic, 0},
     {"_covid19_model_sa2_do_max_par_int", (DL_FUNC) &_covid19_model_sa2_do_max_par_int, 2},
     {"_covid19_model_sa2_do_au_simulate", (DL_FUNC) &_covid19_model_sa2_do_au_simulate, 23},
     {"_covid19_model_sa2_do_exp_dbl2int", (DL_FUNC) &_covid19_model_sa2_do_exp_dbl2int, 2},

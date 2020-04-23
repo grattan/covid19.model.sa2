@@ -28,6 +28,30 @@ distr2status <- function(N, dead, healed, active, critical) {
 #' @noRd
 NULL
 
+status_killed <- function() {
+    .Call(`_covid19_model_sa2_status_killed`)
+}
+
+status_healed <- function() {
+    .Call(`_covid19_model_sa2_status_healed`)
+}
+
+status_suscep <- function() {
+    .Call(`_covid19_model_sa2_status_suscep`)
+}
+
+status_nosymp <- function() {
+    .Call(`_covid19_model_sa2_status_nosymp`)
+}
+
+status_insymp <- function() {
+    .Call(`_covid19_model_sa2_status_insymp`)
+}
+
+status_critic <- function() {
+    .Call(`_covid19_model_sa2_status_critic`)
+}
+
 do_max_par_int <- function(x, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_max_par_int`, x, nThread)
 }
