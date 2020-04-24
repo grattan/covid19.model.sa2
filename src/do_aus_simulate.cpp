@@ -559,9 +559,13 @@ List do_au_simulate(IntegerVector Status,
                     int days_to_sim,
                     int N = 25e6,
                     bool display_progress = true,
+                    int console_width = 80,
                     int nThread = 1) {
 
-  Progress p(days_to_sim, display_progress);
+  Progress p(days_to_sim, display_progress && console_width <= 1);
+
+
+
   if (FreqsByDestType.length() <= 98 ||
       nPlacesByDestType.length() <= 98) {
     stop("Internal error: FreqsByDestType.length < 98");
@@ -688,7 +692,7 @@ List do_au_simulate(IntegerVector Status,
     int wday = wday_2020[(yday % 7)];
     bool is_weekday = wday != 0 && wday != 7;
 
-    p.increment();
+
 
     int n_infected_today = 0;
 
@@ -700,12 +704,51 @@ List do_au_simulate(IntegerVector Status,
 
     nInfected[day] = n_infected_today;
 
-    Statuses.push_back(clone(Status));
+    if (display_progress) {
+      if (console_width <= 1) {
+        p.increment();
+      } else {
+
+        int pbar_w = console_width - 16 - 8;
+        int a = (day * pbar_w) / pbar_w;
+        int b = (days_to_sim * pbar_w) / pbar_w;
+
+        Rcout << "|";
+        for (int w = 0; w < a; ++w) {
+          Rcout << "=";
+        }
+        for (int w = a; w < b; ++w) {
+          Rcout << " ";
+        }
+        int last_yday = (days_to_sim + yday_start);
+
+        Rcout << "yday = " << yday << "/" << last_yday << " ";
+
+        // asking for log(0) = -Inf number of console outputs will do exactly
+        // what is asked
+
+        // number of digits in n_infected_today (-1)
+        int ndig_nit = (n_infected_today > 9) ? floor(log10(n_infected_today)) : 1;
+        for (int w = ndig_nit; w < 8; ++w) {
+          Rcout << " ";
+        }
+
+
+        Rcout << n_infected_today << "\r";
+        if (day == days_to_sim) {
+          Rcout << "\n";
+
+        }
+      }
+    }
+
+
 
     // no more infections?
     if (n_infected_today == 0) {
       continue;
     }
+    Statuses.push_back(clone(Status));
 
 
     // For example, SupermarketFreq[i] = 365  => every day

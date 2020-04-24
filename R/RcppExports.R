@@ -56,8 +56,8 @@ do_max_par_int <- function(x, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_max_par_int`, x, nThread)
 }
 
-do_au_simulate <- function(Status, InfectedOn, SA2, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, SupermarketHour, yday_start, days_to_sim, N = 25e6L, display_progress = TRUE, nThread = 1L) {
-    .Call(`_covid19_model_sa2_do_au_simulate`, Status, InfectedOn, SA2, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, SupermarketHour, yday_start, days_to_sim, N, display_progress, nThread)
+do_au_simulate <- function(Status, InfectedOn, SA2, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, SupermarketHour, yday_start, days_to_sim, N = 25e6L, display_progress = TRUE, console_width = 80L, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_au_simulate`, Status, InfectedOn, SA2, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, SupermarketHour, yday_start, days_to_sim, N, display_progress, console_width, nThread)
 }
 
 do_exp_dbl2int <- function(x, nThread = 1L) {
