@@ -99,6 +99,7 @@ int array3k(int x, int y, int z, int ny, int nz) {
 void contact_tracing(IntegerVector Status,
                      IntegerVector InfectedOn,
                      IntegerVector Incubation,
+                     int day,
                      int yday,
                      IntegerVector seqN,
                      IntegerVector HouseholdSize,
@@ -111,8 +112,9 @@ void contact_tracing(IntegerVector Status,
                      int ptest_per_mille_sympto,
                      int ptest_per_mille_asympto,
                      IntegerVector Todays2B,
-                     int days_to_notify = 3,
-                     int nThread = 1) {
+                     int days_to_notify,
+                     int nThread,
+                     IntegerVector TestedOn) {
   if (nThread < 1 || nThread > omp_get_num_procs()) {
     // lots of large ints nearby!
     stop("Internal error: nThread out of range");
@@ -128,22 +130,39 @@ void contact_tracing(IntegerVector Status,
   // test each person in the household
 
   // TestedOn = Day at which the person is tested and notified
-  IntegerVector TestedOn = no_init(N);
+  // IntegerVector TestedOn = no_init(N);
   const int test_array[3] = {0, ptest_per_mille_asympto, ptest_per_mille_sympto};
   int tests_performed = 0;
 #pragma omp parallel for num_threads(nThread) reduction(+:tests_performed)
   for (int i = 0; i < N; ++i) {
     int test_k = ((Status[i] == STATUS_NOSYMP) + (Status[i] == STATUS_INSYMP));
     int ptest_per_mille = test_array[test_k];
+    if (!ptest_per_mille) {
+      continue;
+    }
+
+    int prev_test_on = TestedOn[i];
+    if (prev_test_on < 0) {
+      continue;
+    }
+
+    // Don't test everyday -- need time to isolate
+    if (yday <= prev_test_on + 1) {
+      continue;
+    }
+
 
     // test_outcome = -1 (negative), 0 (no test), 1 (positive)
-    int test_outcome = (Todays2B[i] % 1000) < ptest_per_mille;
-    tests_performed += test_outcome;
+    if ((Todays2B[i] % 1000) < ptest_per_mille) {
+      tests_performed += 1;
+      bool false_negative = (((Todays2B[i] / 13) % 1000) > SENSITIVITY);
 
-    test_outcome -= 2 * (((Todays2B[i] / 13) % 1000) > SENSITIVITY);
+      // false negatives
+      int test_outcome = (false_negative) ? -1 : 1;
+      // encode negative and time of test in one variable
+      TestedOn[i] = (yday + days_to_notify) * test_outcome;
+    }
 
-    // encode negative and time of test in one variable
-    TestedOn[i] = (yday + days_to_notify) * test_outcome;
   }
 
   // At this point we know how many tests have been performed
@@ -151,7 +170,10 @@ void contact_tracing(IntegerVector Status,
 
   // Isolate everyone who is in the same household
   // as a person who is 'TestedOn' today
+#pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
+
+    // threadsafety -- go through the head of household
     if (seqN[i] != 1) {
       continue;
     }
@@ -178,9 +200,14 @@ void contact_tracing(IntegerVector Status,
       }
       notified_positive_today = TestedOn[i + j] == yday;
     }
+    // if any household member gets notified then
+    // they are all put in isolation
     if (notified_positive_today) {
       for (int j = 0; j < nh; ++j) {
-        Status[i + j] += ISOLATED_PLUS;
+        int statusij = Status[i + j];
+        if (statusij >= 0 && statusij < ISOLATED_PLUS) {
+          Status[i + j] += ISOLATED_PLUS;
+        }
       }
     }
   }
@@ -547,6 +574,7 @@ List do_au_simulate(IntegerVector Status,
   if (Policy.length() && Policy.containsElementNamed("do_contact_tracing")) {
     do_contact_tracing = Policy["do_contact_tracing"];
   }
+  IntegerVector TestedOn = no_init(N);
 
   // TODO: make user-avbl
   int ptest_per_mille_sympto = 1000; // 100%
@@ -602,6 +630,7 @@ List do_au_simulate(IntegerVector Status,
     Illness[i] = 0;
     SupermarketTarget[i] = 0;
     HouseholdInfectedToday[i] = 0;
+    TestedOn[i] = 0;
   }
 
   if (which_unsorted_int(SA2)) {
@@ -759,6 +788,7 @@ List do_au_simulate(IntegerVector Status,
       contact_tracing(Status,
                       InfectedOn,
                       Incubation,
+                      day,
                       yday,
                       seqN,
                       HouseholdSize,
@@ -772,10 +802,12 @@ List do_au_simulate(IntegerVector Status,
                       ptest_per_mille_sympto,
                       Todays2B,
                       days_to_notify,
-                      nThread);
+                      nThread,
+                      TestedOn);
     }
   }
 
   return Rcpp::List::create(Named("nInfected") = nInfected,
-                            Named("Statuses") = Statuses);
+                            Named("Statuses") = Statuses,
+                            Named("TestedOn") = TestedOn);
 }
