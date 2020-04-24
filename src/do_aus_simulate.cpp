@@ -132,6 +132,7 @@ void contact_tracing(IntegerVector Status,
   // TestedOn = Day at which the person is tested and notified
   // IntegerVector TestedOn = no_init(N);
   const int test_array[3] = {0, ptest_per_mille_asympto, ptest_per_mille_sympto};
+  const int test_yday = yday + days_to_notify;
   int tests_performed = 0;
 #pragma omp parallel for num_threads(nThread) reduction(+:tests_performed)
   for (int i = 0; i < N; ++i) {
@@ -143,6 +144,9 @@ void contact_tracing(IntegerVector Status,
 
     int prev_test_on = TestedOn[i];
     if (prev_test_on < 0) {
+      if (!(Todays2B[i] % 32)) {
+        TestedOn[i] = 0;
+      }
       continue;
     }
 
@@ -155,18 +159,44 @@ void contact_tracing(IntegerVector Status,
     // test_outcome = -1 (negative), 0 (no test), 1 (positive)
     if ((Todays2B[i] % 1000) < ptest_per_mille) {
       tests_performed += 1;
+
+      // tests_performed is private so can't be used in an expression like
+      // if (tests_performed < tests_avbl)
       bool false_negative = (((Todays2B[i] / 13) % 1000) > SENSITIVITY);
 
       // false negatives
       int test_outcome = (false_negative) ? -1 : 1;
       // encode negative and time of test in one variable
-      TestedOn[i] = (yday + days_to_notify) * test_outcome;
+      TestedOn[i] = test_yday * test_outcome;
     }
-
   }
 
   // At this point we know how many tests have been performed
   // and who has been identified.
+
+  //
+  // If the number of tests performed has been exceeded, we randomly
+  // remove the fraction exceeded
+  bool tests_exceeded = tests_performed > tests_avbl;
+  // in case tests_performed = 0
+
+
+
+
+  if (tests_exceeded) {
+    // how many tests per 1000 should be omitted
+    int trace_per_mille = (tests_avbl * 1000) / tests_performed;
+
+#pragma omp parallel for num_threads(nThread)
+    for (int i = 0; i < N; ++i) {
+      if (TestedOn[i] &&
+          (TestedOn[i] == test_yday || TestedOn[i] == -test_yday) &&
+            trace_per_mille < ((Todays2B[i] / 17) % 1000)) {
+        TestedOn[i] = 0;
+      }
+    }
+  }
+
 
   // Isolate everyone who is in the same household
   // as a person who is 'TestedOn' today
@@ -178,11 +208,18 @@ void contact_tracing(IntegerVector Status,
       continue;
     }
 
+    if (Status[i] < 0 || Status[i] >= ISOLATED_PLUS) {
+      continue;
+    }
+
     bool notified_positive_today = TestedOn[i] == yday;
+
 
     if (HouseholdSize[i] == 1) {
       if (notified_positive_today) {
-        Status[i] += ISOLATED_PLUS;
+        if (Status[i] >= 0 && Status[i] < ISOLATED_PLUS) {
+          Status[i] += ISOLATED_PLUS;
+        }
       }
       // no household tracing for single person
       continue;
@@ -580,7 +617,7 @@ List do_au_simulate(IntegerVector Status,
   int ptest_per_mille_sympto = 1000; // 100%
   int ptest_per_mille_asympto = 10; // 1%
   int days_to_notify = 3;
-  int tests_avbl = 100e3;
+  int tests_avbl = 10e3;
 
 
   // attach epipars
@@ -811,3 +848,6 @@ List do_au_simulate(IntegerVector Status,
                             Named("Statuses") = Statuses,
                             Named("TestedOn") = TestedOn);
 }
+
+
+
