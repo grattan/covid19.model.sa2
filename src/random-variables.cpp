@@ -64,7 +64,6 @@ IntegerVector dqsample_int2(int m, int n) {
   return dqrng::dqsample_int(m, n, true, R_NilValue, 0);
 }
 
-
 // [[Rcpp::export]]
 DoubleVector prlnorm_dbl(int n, double a, double b, int nThread = 1) {
   DoubleVector out = no_init(n);
@@ -107,6 +106,9 @@ DoubleVector prcauchy(int n, double a, double b, int nThread = 1) {
  * Society 68.225 (1999): 249-260.
  */
 
+#include <cstdint>
+
+#if INTPTR_MAX == INT64_MAX
 
 __uint128_t g_lehmer64_state = 353;
 
@@ -114,6 +116,16 @@ uint64_t lehmer64() {
   g_lehmer64_state *= 0xda942042e4dd58b5;
   return g_lehmer64_state >> 64;
 }
+
+#else INTPTR_MAX == INT32_MAX
+
+int g_lehmer64_state = 3353;
+
+int lehmer64() {
+  return unifRand(0, INT32_MAX - 1);
+}
+
+#endif
 
 // [[Rcpp::export]]
 IntegerVector lemire_rand(int n, int d, int s32, int nThread = 1, unsigned int q2 = 0) {

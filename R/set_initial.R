@@ -83,17 +83,17 @@ set_initial_by_state <- function(state_id,
   if (length(state_id) != 1L) {
     # Perform this function 'by' state_id.
     DT <- setDT(list(x = state_id))
-    DT[, out := set_initial_by_state(.BY[[1]],
-                                     dead = dead,
-                                     healed = healed,
-                                     active = active,
-                                     critical = critical,
-                                     cases = cases,
-                                     cases_by_state = cases_by_state,
-                                     deaths_by_state = deaths_by_state,
-                                     recovered_by_state = recovered_by_state,
-                                     asympto = asympto,
-                                     .population = .N),
+    DT[, "out" := set_initial_by_state(.BY[[1]],
+                                       dead = dead,
+                                       healed = healed,
+                                       active = active,
+                                       critical = critical,
+                                       cases = cases,
+                                       cases_by_state = cases_by_state,
+                                       deaths_by_state = deaths_by_state,
+                                       recovered_by_state = recovered_by_state,
+                                       asympto = asympto,
+                                       .population = .N),
        by = "x"]
     return(DT[["out"]])
   }

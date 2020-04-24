@@ -95,7 +95,8 @@ file_fst <- function(file.fst) {
 start_progress <- function(fst2_progress, file.fst) {
   start.time <- Sys.time()
   if (fst2_progress) {
-    cat(crayon::green(hh_ss()), crayon::red(basename(file.fst)), "\t")
+    cat(crayon::green(as.character(format(Sys.time(), format = "%H:%M:%S"))),
+        crayon::red(basename(file.fst)), "\t")
   }
   start.time
 }
