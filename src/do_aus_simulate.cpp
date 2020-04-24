@@ -760,6 +760,13 @@ List do_au_simulate(IntegerVector Status,
           bool becomes_symptomatic = statusi > STATUS_NOSYMP || (unifRand(0, 1000) > p_asympto);
           bool becomes_critical = statusi == STATUS_CRITIC || (becomes_symptomatic && unifRand(0, 1000) < p_critical);
           bool dies = becomes_critical && unifRand(0, 1000) < p_death;
+          bool in_isolation =
+            (statusi == (STATUS_SUSCEP + ISOLATED_PLUS)) || // most common first
+            (statusi == (STATUS_HEALED + ISOLATED_PLUS)) ||
+            (statusi == (STATUS_KILLED + ISOLATED_PLUS)) ||
+            (statusi == (STATUS_NOSYMP + ISOLATED_PLUS)) ||
+            (statusi == (STATUS_INSYMP + ISOLATED_PLUS)) ||
+            (statusi == (STATUS_CRITIC + ISOLATED_PLUS));
 
           // As before with incubation
           if (Illness[i] == 0) {
@@ -771,6 +778,7 @@ List do_au_simulate(IntegerVector Status,
           if (yday <= InfectedOn[i] + incubation + illness) {
             if (becomes_symptomatic) {
               Status[i] = STATUS_INSYMP + becomes_critical * CRITIC_MINUS_INSYMP;
+              Status[i] += in_isolation * ISOLATED_PLUS;
             } else {
               // nothing to do: they're still ill, but at Status 1.
             }
