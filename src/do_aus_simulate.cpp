@@ -468,7 +468,8 @@ void infect_school(IntegerVector Status,
                    int r_d,
                    bool only_Year12,
                    int n_schools,
-                   int n_pupils) {
+                   int n_pupils,
+                   int nThread = 1) {
 
   // infect people within a school
 
