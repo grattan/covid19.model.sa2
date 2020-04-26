@@ -25,7 +25,6 @@ int status_killed();
 RcppExport SEXP _covid19_model_sa2_status_killed() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     rcpp_result_gen = Rcpp::wrap(status_killed());
     return rcpp_result_gen;
 END_RCPP
@@ -35,7 +34,6 @@ int status_healed();
 RcppExport SEXP _covid19_model_sa2_status_healed() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     rcpp_result_gen = Rcpp::wrap(status_healed());
     return rcpp_result_gen;
 END_RCPP
@@ -45,7 +43,6 @@ int status_suscep();
 RcppExport SEXP _covid19_model_sa2_status_suscep() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     rcpp_result_gen = Rcpp::wrap(status_suscep());
     return rcpp_result_gen;
 END_RCPP
@@ -55,7 +52,6 @@ int status_nosymp();
 RcppExport SEXP _covid19_model_sa2_status_nosymp() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     rcpp_result_gen = Rcpp::wrap(status_nosymp());
     return rcpp_result_gen;
 END_RCPP
@@ -65,7 +61,6 @@ int status_insymp();
 RcppExport SEXP _covid19_model_sa2_status_insymp() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     rcpp_result_gen = Rcpp::wrap(status_insymp());
     return rcpp_result_gen;
 END_RCPP
@@ -75,7 +70,6 @@ int status_critic();
 RcppExport SEXP _covid19_model_sa2_status_critic() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
     rcpp_result_gen = Rcpp::wrap(status_critic());
     return rcpp_result_gen;
 END_RCPP

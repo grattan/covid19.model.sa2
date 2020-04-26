@@ -5,27 +5,27 @@ using namespace Rcpp;
 
 #define N_SUPERMARKETS 7487
 
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 int status_killed() {
   return STATUS_KILLED;
 }
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 int status_healed() {
   return STATUS_HEALED;
 }
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 int status_suscep() {
   return STATUS_SUSCEP;
 }
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 int status_nosymp() {
   return STATUS_NOSYMP;
 }
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 int status_insymp() {
   return STATUS_INSYMP;
 }
-// [[Rcpp::export]]
+// [[Rcpp::export(rng = false)]]
 int status_critic() {
   return STATUS_CRITIC;
 }
