@@ -43,7 +43,10 @@ to a file with this data.}
 
 \item{deaths_by_state, recovered_by_state}{As for \code{cases_by_state}.}
 
-\item{asympto}{The proportion of patients who are asymptomatic.}
+\item{asympto}{The proportion of cases who are asymptomatic.
+\strong{Note: active cases are assumed to be all symptomatic. Thus,
+if the number of active cases is 100 and }\code{asympto = 0.75}
+\strong{ the number of total cases is 400.}}
 
 \item{p_critical}{The proportion of symptomatic cases who are critical.}
 
