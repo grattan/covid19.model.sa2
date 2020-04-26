@@ -117,10 +117,12 @@ void contact_tracing(IntegerVector Status,
                      int days_to_notify,
                      int nThread,
                      IntegerVector TestedOn) {
+#ifdef _OPENMP
   if (nThread < 1 || nThread > omp_get_num_procs()) {
     // lots of large ints nearby!
     stop("Internal error: nThread out of range");
   }
+#endif
 
   // isTested -> isIdentified -> responseReq -> LockdownTomorrw
 
