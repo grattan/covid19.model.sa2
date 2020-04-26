@@ -56,8 +56,8 @@ do_max_par_int <- function(x, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_max_par_int`, x, nThread)
 }
 
-do_au_simulate <- function(Status, InfectedOn, SA2, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, SupermarketHour, yday_start, days_to_sim, N = 25e6L, display_progress = TRUE, console_width = 80L, nThread = 1L) {
-    .Call(`_covid19_model_sa2_do_au_simulate`, Status, InfectedOn, SA2, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, SupermarketHour, yday_start, days_to_sim, N, display_progress, console_width, nThread)
+do_au_simulate <- function(Status, InfectedOn, SA2, State, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, SupermarketHour, yday_start, days_to_sim, N = 25e6L, display_progress = TRUE, by_state = TRUE, console_width = 80L, optionz = 0L, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_au_simulate`, Status, InfectedOn, SA2, State, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, SupermarketHour, yday_start, days_to_sim, N, display_progress, by_state, console_width, optionz, nThread)
 }
 
 do_exp_dbl2int <- function(x, nThread = 1L) {
@@ -70,6 +70,10 @@ do_lag_int <- function(s, nThread = 1L) {
 
 do_seqN_N <- function(hid, pid, check_hid_sorted = TRUE) {
     .Call(`_covid19_model_sa2_do_seqN_N`, hid, pid, check_hid_sorted)
+}
+
+testOpenmp <- function(x, nThread = 1L) {
+    .Call(`_covid19_model_sa2_testOpenmp`, x, nThread)
 }
 
 punif_int <- function(n, a, b, nThread = 1L) {
@@ -96,15 +100,27 @@ lemire_rand <- function(n, d, s32, nThread = 1L, q2 = 0L) {
     .Call(`_covid19_model_sa2_lemire_rand`, n, d, s32, nThread, q2)
 }
 
-modulo <- function(x, m, d, nThread = 10L) {
-    .Call(`_covid19_model_sa2_modulo`, x, m, d, nThread)
-}
-
 short_sa2 <- function(sa2) {
     .Call(`_covid19_model_sa2_short_sa2`, sa2)
 }
 
 shorten_sa2s_ordered <- function(SA2) {
     .Call(`_covid19_model_sa2_shorten_sa2s_ordered`, SA2)
+}
+
+do_minmax_par <- function(x, nThread = 10L) {
+    .Call(`_covid19_model_sa2_do_minmax_par`, x, nThread)
+}
+
+do_ModuloIndex <- function(x, d, m, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_ModuloIndex`, x, d, m, nThread)
+}
+
+do_modulo_d <- function(x, m, d, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_modulo_d`, x, m, d, nThread)
+}
+
+do_is_unsorted_pint <- function(x) {
+    .Call(`_covid19_model_sa2_do_is_unsorted_pint`, x)
 }
 

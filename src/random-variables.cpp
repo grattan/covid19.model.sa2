@@ -154,21 +154,4 @@ IntegerVector lemire_rand(int n, int d, int s32, int nThread = 1, unsigned int q
 }
 
 
-// [[Rcpp::export]]
-IntegerVector modulo(IntegerVector x, int m, int d, int nThread = 10) {
-  if (m < 1) {
-    return x;
-  }
-  int n = x.length();
-  IntegerVector out = no_init(n);
-  if (d <= 0) {
-    d = 1;
-  }
-
-#pragma omp parallel for num_threads(nThread)
-  for (int i = 0; i < n; ++i) {
-    out[i] = (x[i] / d) % m;
-  }
-  return out;
-}
 
