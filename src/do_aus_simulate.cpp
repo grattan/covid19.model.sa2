@@ -362,8 +362,8 @@ void infect_supermarkets(IntegerVector Status,
                          int r_d,
                          IntegerVector SupermarketFreq,
                          IntegerVector TodaysHz,
+                         int resistance1,
                          int hrs_open = 8,
-                         int resistance1 = 400,
                          int resistance2 = 3,
                          double r_div = 36, // divide r_ by this // TODO: model is highly sensitive to this par!
                          bool verbose = false) {
@@ -430,7 +430,7 @@ void infect_supermarkets(IntegerVector Status,
 
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
-    if (Status[i] || !nSupermarketsAvbl[i] || TodaysHz[i] > SupermarketFreq[i]) {
+    if (Status[i] || !nSupermarketsAvbl[i] || (TodaysHz[i] % 365) > SupermarketFreq[i]) {
       continue;
     }
 
@@ -531,8 +531,8 @@ void infect_household(IntegerVector Status,
                       int yday,
                       int N,
                       IntegerVector HouseholdInfectedToday,
+                      int resistance1,
                       int nThread = 1,
-                      int resistance1 = 400,
                       int resistance_penalty = 400) {
   // resistance_penalty = penalty against Resistance[i]
   // that makes infection more likely. Higher penalties
@@ -722,7 +722,10 @@ List do_au_simulate(IntegerVector Status,
   double illness_m = Epi["illness_mean"];
   double illness_s = Epi["illness_sigma"];
   double r_location = Epi["r_location"];
+  double r_schools_location = Epi["r_schools_location"];
+  double r_supermarket_location = Epi["r_supermarket_location"];
   double r_scale = Epi["r_scale"];
+  int resistance_threshold = Epi["resistance_threshold"];
   int p_asympto = Epi["p_asympto"];
   int p_critical = Epi["p_critical"];
   int p_death = Epi["p_death"];
@@ -840,8 +843,12 @@ List do_au_simulate(IntegerVector Status,
     if (n_infected_today == 0) {
       continue;
     }
-    Statuses.push_back(clone(Status));
-
+    if (optionz != 2) {
+      Statuses.push_back(clone(Status));
+    }
+    if (optionz == 3) {
+      continue;
+    }
 
     // For example, SupermarketFreq[i] = 365  => every day
     // SupermarketFreq[i] = 1 every year.  So we create a vector
@@ -849,12 +856,15 @@ List do_au_simulate(IntegerVector Status,
     // visit. So if TodaysHz[i] = 366 they will not visit anything
     // regardless; if TodaysHz[i] = 1 they will visit everything.
     IntegerVector TodaysHz = rep_len(dqsample_int2(365, wday * 23456), N);
-
-    // We also want to draw quickly from a sample every day
-    IntegerVector TodaysK = rep_len(dqsample_int2(1000, wday * 54321), N);
+    if (optionz == 4) {
+      continue;
+    }
 
     // Use this with modulo
     IntegerVector Todays2B = rep_len(dqsample_int2(2e9, wday * 54321), N);
+    if (optionz == 1) {
+      continue;
+    }
 
 
 #pragma omp parallel for num_threads(nThread)
@@ -943,16 +953,18 @@ List do_au_simulate(IntegerVector Status,
                           N,
                           SupermarketTypical,
                           SupermarketHour,
-                          r_location, r_scale, r_d,
+                          r_supermarket_location, r_scale, r_d,
                           SupermarketFreq,
-                          TodaysHz);
+                          TodaysHz,
+                          resistance_threshold);
     }
 
     if (is_weekday && schools_open) {
       infect_school(Status, InfectedOn, School, Age,
                     yday, N,
                     schoolsIndex,
-                    r_location, r_scale, r_d,
+                    r_schools_location, r_scale, r_d,
+                    Todays2B,
                     only_Year12,
                     NSCHOOLS,
                     n_pupils);
@@ -962,7 +974,9 @@ List do_au_simulate(IntegerVector Status,
     // finally
 
     infect_household(Status, InfectedOn, hid, seqN, HouseholdSize, Resistance, Age,
-                     yday, N, HouseholdInfectedToday, nThread);
+                     yday, N, HouseholdInfectedToday,
+                     resistance_threshold,
+                     nThread);
 
     if (do_contact_tracing) {
       contact_tracing(Status,
