@@ -155,6 +155,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// testOpenmp
+NumericVector testOpenmp(NumericVector x, int nThread);
+RcppExport SEXP _covid19_model_sa2_testOpenmp(SEXP xSEXP, SEXP nThreadSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
+    rcpp_result_gen = Rcpp::wrap(testOpenmp(x, nThread));
+    return rcpp_result_gen;
+END_RCPP
+}
 // punif_int
 IntegerVector punif_int(int n, int a, int b, int nThread);
 RcppExport SEXP _covid19_model_sa2_punif_int(SEXP nSEXP, SEXP aSEXP, SEXP bSEXP, SEXP nThreadSEXP) {
