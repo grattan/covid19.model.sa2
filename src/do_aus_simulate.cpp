@@ -633,6 +633,7 @@ List do_au_simulate(IntegerVector Status,
                     bool display_progress = true,
                     bool by_state = true,
                     int console_width = 80,
+                    int optionz = 0,
                     int nThread = 1) {
 
   Progress p(days_to_sim, display_progress && console_width <= 1);
