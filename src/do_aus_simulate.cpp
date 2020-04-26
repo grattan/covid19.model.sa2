@@ -103,7 +103,9 @@ void contact_tracing(IntegerVector Status,
                      int yday,
                      IntegerVector seqN,
                      IntegerVector HouseholdSize,
-                     int tests_avbl,
+                     IntegerVector TestsAvbl,
+                     bool by_state,
+                     IntegerVector State,
                      IntegerVector hid,
                      IntegerVector HouseholdInfectedToday,
                      int N,
@@ -133,8 +135,42 @@ void contact_tracing(IntegerVector Status,
   // IntegerVector TestedOn = no_init(N);
   const int test_array[3] = {0, ptest_per_mille_asympto, ptest_per_mille_sympto};
   const int test_yday = yday + days_to_notify;
-  int tests_performed = 0;
-#pragma omp parallel for num_threads(nThread) reduction(+:tests_performed)
+  const int NSTATES1 = NSTATES + 1;
+
+  int tests_avbl[NSTATES1] = {0};
+
+  for (int s = 0; s < NSTATES1; ++s) {
+    if (TestsAvbl[s] < 0) {
+      stop("TestsAvbl[s] < 0 was negative.");
+    }
+    tests_avbl[s] = TestsAvbl[s];
+  }
+
+  // tests_performed[0] = all of australia
+  int tests_performed[NSTATES1] = {0};
+  if (TestsAvbl.length() != NSTATES1) {
+    stop("Internal error: TestsAvbl.length() != NSTATES + 1.");
+  }
+  if (NSTATES1 != 10) {
+    stop("Internal error. NSTATES1 != 10");
+  }
+
+  // until OpenMP 4.5
+  int t_perf0 = 0;
+  int t_perf1 = 0;
+  int t_perf2 = 0;
+  int t_perf3 = 0;
+  int t_perf4 = 0;
+  int t_perf5 = 0;
+  int t_perf6 = 0;
+  int t_perf7 = 0;
+  int t_perf8 = 0;
+  int t_perf9 = 0;
+
+
+
+
+#pragma omp parallel for num_threads(nThread) reduction(+:t_perf0,t_perf1,t_perf2,t_perf3,t_perf4,t_perf5,t_perf6,t_perf7,t_perf8,t_perf9)
   for (int i = 0; i < N; ++i) {
     int test_k = ((Status[i] == STATUS_NOSYMP) + (Status[i] == STATUS_INSYMP));
     int ptest_per_mille = test_array[test_k];
@@ -143,6 +179,9 @@ void contact_tracing(IntegerVector Status,
     }
 
     int prev_test_on = TestedOn[i];
+
+    // if the person gets a (false) negative result
+    // they reset with 1/32 probability
     if (prev_test_on < 0) {
       if (!(Todays2B[i] % 32)) {
         TestedOn[i] = 0;
@@ -158,7 +197,19 @@ void contact_tracing(IntegerVector Status,
 
     // test_outcome = -1 (negative), 0 (no test), 1 (positive)
     if ((Todays2B[i] % 1000) < ptest_per_mille) {
-      tests_performed += 1;
+      t_perf0 += 1;
+      int statei = State[i];
+      if (by_state) {
+        if (statei == 1) t_perf1 += 1;
+        if (statei == 2) t_perf2 += 1;
+        if (statei == 3) t_perf3 += 1;
+        if (statei == 4) t_perf4 += 1;
+        if (statei == 5) t_perf5 += 1;
+        if (statei == 6) t_perf6 += 1;
+        if (statei == 7) t_perf7 += 1;
+        if (statei == 8) t_perf8 += 1;
+        if (statei == 9) t_perf9 += 1;
+      }
 
       // tests_performed is private so can't be used in an expression like
       // if (tests_performed < tests_avbl)
@@ -174,24 +225,38 @@ void contact_tracing(IntegerVector Status,
   // At this point we know how many tests have been performed
   // and who has been identified.
 
-  //
-  // If the number of tests performed has been exceeded, we randomly
-  // remove the fraction exceeded
-  bool tests_exceeded = tests_performed > tests_avbl;
-  // in case tests_performed = 0
+  // If the tests_avbl has been exceeded (for a state) and the person
+  // was tested today, we unset their test probabilistically, based
+  // on how many tests were exceeded
 
-
-
-
-  if (tests_exceeded) {
-    // how many tests per 1000 should be omitted
-    int trace_per_mille = (tests_avbl * 1000) / tests_performed;
+  tests_performed[0] = t_perf0;
+  tests_performed[1] = t_perf1;
+  tests_performed[2] = t_perf2;
+  tests_performed[3] = t_perf3;
+  tests_performed[4] = t_perf4;
+  tests_performed[5] = t_perf5;
+  tests_performed[6] = t_perf6;
+  tests_performed[7] = t_perf7;
+  tests_performed[8] = t_perf8;
+  tests_performed[9] = t_perf9;
 
 #pragma omp parallel for num_threads(nThread)
-    for (int i = 0; i < N; ++i) {
-      if (TestedOn[i] &&
-          (TestedOn[i] == test_yday || TestedOn[i] == -test_yday) &&
-            trace_per_mille < ((Todays2B[i] / 17) % 1000)) {
+  for (int i = 0; i < N; ++i) {
+    int statei = by_state ? State[i] : 0;
+
+    // if no tests were ever available we can quickly discard tested
+    if (tests_avbl[statei] == 0 &&
+        TestedOn[i] &&
+        (TestedOn[i] == test_yday || TestedOn[i] == -test_yday)) {
+      TestedOn[i] = 0;
+      continue;
+    }
+    bool tests_exceeded = tests_performed[statei] > tests_avbl[statei];
+    if (tests_exceeded &&
+        TestedOn[i] &&
+        (TestedOn[i] == test_yday || TestedOn[i] == -test_yday)) {
+      int trace_per_mille = (tests_avbl[statei] * 1000) / tests_performed[statei];
+      if (trace_per_mille < ((Todays2B[i] / 17) % 1000)) {
         TestedOn[i] = 0;
       }
     }
@@ -559,6 +624,7 @@ List do_au_simulate(IntegerVector Status,
                     int days_to_sim,
                     int N = 25e6,
                     bool display_progress = true,
+                    bool by_state = true,
                     int console_width = 80,
                     int nThread = 1) {
 
@@ -615,6 +681,21 @@ List do_au_simulate(IntegerVector Status,
   if (Policy.length() && Policy.containsElementNamed("do_contact_tracing")) {
     do_contact_tracing = Policy["do_contact_tracing"];
   }
+  IntegerVector TestsAvbl(NSTATES1);
+  // 2020-04-24 numbers
+  TestsAvbl[0] = 482370 - 466659;
+  if (Policy.length() && Policy.containsElementNamed("tests_by_state")) {
+    IntegerVector tests_by_state = Policy["tests_by_state"];
+    if (tests_by_state.length() != NSTATES1) {
+      warning("tests_by_state.length() != NSTATES + 1 and will be ignored.");
+    } else {
+      for (int s = 0; s < NSTATES1; ++s) {
+        TestsAvbl[s] = tests_by_state[s];
+      }
+    }
+  }
+
+
   IntegerVector TestedOn = no_init(N);
 
   // TODO: make user-avbl
@@ -880,7 +961,9 @@ List do_au_simulate(IntegerVector Status,
                       yday,
                       seqN,
                       HouseholdSize,
-                      tests_avbl,
+                      TestsAvbl,
+                      by_state,
+                      State,
                       hid,
                       HouseholdInfectedToday,
                       N,

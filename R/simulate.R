@@ -66,7 +66,8 @@
 
 
 simulate_sa2 <- function(days_to_simulate = 5,
-                         PolicyPars = list(),
+                         PolicyPars = set_policypars(),
+                         EpiPars = set_epipars(),
                          InitialStatus = list(dead = 71,
                                               healed = 4685,
                                               active = 1840,
@@ -275,6 +276,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
          do_au_simulate(Status,
                         InfectedOn,
                         sa2,
+                        State = state,
                         hid = hid,
                         seqN = seqN,
                         HouseholdSize = HouseholdSize,
@@ -293,7 +295,9 @@ simulate_sa2 <- function(days_to_simulate = 5,
                         yday_start = .first_day,
                         days_to_sim = days_to_simulate,
                         N = nrow(aus),
+                        by_state = by_state,
                         console_width = getOption("width", 80L),
+                        optionz = getOption("optionz", 0L),
                         nThread = nThread))
 
   # Rcpp doesn't put (any) names on the push_back

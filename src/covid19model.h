@@ -14,6 +14,8 @@ using namespace Rcpp;
 #include <omp.h>
 #endif
 
+const int NSTATES = 9;
+const int NSTATES1 = 10;
 const int NSA2 = 2310;
 const int NSCHOOLS = 9501;
 const int NPUPILS = 3135825;
