@@ -65,6 +65,7 @@ int max0(int x);
 int max0(double x);
 
 IntegerVector do_lag_int(IntegerVector s, int nThread);
+IntegerVector modulo(IntegerVector x, int m, int d, int nThread);
 
 
 #endif
