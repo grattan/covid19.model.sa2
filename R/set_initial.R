@@ -16,7 +16,10 @@
 #' Alternatively a string to be read in by \code{\link{read_sys}}, the path
 #' to a file with this data.
 #' @param deaths_by_state,recovered_by_state As for \code{cases_by_state}.
-#' @param asympto The proportion of patients who are asymptomatic.
+#' @param asympto The proportion of cases who are asymptomatic.
+#' \strong{Note: active cases are assumed to be all symptomatic. Thus,
+#' if the number of active cases is 100 and }\code{asympto = 0.75}
+#' \strong{ the number of total cases is 400.}
 #' @param p_critical The proportion of symptomatic cases who are critical.
 #' @param .population The size of the output, the population. By default,
 #' set to the length of \code{state_id}.
@@ -110,10 +113,10 @@ set_initial_by_state <- function(state_id,
   # as this will causing rounding errors and we have
   # to get the same length out as in.
   sympto <- 1 - asympto
-  nosymp <- as.integer(asympto * active)
+  nosymp <- as.integer((asympto / (1 - asympto)) * active)
 
-  # Note that insymp <- sympto * active is wrong because of rounding.
-  insymp <- active - nosymp
+  # We assume all active casees are symptomatic
+  insymp <- active
 
   critical %<=% (as.integer(p_critical * insymp))
 
