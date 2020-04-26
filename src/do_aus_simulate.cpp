@@ -388,7 +388,7 @@ void infect_supermarkets(IntegerVector Status,
 
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
-    if (Status[i] != STATUS_NOSYMP || TodaysHz[i] > SupermarketFreq[i]) {
+    if (Status[i] != STATUS_NOSYMP || (TodaysHz[i] % 365) > SupermarketFreq[i]) {
       continue;
     }
     int supermarketi = SupermarketTypical[i];
