@@ -174,6 +174,7 @@ void contact_tracing(IntegerVector Status,
 
 #pragma omp parallel for num_threads(nThread) reduction(+:t_perf0,t_perf1,t_perf2,t_perf3,t_perf4,t_perf5,t_perf6,t_perf7,t_perf8,t_perf9)
   for (int i = 0; i < N; ++i) {
+
     int test_k = ((Status[i] == STATUS_NOSYMP) + (Status[i] == STATUS_INSYMP));
     int ptest_per_mille = test_array[test_k];
     if (!ptest_per_mille) {
@@ -263,6 +264,7 @@ void contact_tracing(IntegerVector Status,
       }
     }
   }
+
 
 
   // Isolate everyone who is in the same household
@@ -482,6 +484,8 @@ void infect_school(IntegerVector Status,
   memset(s_visits, 0, sizeof s_visits);
   memset(i_visits, 0, sizeof i_visits);
 
+  // IntegerVector Modulo5 = modulo(Todays2B, 5, 37, nThread);
+
   for (int k = 0; k < n_pupils; ++k) {
     int i = schoolIndices[k];
     int schooli = School[i] - 1;
@@ -613,6 +617,7 @@ void infect_household(IntegerVector Status,
 List do_au_simulate(IntegerVector Status,
                     IntegerVector InfectedOn,
                     IntegerVector SA2,
+                    IntegerVector State,
                     IntegerVector hid,
                     IntegerVector seqN,
                     IntegerVector HouseholdSize,
@@ -636,6 +641,7 @@ List do_au_simulate(IntegerVector Status,
                     int console_width = 80,
                     int optionz = 0,
                     int nThread = 1) {
+
 
   Progress p(days_to_sim, display_progress && console_width <= 1);
 
@@ -716,7 +722,6 @@ List do_au_simulate(IntegerVector Status,
   int ptest_per_mille_sympto = 1000; // 100%
   int ptest_per_mille_asympto = 10; // 1%
   int days_to_notify = 3;
-  int tests_avbl = 10e3;
 
 
   // attach epipars
@@ -941,6 +946,8 @@ List do_au_simulate(IntegerVector Status,
     }
 
     // This function actually performs the interactions and infections
+
+
     if (supermarkets_open) {
       infect_supermarkets(Status,
                           InfectedOn,
@@ -962,6 +969,8 @@ List do_au_simulate(IntegerVector Status,
                           resistance_threshold);
     }
 
+
+
     if (is_weekday && schools_open) {
       infect_school(Status, InfectedOn, School, Age,
                     yday, N,
@@ -972,6 +981,7 @@ List do_au_simulate(IntegerVector Status,
                     NSCHOOLS,
                     n_pupils);
     }
+
 
 
     // finally
