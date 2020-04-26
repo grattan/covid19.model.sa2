@@ -372,6 +372,10 @@ void infect_supermarkets(IntegerVector Status,
 
   // int i_supermarkets[NSA2][maxSupermarketsBySA2][hrs_open];
   // memset(i_supermarkets, 0, sizeof i_supermarkets);
+  if (resistance1 < 0 || resistance1 > 1000) {
+    stop("Internal error: resistance1 was not in [0, 1]");
+  }
+
 
   int nInfections_len = NSA2 * hrs_open;
   nInfections_len *= 8;

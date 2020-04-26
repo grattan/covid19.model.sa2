@@ -14,7 +14,12 @@
 #' @param r_distribution The distribution of the number of infections from each
 #' infected person, one of `"cauchy"`, `"lnorm"`, `"pois"`, or `"dirac"`.
 #'
-#' @param r_location,r_scale Parameters for \code{r_distribution}.
+#' @param r_location,r_scale Parameters for \code{r_distribution}. The number of
+#' infections \strong{per day}.
+#'
+#' @param resistance_threshold An integer in \code{[0, 1000]}, the resistance
+#' required to not be infected. A value of 0
+#' means no-one will be infected; a value of 1000 means everyone will.
 #'
 #' @param p_asympto A number in \code{[0, 1]}, the proportion of cases that
 #' are asymptomatic.
@@ -35,15 +40,21 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
                         illness_mean = 15,
                         illness_sigma = 1,
                         r_distribution = c("cauchy", "lnorm", "pois", "dirac"),
-                        r_location = 2,
+                        r_location = 2/5,
                         r_scale = 1,
+                        r_schools_distribution = r_distribution,
+                        r_schools_location = r_location,
+                        r_schools_scale = r_scale,
+                        r_supermarket_location = r_location,
+                        r_supermarket_scale = r_scale,
+                        resistance_threshold = 400L,
                         p_asympto = 0.48,
                         p_critical = 0.02,
                         p_death = 0.01) {
   incubation_distribution <- match.arg(incubation_distribution)
   switch(incubation_distribution,
          "pois" = {
-           checkmate::check_int(incubation_mean, lower = 1)
+           checkmate::assert_number(incubation_mean, lower = 0)
          },
          "lnorm" = {
            checkmate::assert_number(incubation_mean, finite = TRUE, lower = 1)
@@ -67,12 +78,16 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
          })
 
   r_distribution <- match.arg(r_distribution)
-  if (r_distribution != "pois" || r_distribution != "dirac") {
-    checkmate::assert_number(r_location, finite = TRUE, lower = 0)
-    checkmate::assert_number(r_scale, finite = TRUE, lower = 0)
-  } else {
+  if (r_distribution == "dirac") {
     # integerish
     checkmate::assert_int(r_location, lower = 1)
+    checkmate::assert_int(r_supermarket_location, lower = 1)
+    checkmate::assert_int(r_schools_location, lower = 1)
+  } else {
+    checkmate::assert_number(r_location, finite = TRUE, lower = 0)
+    checkmate::assert_number(r_supermarket_location, finite = TRUE, lower = 0)
+    checkmate::assert_number(r_schools_location, finite = TRUE, lower = 0)
+    checkmate::assert_number(r_scale, finite = TRUE, lower = 0)
   }
 
   checkmate::assert_number(p_asympto, finite = TRUE, lower = 0, upper = 1)
@@ -88,6 +103,10 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
   incubation_distribution <- match_distr(incubation_distribution)
   illness_distribution <- match_distr(illness_distribution)
   r_distribution <- match_distr(r_distribution)
+
+  checkmate::assert_number(resistance_threshold,
+                           lower = 0,
+                           upper = 1000)
 
   CHECKED <- TRUE
 
