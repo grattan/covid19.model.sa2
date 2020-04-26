@@ -657,6 +657,11 @@ List do_au_simulate(IntegerVector Status,
     stop("Internal error: PlaceTypeBySA2 not implemented yet.");
   }
 
+#ifdef _OPENMP
+  if (nThread < 1 || nThread > omp_get_num_procs()) {
+    stop("Internal error: nThread out of range");
+  }
+#endif
 
   int maxSupermarketsBySA2 = 8;
 
