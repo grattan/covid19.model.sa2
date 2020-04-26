@@ -12,8 +12,14 @@ set_epipars(
   illness_mean = 15,
   illness_sigma = 1,
   r_distribution = c("cauchy", "lnorm", "pois", "dirac"),
-  r_location = 2,
+  r_location = 2/5,
   r_scale = 1,
+  r_schools_distribution = r_distribution,
+  r_schools_location = r_location,
+  r_schools_scale = r_scale,
+  r_supermarket_location = r_location,
+  r_supermarket_scale = r_scale,
+  resistance_threshold = 400L,
   p_asympto = 0.48,
   p_critical = 0.02,
   p_death = 0.01
@@ -33,7 +39,12 @@ positive, and a whole number for `"pois"` and `"diract"`.}
 \item{r_distribution}{The distribution of the number of infections from each
 infected person, one of `"cauchy"`, `"lnorm"`, `"pois"`, or `"dirac"`.}
 
-\item{r_location, r_scale}{Parameters for \code{r_distribution}.}
+\item{r_location, r_scale}{Parameters for \code{r_distribution}. The number of
+infections \strong{per day}.}
+
+\item{resistance_threshold}{An integer in \code{[0, 1000]}, the resistance
+required to not be infected. A value of 0
+means no-one will be infected; a value of 1000 means everyone will.}
 
 \item{p_asympto}{A number in \code{[0, 1]}, the proportion of cases that
 are asymptomatic.}
