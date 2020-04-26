@@ -823,7 +823,7 @@ List do_au_simulate(IntegerVector Status,
         // what is asked
 
         // number of digits in n_infected_today (-1)
-        int ndig_nit = (n_infected_today > 9) ? floor(log10(n_infected_today)) : 1;
+        int ndig_nit = (n_infected_today > 9) ? floor(log10(n_infected_today)) : 0;
         for (int w = ndig_nit; w < 8; ++w) {
           Rcout << " ";
         }
