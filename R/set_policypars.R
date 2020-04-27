@@ -24,6 +24,8 @@
 #' or \code{NA}, the most recent day's number of tests performed are
 #' used.
 #'
+#' @param max_persons_per_event,max_persons_per_supermarket Not yet used.
+#'
 #' @return A list of the components.
 #'
 #' @export

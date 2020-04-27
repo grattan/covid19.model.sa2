@@ -43,6 +43,8 @@ perform. First entry is the total tests available across Australia.
 If any entry is negative,
 or \code{NA}, the most recent day's number of tests performed are
 used.}
+
+\item{max_persons_per_event, max_persons_per_supermarket}{Not yet used.}
 }
 \value{
 A list of the components.
