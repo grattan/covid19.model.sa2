@@ -273,7 +273,7 @@ void contact_tracing(IntegerVector Status,
         TestedOn[i] &&
         (TestedOn[i] == yday_result || TestedOn[i] == -yday_result)) {
       int trace_per_mille = (tests_avbl[statei] * 1000) / tests_performed[statei];
-      int todayi = (i + day + 13) % N;
+      int todayi = (i + day + 13) % NTODAY;
       if (trace_per_mille < TodaysK[todayi]) {
         TestedOn[i] = 0;
       }
