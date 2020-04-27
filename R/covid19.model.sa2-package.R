@@ -15,6 +15,7 @@
 #' @importFrom magrittr %>%
 #' @importFrom stats rbeta
 #' @importFrom utils packageName
+#' @importFrom utils hasName
 #'
 #' @useDynLib covid19.model.sa2, .registration = TRUE
 ## usethis namespace: end
