@@ -120,6 +120,10 @@ do_modulo_d <- function(x, m, d, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_modulo_d`, x, m, d, nThread)
 }
 
+do_lag_in_place <- function(x, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_lag_in_place`, x, nThread)
+}
+
 do_is_unsorted_pint <- function(x) {
     .Call(`_covid19_model_sa2_do_is_unsorted_pint`, x)
 }
