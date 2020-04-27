@@ -20,6 +20,8 @@ const int NSA2 = 2310;
 const int NSCHOOLS = 9501;
 const int NPUPILS = 3135825;
 
+const int NTODAY = 262144; // good cache length
+
 const int STATUS_KILLED = -2;
 const int STATUS_HEALED = -1;
 const int STATUS_SUSCEP =  0;

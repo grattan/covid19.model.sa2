@@ -314,14 +314,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // do_lag_in_place
-IntegerVector do_lag_in_place(IntegerVector x, int nThread);
-RcppExport SEXP _covid19_model_sa2_do_lag_in_place(SEXP xSEXP, SEXP nThreadSEXP) {
+IntegerVector do_lag_in_place(IntegerVector x);
+RcppExport SEXP _covid19_model_sa2_do_lag_in_place(SEXP xSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
-    Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
-    rcpp_result_gen = Rcpp::wrap(do_lag_in_place(x, nThread));
+    rcpp_result_gen = Rcpp::wrap(do_lag_in_place(x));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -361,7 +360,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_do_minmax_par", (DL_FUNC) &_covid19_model_sa2_do_minmax_par, 2},
     {"_covid19_model_sa2_do_ModuloIndex", (DL_FUNC) &_covid19_model_sa2_do_ModuloIndex, 4},
     {"_covid19_model_sa2_do_modulo_d", (DL_FUNC) &_covid19_model_sa2_do_modulo_d, 4},
-    {"_covid19_model_sa2_do_lag_in_place", (DL_FUNC) &_covid19_model_sa2_do_lag_in_place, 2},
+    {"_covid19_model_sa2_do_lag_in_place", (DL_FUNC) &_covid19_model_sa2_do_lag_in_place, 1},
     {"_covid19_model_sa2_do_is_unsorted_pint", (DL_FUNC) &_covid19_model_sa2_do_is_unsorted_pint, 1},
     {NULL, NULL, 0}
 };
