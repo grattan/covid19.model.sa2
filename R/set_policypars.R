@@ -9,6 +9,15 @@
 #' restricted to Year 12 students only? No effect if \code{schools_open = FALSE}.
 #' @param do_contact_tracing \code{TRUE|FALSE}. Should contact tracing occur?
 #' If \code{FALSE} households are not isolated if tested.
+#' @param contact_tracing_days_before_test The number of days following
+#' the end of the incubation period
+#' before the person gets tested.
+#' @param contact_tracing_days_until_result The number of days between a test
+#' and the result being known.
+#' @param contact_tracing_only_sympto \code{TRUE|FALSE} Is contact tracing only
+#' applied to symptomatic cases?
+#'
+#'
 #' @param tests_by_state \code{integer(10)} The number of tests per day that states
 #' perform. First entry is the total tests available across Australia.
 #' If any entry is negative,
@@ -30,6 +39,9 @@ set_policypars <- function(supermarkets_open = TRUE,
                            schools_open = FALSE,
                            only_Year12 = FALSE,
                            do_contact_tracing = TRUE,
+                           contact_tracing_days_before_test = 0L,
+                           contact_tracing_days_until_result = 3L,
+                           contact_tracing_only_sympto = TRUE,
                            tests_by_state = NULL,
                            max_persons_per_event = 5L,
                            max_persons_per_supermarket = 200L) {
@@ -47,7 +59,12 @@ set_policypars <- function(supermarkets_open = TRUE,
                             len = 1L)
 
   tests_by_state <- .fix_tests_by_state(tests_by_state)
-
+  if (!missing(max_persons_per_event)) {
+    .NotYetUsed("max_persons_per_event")
+  }
+  if (!missing(max_persons_per_supermarket)) {
+    .NotYetUsed("max_persons_per_supermarket")
+  }
 
 
   mget(ls())

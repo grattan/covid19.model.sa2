@@ -114,6 +114,7 @@ void contact_tracing(IntegerVector Status,
                      int ptest_per_mille_sympto,
                      int ptest_per_mille_asympto,
                      IntegerVector Todays2B,
+                     int days_before_test,
                      int days_to_notify,
                      int nThread,
                      IntegerVector TestedOn) {
@@ -136,7 +137,8 @@ void contact_tracing(IntegerVector Status,
   // TestedOn = Day at which the person is tested and notified
   // IntegerVector TestedOn = no_init(N);
   const int test_array[3] = {0, ptest_per_mille_asympto, ptest_per_mille_sympto};
-  const int test_yday = yday + days_to_notify;
+  const int yday_tested = yday + days_before_test;
+  const int yday_result = yday + days_to_notify + days_to_notify;
   const int NSTATES1 = NSTATES + 1;
 
   int tests_avbl[NSTATES1] = {0};
@@ -192,8 +194,13 @@ void contact_tracing(IntegerVector Status,
       continue;
     }
 
-    // Don't test everyday -- need time to isolate
+    // Don't test everyday -- need time to isolate and
+    // tests scheduled shouldn't be overwritten
     if (yday <= prev_test_on + 1) {
+      continue;
+    }
+    //
+    if (InfectedOn[i] + Incubation[i] != yday_tested) {
       continue;
     }
 
@@ -221,7 +228,7 @@ void contact_tracing(IntegerVector Status,
       // false negatives
       int test_outcome = (false_negative) ? -1 : 1;
       // encode negative and time of test in one variable
-      TestedOn[i] = test_yday * test_outcome;
+      TestedOn[i] = yday_result * test_outcome;
     }
   }
 
@@ -250,14 +257,14 @@ void contact_tracing(IntegerVector Status,
     // if no tests were ever available we can quickly discard tested
     if (tests_avbl[statei] == 0 &&
         TestedOn[i] &&
-        (TestedOn[i] == test_yday || TestedOn[i] == -test_yday)) {
+        (TestedOn[i] == yday_result || TestedOn[i] == -yday_result)) {
       TestedOn[i] = 0;
       continue;
     }
     bool tests_exceeded = tests_performed[statei] > tests_avbl[statei];
     if (tests_exceeded &&
         TestedOn[i] &&
-        (TestedOn[i] == test_yday || TestedOn[i] == -test_yday)) {
+        (TestedOn[i] == yday_result || TestedOn[i] == -yday_result)) {
       int trace_per_mille = (tests_avbl[statei] * 1000) / tests_performed[statei];
       if (trace_per_mille < ((Todays2B[i] / 17) % 1000)) {
         TestedOn[i] = 0;
@@ -714,6 +721,8 @@ List do_au_simulate(IntegerVector Status,
       }
     }
   }
+  int ct_days_before_test = Policy["contact_tracing_days_before_test"];
+  int ct_days_until_result = Policy["contact_tracing_days_until_result"];
 
 
   IntegerVector TestedOn = no_init(N);
@@ -721,7 +730,6 @@ List do_au_simulate(IntegerVector Status,
   // TODO: make user-avbl
   int ptest_per_mille_sympto = 1000; // 100%
   int ptest_per_mille_asympto = 10; // 1%
-  int days_to_notify = 3;
 
 
   // attach epipars
@@ -729,7 +737,7 @@ List do_au_simulate(IntegerVector Status,
   double incubation_s = Epi["incubation_sigma"];
   double illness_m = Epi["illness_mean"];
   double illness_s = Epi["illness_sigma"];
-  double r_location = Epi["r_location"];
+  // double r_location = Epi["r_location"];
   double r_schools_location = Epi["r_schools_location"];
   double r_supermarket_location = Epi["r_supermarket_location"];
   double r_scale = Epi["r_scale"];
@@ -1010,7 +1018,8 @@ List do_au_simulate(IntegerVector Status,
                       ptest_per_mille_asympto,
                       ptest_per_mille_sympto,
                       Todays2B,
-                      days_to_notify,
+                      ct_days_before_test,
+                      ct_days_before_test,
                       nThread,
                       TestedOn);
     }

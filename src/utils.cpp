@@ -72,3 +72,15 @@ IntegerVector do_modulo_d(IntegerVector x, int m, int d, int nThread = 1) {
   }
   return out;
 }
+
+
+// [[Rcpp::export]]
+IntegerVector do_lag_in_place(IntegerVector x) {
+  int N = x.length();
+  int x0 = x[0];
+  for (int i = 0; i < N - 1; ++i) {
+    x[i] = x[i + 1];
+  }
+  x[N - 1] = x0;
+  return x;
+}
