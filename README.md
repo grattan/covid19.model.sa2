@@ -2,6 +2,17 @@
 
 A model of the COVID-19 pandemic stratified by SA2.
 
+### Synopsis
+
+Basic usage:
+
+```r
+S <- simulate_sa2(days_to_simulate = 5)
+```
+
+See `?simulate_sa2` for further arguments.
+
+
 ### Epidemiological inputs
 
 From Imperial College London, R_0 under certain intervention:
