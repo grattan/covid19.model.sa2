@@ -69,11 +69,9 @@ read_sys <- function(file.fst,
 
 
 file_fst <- function(file.fst) {
-  fileFst <- sub("\\.fst", "-fst", file.fst)
-  if (nzchar(out <- system.file("extdata", fileFst, package = packageName()))) {
+  if (nzchar(out <- system.file("extdata", file.fst, package = packageName()))) {
     return(out)
   }
-
 
 
   regexpr_colon <- regexpr(":", file.fst, fixed = TRUE)
