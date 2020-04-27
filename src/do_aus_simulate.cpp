@@ -113,7 +113,7 @@ void contact_tracing(IntegerVector Status,
                      IntegerVector PlaceId,
                      int ptest_per_mille_sympto,
                      int ptest_per_mille_asympto,
-                     IntegerVector Todays2B,
+                     IntegerVector TodaysK,
                      int days_before_test,
                      int days_to_notify,
                      int nThread,
@@ -183,12 +183,14 @@ void contact_tracing(IntegerVector Status,
       continue;
     }
 
+    int todayi = (i + day) % NTODAY;
+
     int prev_test_on = TestedOn[i];
 
     // if the person gets a (false) negative result
     // they reset with 1/32 probability
     if (prev_test_on < 0) {
-      if (!(Todays2B[i] % 32)) {
+      if (TodaysK[todayi] < 32) {
         TestedOn[i] = 0;
       }
       continue;
@@ -206,7 +208,7 @@ void contact_tracing(IntegerVector Status,
 
 
     // test_outcome = -1 (negative), 0 (no test), 1 (positive)
-    if ((Todays2B[i] % 1000) < ptest_per_mille) {
+    if (TodaysK[todayi] < ptest_per_mille) {
       t_perf0 += 1;
       int statei = State[i];
       if (by_state) {
@@ -220,10 +222,15 @@ void contact_tracing(IntegerVector Status,
         if (statei == 8) t_perf8 += 1;
         if (statei == 9) t_perf9 += 1;
       }
+      if (todayi == NTODAY - 1) {
+        todayi = 0;
+      } else {
+        ++todayi;
+      }
 
       // tests_performed is private so can't be used in an expression like
       // if (tests_performed < tests_avbl)
-      bool false_negative = (((Todays2B[i] / 13) % 1000) > SENSITIVITY);
+      bool false_negative = TodaysK[todayi] > SENSITIVITY;
 
       // false negatives
       int test_outcome = (false_negative) ? -1 : 1;
@@ -266,7 +273,8 @@ void contact_tracing(IntegerVector Status,
         TestedOn[i] &&
         (TestedOn[i] == yday_result || TestedOn[i] == -yday_result)) {
       int trace_per_mille = (tests_avbl[statei] * 1000) / tests_performed[statei];
-      if (trace_per_mille < ((Todays2B[i] / 17) % 1000)) {
+      int todayi = (i + day + 13) % N;
+      if (trace_per_mille < TodaysK[todayi]) {
         TestedOn[i] = 0;
       }
     }
@@ -397,7 +405,7 @@ void infect_supermarkets(IntegerVector Status,
 
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
-    if (Status[i] != STATUS_NOSYMP || (TodaysHz[i] % 365) > SupermarketFreq[i]) {
+    if (Status[i] != STATUS_NOSYMP || TodaysHz[(i + yday) % NTODAY] > SupermarketFreq[i]) {
       continue;
     }
     int supermarketi = SupermarketTypical[i];
@@ -439,7 +447,7 @@ void infect_supermarkets(IntegerVector Status,
 
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
-    if (Status[i] || !nSupermarketsAvbl[i] || (TodaysHz[i] % 365) > SupermarketFreq[i]) {
+    if (Status[i] || !nSupermarketsAvbl[i] || TodaysHz[(i + yday) % NTODAY] > SupermarketFreq[i]) {
       continue;
     }
 
@@ -475,7 +483,7 @@ void infect_school(IntegerVector Status,
                    double r_location,
                    double r_scale,
                    int r_d,
-                   IntegerVector Todays2B,
+                   IntegerVector TodaysK,
                    bool only_Year12,
                    int n_schools,
                    int n_pupils,
@@ -794,6 +802,17 @@ List do_au_simulate(IntegerVector Status,
 
   IntegerVector PlaceId = clone(SupermarketTarget);
 
+  // For example, SupermarketFreq[i] = 365  => every day
+  // SupermarketFreq[i] = 1 every year.  So we create a vector
+  // of 1:366 and compare that to the individual's tendency to
+  // visit. So if TodaysHz[i] = 366 they will not visit anything
+  // regardless; if TodaysHz[i] = 1 they will visit everything.
+
+  // Note these are < N
+  IntegerVector TodaysK = dqsample_int2(1000, 262144);
+  IntegerVector TodayHz = dqsample_int2(365, 262144);
+
+
 
 
   for (int day = 0; day < days_to_sim; ++day) {
@@ -821,8 +840,8 @@ List do_au_simulate(IntegerVector Status,
       } else {
 
         int pbar_w = console_width - 16 - 8;
-        int a = (day * pbar_w) / pbar_w;
-        int b = (days_to_sim * pbar_w) / pbar_w;
+        int a = (day * pbar_w) / days_to_sim;
+        int b = (days_to_sim * pbar_w) / days_to_sim;
 
         Rcout << "|";
         for (int w = 0; w < a; ++w) {
@@ -866,21 +885,7 @@ List do_au_simulate(IntegerVector Status,
       continue;
     }
 
-    // For example, SupermarketFreq[i] = 365  => every day
-    // SupermarketFreq[i] = 1 every year.  So we create a vector
-    // of 1:366 and compare that to the individual's tendency to
-    // visit. So if TodaysHz[i] = 366 they will not visit anything
-    // regardless; if TodaysHz[i] = 1 they will visit everything.
-    IntegerVector TodaysHz = rep_len(dqsample_int2(365, wday * 23456), N);
-    if (optionz == 4) {
-      continue;
-    }
 
-    // Use this with modulo
-    IntegerVector Todays2B = rep_len(dqsample_int2(2e9, wday * 54321), N);
-    if (optionz == 1) {
-      continue;
-    }
 
 
 #pragma omp parallel for num_threads(nThread)
@@ -973,7 +978,7 @@ List do_au_simulate(IntegerVector Status,
                           SupermarketHour,
                           r_supermarket_location, r_scale, r_d,
                           SupermarketFreq,
-                          TodaysHz,
+                          TodayHz,
                           resistance_threshold);
     }
 
@@ -984,7 +989,7 @@ List do_au_simulate(IntegerVector Status,
                     yday, N,
                     schoolsIndex,
                     r_schools_location, r_scale, r_d,
-                    Todays2B,
+                    TodaysK,
                     only_Year12,
                     NSCHOOLS,
                     n_pupils);
@@ -1017,7 +1022,7 @@ List do_au_simulate(IntegerVector Status,
                       PlaceId,
                       ptest_per_mille_asympto,
                       ptest_per_mille_sympto,
-                      Todays2B,
+                      TodaysK,
                       ct_days_before_test,
                       ct_days_before_test,
                       nThread,
