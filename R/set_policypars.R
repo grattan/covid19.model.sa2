@@ -59,6 +59,8 @@ set_policypars <- function(supermarkets_open = TRUE,
   checkmate::assert_logical(do_contact_tracing,
                             any.missing = FALSE,
                             len = 1L)
+  checkmate::assert_int(contact_tracing_days_until_result)
+  checkmate::assert_int(contact_tracing_days_before_test)
 
   tests_by_state <- .fix_tests_by_state(tests_by_state)
   if (!missing(max_persons_per_event)) {
