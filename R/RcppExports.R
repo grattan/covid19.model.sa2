@@ -112,12 +112,12 @@ do_minmax_par <- function(x, nThread = 10L) {
     .Call(`_covid19_model_sa2_do_minmax_par`, x, nThread)
 }
 
-do_ModuloIndex <- function(x, d, m, nThread = 1L) {
-    .Call(`_covid19_model_sa2_do_ModuloIndex`, x, d, m, nThread)
+do_ModuloIndex <- function(x, mod, max, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_ModuloIndex`, x, mod, max, nThread)
 }
 
-do_modulo_d <- function(x, m, d, nThread = 1L) {
-    .Call(`_covid19_model_sa2_do_modulo_d`, x, m, d, nThread)
+do_modulo_d <- function(x, m, divisor, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_modulo_d`, x, m, divisor, nThread)
 }
 
 do_lag_in_place <- function(x) {

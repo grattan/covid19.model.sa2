@@ -35,11 +35,11 @@ IntegerVector do_minmax_par(IntegerVector x, int nThread = 10) {
 }
 
 // [[Rcpp::export]]
-IntegerVector do_ModuloIndex(IntegerVector x, int d, int m, int nThread = 1) {
+IntegerVector do_ModuloIndex(IntegerVector x, int mod, int max, int nThread = 1) {
   std::vector<int> y;
-  y.reserve(m);
-  for (int j = 0; j < m; ++j) {
-    y.push_back(j % d);
+  y.reserve(max);
+  for (int j = 0; j < max; ++j) {
+    y.push_back(j % mod);
   }
   int n = x.length();
   IntegerVector out = no_init(n);
@@ -52,13 +52,13 @@ IntegerVector do_ModuloIndex(IntegerVector x, int d, int m, int nThread = 1) {
 
 
 // [[Rcpp::export]]
-IntegerVector do_modulo_d(IntegerVector x, int m, int d, int nThread = 1) {
+IntegerVector do_modulo_d(IntegerVector x, int m, int divisor, int nThread = 1) {
   if (m < 1) {
     return x;
   }
   int n = x.length();
   IntegerVector out = no_init(n);
-  if (d <= 1) {
+  if (divisor <= 1) {
 #pragma omp parallel for num_threads(nThread)
     for (int i = 0; i < n; ++i) {
       out[i] = x[i] % m;
@@ -68,7 +68,7 @@ IntegerVector do_modulo_d(IntegerVector x, int m, int d, int nThread = 1) {
 
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < n; ++i) {
-    out[i] = (x[i] / d) % m;
+    out[i] = (x[i] / divisor) % m;
   }
   return out;
 }
