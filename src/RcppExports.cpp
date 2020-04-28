@@ -286,30 +286,30 @@ BEGIN_RCPP
 END_RCPP
 }
 // do_ModuloIndex
-IntegerVector do_ModuloIndex(IntegerVector x, int d, int m, int nThread);
-RcppExport SEXP _covid19_model_sa2_do_ModuloIndex(SEXP xSEXP, SEXP dSEXP, SEXP mSEXP, SEXP nThreadSEXP) {
+IntegerVector do_ModuloIndex(IntegerVector x, int mod, int max, int nThread);
+RcppExport SEXP _covid19_model_sa2_do_ModuloIndex(SEXP xSEXP, SEXP modSEXP, SEXP maxSEXP, SEXP nThreadSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
-    Rcpp::traits::input_parameter< int >::type d(dSEXP);
-    Rcpp::traits::input_parameter< int >::type m(mSEXP);
+    Rcpp::traits::input_parameter< int >::type mod(modSEXP);
+    Rcpp::traits::input_parameter< int >::type max(maxSEXP);
     Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
-    rcpp_result_gen = Rcpp::wrap(do_ModuloIndex(x, d, m, nThread));
+    rcpp_result_gen = Rcpp::wrap(do_ModuloIndex(x, mod, max, nThread));
     return rcpp_result_gen;
 END_RCPP
 }
 // do_modulo_d
-IntegerVector do_modulo_d(IntegerVector x, int m, int d, int nThread);
-RcppExport SEXP _covid19_model_sa2_do_modulo_d(SEXP xSEXP, SEXP mSEXP, SEXP dSEXP, SEXP nThreadSEXP) {
+IntegerVector do_modulo_d(IntegerVector x, int m, int divisor, int nThread);
+RcppExport SEXP _covid19_model_sa2_do_modulo_d(SEXP xSEXP, SEXP mSEXP, SEXP divisorSEXP, SEXP nThreadSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
     Rcpp::traits::input_parameter< int >::type m(mSEXP);
-    Rcpp::traits::input_parameter< int >::type d(dSEXP);
+    Rcpp::traits::input_parameter< int >::type divisor(divisorSEXP);
     Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
-    rcpp_result_gen = Rcpp::wrap(do_modulo_d(x, m, d, nThread));
+    rcpp_result_gen = Rcpp::wrap(do_modulo_d(x, m, divisor, nThread));
     return rcpp_result_gen;
 END_RCPP
 }
