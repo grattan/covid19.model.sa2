@@ -13,6 +13,7 @@ simulate_sa2(
   verbose_timer = interactive(),
   by_state = TRUE,
   dataEnv = getOption("covid19.model.sa2_dataEnv", new.env()),
+  use_dataEnv = FALSE,
   nThread = getOption("covid19.model.sa2_nThread", 1L),
   myaus = NULL
 )
