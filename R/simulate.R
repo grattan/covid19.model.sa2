@@ -56,6 +56,8 @@
 #' |      1 | Infected, not showing symptoms |
 #' |      2 | Infected, showing symptoms     |
 #' |      3 | Critical                       |
+#' |     32 | 0 but isolated                 |
+#' |     33 | 1 but isolated                 |
 #'
 #' @md
 #'
@@ -64,18 +66,25 @@
 
 
 simulate_sa2 <- function(days_to_simulate = 5,
-                         PolicyPars = list(),
+                         PolicyPars = set_policypars(),
+                         EpiPars = set_epipars(),
                          InitialStatus = list(dead = 71,
                                               healed = 4685,
                                               active = 1840,
                                               critical = 49),
-                         EpiPars = set_epipars(),
                          .first_day = NULL,
                          verbose_timer = interactive(),
                          by_state = TRUE,
                          dataEnv = getOption("covid19.model.sa2_dataEnv", new.env()),
                          nThread = getOption("covid19.model.sa2_nThread", 1L),
                          myaus = NULL) {
+  # CRAN NOTE AVOIDANCE
+  Date <- VIC <- i.VIC <- VicCases <-
+    VicRecovered <- Concluded <-
+    VicDeaths <- NewCases <- dConcluded <-
+    VicActive <- Yday <- Duration <-
+    YdayOut <- YdayIn <- Status <- NULL
+
   ## Each day a person can
   ## stay in the household
   ## journey outside
@@ -140,7 +149,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
   }
 
   aus <- read_sys("australia.fst")
-  nSupermarkets_by_sa2 <- read_fst("data-raw/google/tmp/nSupermarkets_by_sa2.fst", as.data.table = TRUE)
+  nSupermarkets_by_sa2 <- read_sys("nSupermarkets_by_sa2.fst")
 
   demo_by_person <- read_sys("person_demography.fst")
 
@@ -219,7 +228,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
   nPlacesByDestType <-
     lapply(1:106, function(i) {
       if (i == 98L) {
-        read_fst("data-raw/google/tmp/nSupermarkets_by_sa2.fst",
+        read_sys("nSupermarkets_by_sa2.fst",
                  columns = "nSupermarkets")[[1L]]
       } else {
         integer(0)
@@ -266,6 +275,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
          do_au_simulate(Status,
                         InfectedOn,
                         sa2,
+                        State = state,
                         hid = hid,
                         seqN = seqN,
                         HouseholdSize = HouseholdSize,
@@ -284,6 +294,9 @@ simulate_sa2 <- function(days_to_simulate = 5,
                         yday_start = .first_day,
                         days_to_sim = days_to_simulate,
                         N = nrow(aus),
+                        by_state = by_state,
+                        console_width = getOption("width", 80L),
+                        optionz = getOption("optionz", 0L),
                         nThread = nThread))
 
   # Rcpp doesn't put (any) names on the push_back

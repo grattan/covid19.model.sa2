@@ -10,6 +10,7 @@ set_initial_by_state(
   healed = NULL,
   active = NULL,
   critical = NULL,
+  cases = NULL,
   cases_by_state = "time_series_cases.fst",
   deaths_by_state = "time_series_deaths.fst",
   recovered_by_state = "time_series_recovered.fst",
@@ -32,6 +33,9 @@ and have not recovered, died, or been admitted to intensive care.}
 
 \item{critical}{The number of patients in intensive care.}
 
+\item{cases}{Optionally, the number of cumulative cases. That is,
+\code{dead + healed + active + critical}.}
+
 \item{cases_by_state}{A table of total cases (cumulative) by date,
 ordered by date, and having columns matching the states in \code{state_id}.
 Alternatively a string to be read in by \code{\link{read_sys}}, the path
@@ -39,7 +43,10 @@ to a file with this data.}
 
 \item{deaths_by_state, recovered_by_state}{As for \code{cases_by_state}.}
 
-\item{asympto}{The proportion of patients who are asymptomatic.}
+\item{asympto}{The proportion of cases who are asymptomatic.
+\strong{Note: active cases are assumed to be all symptomatic. Thus,
+if the number of active cases is 100 and }\code{asympto = 0.75}
+\strong{ the number of total cases is 400.}}
 
 \item{p_critical}{The proportion of symptomatic cases who are critical.}
 
