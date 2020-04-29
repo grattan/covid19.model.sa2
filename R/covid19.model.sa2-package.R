@@ -10,6 +10,7 @@
 #' @importFrom Rcpp evalCpp
 #' @importFrom checkmate vname
 #' @importFrom fst read_fst
+#' @importFrom glue glue
 #' @importFrom hutils coalesce
 #' @importFrom hutils weight2rows
 #' @importFrom fastmatch fmatch
