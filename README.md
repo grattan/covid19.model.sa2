@@ -15,6 +15,12 @@ See `?simulate_sa2` for further arguments.
 
 
 
+# Installation
+
+## Mac
+
+Enable OpenMP by installing `clang7`: https://github.com/rmacoslib/r-macos-rtools/releases/tag/v3.2.2
+
 
 # Model notes
 
