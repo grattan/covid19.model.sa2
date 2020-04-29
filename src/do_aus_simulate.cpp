@@ -477,14 +477,18 @@ void infect_school(IntegerVector Status,
                    IntegerVector InfectedOn,
                    IntegerVector School,
                    IntegerVector Age,
+                   int day,
                    int yday,
+                   int wday,
                    int N,
+                   IntegerVector State,
                    const std::vector<int>& schoolIndices,
                    double r_location,
                    double r_scale,
                    int r_d,
                    IntegerVector TodaysK,
                    bool only_Year12,
+                   List school_days_per_wk,
                    int n_schools,
                    int n_pupils,
                    int nThread = 1) {
@@ -499,15 +503,107 @@ void infect_school(IntegerVector Status,
   memset(s_visits, 0, sizeof s_visits);
   memset(i_visits, 0, sizeof i_visits);
 
-  // IntegerVector Modulo5 = modulo(Todays2B, 5, 37, nThread);
+  if (day == 0) {
+    if (!school_days_per_wk.containsElementNamed("week15combns")) {
+      stop("Internal error: school_days_per_wk did not contain 'week15combns'.");
+    }
+    if (school_days_per_wk.length() < 9) {
+      stop("school_days_per_wk had wrong length");
+    }
+  }
 
+  List week15combns = school_days_per_wk["week15combns"];
+
+  bool all_full_time =
+    school_days_per_wk.containsElementNamed("all_full_time") &&
+    school_days_per_wk["all_full_time"];
+
+
+
+
+  // This should be parallelizable!!
+  // But accessing a list is not thread safe so can't be done directly.
+  LogicalVector AttendsToday = no_init(n_pupils);
   for (int k = 0; k < n_pupils; ++k) {
     int i = schoolIndices[k];
     int schooli = School[i] - 1;
     int Agei = (Age[i] > 20) ? 20 : Age[i];
     if (only_Year12 && Agei < 17) {
+      AttendsToday[k] = false;
       continue;
     }
+    if (all_full_time) {
+      AttendsToday[k] = true;
+      continue;
+    }
+
+    // schools_days_per_wk
+    int statei = State[i];
+    IntegerVector DaysPerWk = school_days_per_wk[statei];
+    int daysPerWk_Agei = DaysPerWk[Agei];
+
+
+    // if daysPerWk_Agei == 5 then they go to school every day
+    // otherwise we need to work out whether they will stay at
+    // home (continue;)
+    bool attends_today = daysPerWk_Agei == 5;
+
+    if (!attends_today) {
+      if (daysPerWk_Agei == 1) {
+        // this state-age combination is only set to go to school
+        // once per week
+        // randomly choose a weekday for this school age combination
+        //
+        // Verify good uniform distribution by just adding agei + schooli
+        // library(data.table)
+        // DT <- CJ(schools = seq_len(9501), ages = 0:20)
+        // DT[, .N, keyby = .(M = (schools + ages) %% 5L)]
+        // 39904 each
+
+        // for both 1 and 4 days a week
+        //    ((Agei + schooli) % 5) + 1
+        // is a constant weekday for each person
+        // for one day a week, the person *attends* on that day
+        // for four days a week, the person doesn't attend
+
+
+        attends_today = ((Agei + schooli) % 5) + 1 == wday;
+      } else if (daysPerWk_Agei == 4) {
+        attends_today = ((Agei + schooli) % 5) + 1 != wday;
+      } else {
+        // 2, 3, 4 days per week. We need to access the
+        // list of combinations
+        IntegerMatrix W = week15combns[daysPerWk_Agei];
+        int Wcol = W.ncol(); // 10 or 5
+        int Wrow = W.nrow();
+        int coli = (Agei + schooli) % Wcol;
+        IntegerVector WdaysAttend = W(_, coli);
+
+        for (int wr = 0; wr < Wrow; ++wr) {
+          if (attends_today) {
+            break;
+          }
+          attends_today = WdaysAttend[wr] == wday;
+        }
+      }
+
+
+    }
+    AttendsToday[k] = attends_today;
+  }
+
+
+
+
+
+  for (int k = 0; k < n_pupils; ++k) {
+    if (!AttendsToday[k]) {
+      continue;
+    }
+    int i = schoolIndices[k];
+    int schooli = School[i] - 1;
+    int Agei = (Age[i] > 20) ? 20 : Age[i];
+
     s_visits[schooli][0] += 1;
     s_visits[schooli][Agei] += 1;
     // rcauchy relates to the single day
@@ -519,13 +615,15 @@ void infect_school(IntegerVector Status,
   }
 
   for (int k = 0; k < n_pupils; ++k) {
-    int i = schoolIndices[k];
-    if (Status[i]) continue;
-    int schooli = School[i] - 1;
-    int Agei = (Age[i] > 20) ? 20 : Age[i];
-    if (only_Year12 && Agei > 17) {
+    if (!AttendsToday[k]) {
       continue;
     }
+    int i = schoolIndices[k];
+    if (Status[i]) {
+      continue;
+    }
+    int schooli = School[i] - 1;
+    int Agei = (Age[i] > 20) ? 20 : Age[i];
 
     // N.B. This logic means the 'first' people in the table get infected
     // first.  We could randomize this, but I don't think it matters.
@@ -703,14 +801,21 @@ List do_au_simulate(IntegerVector Status,
     supermarkets_open = Policy["supermarkets_open"];
   }
 
+  // school policies
   bool schools_open = false;
   bool only_Year12  = false;
+
   if (Policy.length() && Policy.containsElementNamed("schools_open")) {
     schools_open = Policy["schools_open"];
   }
   if (Policy.length() && Policy.containsElementNamed("only_Year12")) {
     only_Year12 = Policy["only_Year12"];
   }
+  if (!Policy.containsElementNamed("school_days_per_wk")) {
+    stop("Internal error: 'Policy' did not contain element 'school_days_per_wk'.");
+  }
+  List school_days_per_wk = Policy["school_days_per_wk"];
+
 
   bool do_contact_tracing = true;
   if (Policy.length() && Policy.containsElementNamed("do_contact_tracing")) {
@@ -818,10 +923,12 @@ List do_au_simulate(IntegerVector Status,
   for (int day = 0; day < days_to_sim; ++day) {
     int yday = yday_start + day;
 
+    //                  yday  1, 2, 3, 4, 5, 6, 7, ...
     const int wday_2020[7] = {3, 4, 5, 6, 7, 1, 2};
-    int wday = wday_2020[(yday % 7)];
-    bool is_weekday = wday != 0 && wday != 7;
+    // i.e yday 1 was a Wednesday
 
+    int wday = wday_2020[((yday - 1) % 7)];
+    bool is_weekday = wday < 6;
 
 
     int n_infected_today = 0;
@@ -986,13 +1093,17 @@ List do_au_simulate(IntegerVector Status,
 
     if (is_weekday && schools_open) {
       infect_school(Status, InfectedOn, School, Age,
-                    yday, N,
+                    day, yday, wday,
+                    N,
+                    State,
                     schoolsIndex,
                     r_schools_location, r_scale, r_d,
                     TodaysK,
                     only_Year12,
+                    school_days_per_wk,
                     NSCHOOLS,
-                    n_pupils);
+                    n_pupils,
+                    nThread);
     }
 
 

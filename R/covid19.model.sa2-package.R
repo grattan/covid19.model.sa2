@@ -8,6 +8,7 @@
 ## usethis namespace: start
 #' @import data.table
 #' @importFrom Rcpp evalCpp
+#' @importFrom checkmate vname
 #' @importFrom fst read_fst
 #' @importFrom hutils coalesce
 #' @importFrom hutils weight2rows

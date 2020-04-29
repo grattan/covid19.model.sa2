@@ -84,3 +84,14 @@ IntegerVector do_lag_in_place(IntegerVector x) {
   x[N - 1] = x0;
   return x;
 }
+
+// [[Rcpp::export]]
+IntegerVector do_pminCppp(IntegerVector x, int a = 0, int nThread = 1) {
+  int N = x.length();
+  IntegerVector out = no_init(N);
+#pragma omp parallel for num_threads(nThread)
+  for (int i = 0; i < N; ++i) {
+    out[i] = (x[i] > a) ? a : x[i];
+  }
+  return out;
+}

@@ -10,7 +10,7 @@ simulate_sa2(
   EpiPars = set_epipars(),
   InitialStatus = list(dead = 71, healed = 4685, active = 1840, critical = 49),
   .first_day = NULL,
-  verbose_timer = interactive(),
+  showProgress = 1L,
   by_state = TRUE,
   dataEnv = getOption("covid19.model.sa2_dataEnv", new.env()),
   use_dataEnv = FALSE,
@@ -45,7 +45,11 @@ in records from Australia. Used to predict the outcomes of those presently
 ill with COVID-19 based on imputed duration of infection.}
 }}
 
-\item{verbose_timer}{Should the time be printed at points during the computation?}
+\item{showProgress}{Should progress times and bars be displayed?
+By default, 1 which displays bars unless it is likely to not be
+desired (for example it won't be displayed when running tests or
+in non-interactive sessions). Set to 0 to never display; 2 to always
+display. Set to 3 to also show internal data access.}
 
 \item{by_state}{Set the initial status by state.}
 

@@ -26,7 +26,12 @@
 #' in records from Australia. Used to predict the outcomes of those presently
 #' ill with COVID-19 based on imputed duration of infection.}
 #' }
-#' @param verbose_timer Should the time be printed at points during the computation?
+#' @param showProgress Should progress times and bars be displayed?
+#' By default, 1 which displays bars unless it is likely to not be
+#' desired (for example it won't be displayed when running tests or
+#' in non-interactive sessions). Set to 0 to never display; 2 to always
+#' display. Set to 3 to also show internal data access.
+#'
 #' @param by_state Set the initial status by state.
 #'
 #' @param dataEnv An environment into which the data will be saved and
@@ -77,13 +82,28 @@ simulate_sa2 <- function(days_to_simulate = 5,
                                               active = 1840,
                                               critical = 49),
                          .first_day = NULL,
-                         verbose_timer = interactive(),
+                         showProgress = 1L,
                          by_state = TRUE,
                          dataEnv = getOption("covid19.model.sa2_dataEnv", new.env()),
                          use_dataEnv = FALSE,
                          nThread = getOption("covid19.model.sa2_nThread", 1L),
                          myaus = NULL) {
   nThread <- checkmate::assert_int(nThread, lower = 1L, coerce = TRUE)
+
+  .showProgress <- showProgress > 0
+  if (showProgress == 1L) {
+    .showProgress <- interactive() && isnt_testing()
+  }
+  prev_fst2_opt <- getOption("covid19.model.sa2.fst2_progress")
+
+  .fst_progress <-
+    (showProgress == 3) ||
+    (showProgress == 2 && isTRUE(getOption("covid19.model.sa2.fst2_progress")))
+
+  options("covid19.model.sa2.fst2_progress" = .fst_progress)
+  on.exit({
+    options(covid19.model.sa2.fst2_progress = prev_fst2_opt)
+  })
 
   Policy  <- PolicyPars
   if (!isTRUE(use_dataEnv) ||
@@ -134,33 +154,13 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
 
     hh_ss <- function (x. = "", form = "%H:%M:%S") {
-      if (verbose_timer) {
+      if (.showProgress) {
         cat(as.character(format(Sys.time(), format = form)), x., "\n")
       } else {
         invisible(NULL)
       }
     }
     hh_ss("Start\t")
-
-    read_sys <- function(file, columns = NULL) {
-      # Distinguish between objects with different columns
-      .file <- paste0(c(file, columns), collapse = "-")
-      if (exists(.file, envir = dataEnv)) {
-        return(get(.file, envir = dataEnv))
-      }
-      if (file.exists(file)) {
-        ans <- fst::read_fst(file, columns = columns, as.data.table = TRUE)
-      } else {
-        sys_file <- system.file("extdata", file, package = "covid19.model.sa2")
-        if (!nzchar(sys_file)) {
-          stop(glue::glue("`file = {file}`, yet this file does not exist, "),
-               "either by path or in the package system file.")
-        }
-        ans <- fst::read_fst(sys_file, columns = columns, as.data.table = TRUE)
-      }
-      # assign(.file, value = copy(ans), envir = dataEnv)
-      ans
-    }
 
     aus <- read_sys("australia.fst")
     nSupermarkets_by_sa2 <- read_sys("nSupermarkets_by_sa2.fst")
@@ -170,6 +170,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
     Cases.csv <- read_sys("time_series_cases.fst")
     Recovered.csv <- read_sys("time_series_recovered.fst")
     Deaths.csv <- read_sys("time_series_deaths.fst")
+
     if (is.null(.first_day)) {
       .first_day <- Deaths.csv[, yday(last(Date))]
     }
@@ -288,6 +289,9 @@ simulate_sa2 <- function(days_to_simulate = 5,
   }
 
   hh_ss("pre-C++")
+
+
+
   out <-
     with(aus,
          do_au_simulate(Status = copy(.subset2(aus, "Status")),
@@ -313,8 +317,9 @@ simulate_sa2 <- function(days_to_simulate = 5,
                         days_to_sim = days_to_simulate,
                         N = nrow(aus),
                         by_state = by_state,
+                        display_progress = .showProgress,
                         console_width = getOption("width", 80L),
-                        optionz = getOption("optionz", 0L),
+                        optionz = getOption("optionz", 0L),  # for debugging may be changed without notice
                         nThread = nThread))
 
 

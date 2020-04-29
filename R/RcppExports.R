@@ -124,6 +124,10 @@ do_lag_in_place <- function(x) {
     .Call(`_covid19_model_sa2_do_lag_in_place`, x)
 }
 
+do_pminCppp <- function(x, a = 0L, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_pminCppp`, x, a, nThread)
+}
+
 do_is_unsorted_pint <- function(x) {
     .Call(`_covid19_model_sa2_do_is_unsorted_pint`, x)
 }

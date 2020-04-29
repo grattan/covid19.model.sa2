@@ -8,6 +8,7 @@ set_policypars(
   supermarkets_open = TRUE,
   schools_open = FALSE,
   only_Year12 = FALSE,
+  school_days_per_wk = NULL,
   do_contact_tracing = TRUE,
   contact_tracing_days_before_test = 0L,
   contact_tracing_days_until_result = 3L,
@@ -45,6 +46,24 @@ or \code{NA}, the most recent day's number of tests performed are
 used.}
 
 \item{max_persons_per_event, max_persons_per_supermarket}{Not yet used.}
+
+\item{schools_days_per_wk}{Specifies how many days a week pupils attend
+school. By default, students attend full-time. Only applied after
+\code{schools_open} and \code{only_Year12}. In particular, has no
+effect if \code{schools_open = FALSE} and if \code{only_Year12 = TRUE} then
+all other students attend 0 times per week.
+
+If a single number, applies to all states. Otherwise must be a
+named list or vector.
+
+If a named vector, names must be state names.
+(See \code{\link{states}}.) Omitted states take the value 5 (i.e.
+full-time).
+
+If a named list, each element must be a length-21 vector which
+specifies the number of times per week students of each age 0-20
+attend in the given state (with the last
+element being the attendance per week of teachers).'}
 }
 \value{
 A list of the components.
