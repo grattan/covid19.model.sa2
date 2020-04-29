@@ -477,6 +477,7 @@ void infect_school(IntegerVector Status,
                    IntegerVector InfectedOn,
                    IntegerVector School,
                    IntegerVector Age,
+                   IntegerVector AttendsWday,
                    int day,
                    int yday,
                    int wday,
@@ -517,27 +518,6 @@ void infect_school(IntegerVector Status,
   bool all_full_time =
     school_days_per_wk.containsElementNamed("all_full_time") &&
     school_days_per_wk["all_full_time"];
-
-  int combn2_0[2] = {1, 2};
-  int combn2_1[2] = {1, 3};
-  int combn2_2[2] = {1, 4};
-  int combn2_3[2] = {1, 5};
-  int combn2_4[2] = {2, 3};
-  int combn2_5[2] = {2, 4};
-  int combn2_6[2] = {2, 5};
-  int combn2_7[2] = {3, 4};
-  int combn2_8[2] = {3, 5};
-  int combn2_9[2] = {4, 5};
-  int combn3_0[3] = {1, 2, 3};
-  int combn3_1[3] = {1, 2, 4};
-  int combn3_2[3] = {1, 2, 5};
-  int combn3_3[3] = {1, 3, 4};
-  int combn3_4[3] = {1, 3, 5};
-  int combn3_5[3] = {1, 4, 5};
-  int combn3_6[3] = {2, 3, 4};
-  int combn3_7[3] = {2, 3, 5};
-  int combn3_8[3] = {2, 4, 5};
-  int combn3_9[3] = {3, 4, 5};
 
 
   int combn2[10][2] =
@@ -587,79 +567,82 @@ void infect_school(IntegerVector Status,
 
   // This should be parallelizable!!
   // But accessing a list is not thread safe so can't be done directly.
-  LogicalVector AttendsToday = no_init(n_pupils);
+  if (day < 7 && wday < 6) {
 #pragma omp parallel for num_threads(nThread)
-  for (int k = 0; k < n_pupils; ++k) {
-    int i = schoolIndices[k];
-    int schooli = School[i] - 1;
-    int Agei = (Age[i] > 20) ? 20 : Age[i];
-    if (only_Year12 && Agei < 17) {
-      AttendsToday[k] = false;
-      continue;
-    }
-    if (all_full_time) {
-      AttendsToday[k] = true;
-      continue;
-    }
+    for (int k = 0; k < n_pupils; ++k) {
 
-    // schools_days_per_wk
-    int statei = State[i];
-    int daysPerWk_Agei = DaysPerWk[statei][Agei];
-    if (daysPerWk_Agei <= 0 || daysPerWk_Agei > 5) {
-      // only daysPerWk_Agei == 0 should be valid but we presume
-      // any other values are zero
-      AttendsToday[k] = false;
-      continue;
-    }
+      int k2 = wday + (7 * k);
+      int i = schoolIndices[k];
+      int schooli = School[i] - 1;
+      int Agei = (Age[i] > 20) ? 20 : Age[i];
+      if (only_Year12 && Agei < 17) {
+        AttendsWday[k2] = 0;
+        continue;
+      }
+      if (all_full_time) {
+        AttendsWday[k2] = 1;
+        continue;
+      }
 
-
-    // if daysPerWk_Agei == 5 then they go to school every day
-    // otherwise we need to work out whether they will stay at
-    // home (continue;)
-    bool attends_today = daysPerWk_Agei == 5;
-
-    if (!attends_today) {
-      if (daysPerWk_Agei == 1) {
-        // this state-age combination is only set to go to school
-        // once per week
-        // randomly choose a weekday for this school age combination
-        //
-        // Verify good uniform distribution by just adding agei + schooli
-        // library(data.table)
-        // DT <- CJ(schools = seq_len(9501), ages = 0:20)
-        // DT[, .N, keyby = .(M = (schools + ages) %% 5L)]
-        // 39904 each
-
-        // for both 1 and 4 days a week
-        //    ((Agei + schooli) % 5) + 1
-        // is a constant weekday for each person
-        // for one day a week, the person *attends* on that day
-        // for four days a week, the person doesn't attend
+      // schools_days_per_wk
+      int statei = State[i];
+      int daysPerWk_Agei = DaysPerWk[statei][Agei];
+      if (daysPerWk_Agei <= 0 || daysPerWk_Agei > 5) {
+        // only daysPerWk_Agei == 0 should be valid but we presume
+        // any other values are zero
+        AttendsWday[k2] = 0;
+        continue;
+      }
 
 
-        attends_today = ((Agei + schooli) % 5) + 1 == wday;
-      } else if (daysPerWk_Agei == 4) {
-        attends_today = ((Agei + schooli) % 5) + 1 != wday;
-      } else {
-        // 2, 3 days per week. We need to access the
-        // list of combinations
-        int coli = (Agei + schooli) % 10;
-        if (daysPerWk_Agei == 2) {
-          attends_today = combn2[coli][0] == wday || combn2[coli][1] == wday;
+      // if daysPerWk_Agei == 5 then they go to school every day
+      // otherwise we need to work out whether they will stay at
+      // home (continue;)
+      bool attends_today = daysPerWk_Agei == 5;
+
+      if (!attends_today) {
+        if (daysPerWk_Agei == 1) {
+          // this state-age combination is only set to go to school
+          // once per week
+          // randomly choose a weekday for this school age combination
+          //
+          // Verify good uniform distribution by just adding agei + schooli
+          // library(data.table)
+          // DT <- CJ(schools = seq_len(9501), ages = 0:20)
+          // DT[, .N, keyby = .(M = (schools + ages) %% 5L)]
+          // 39904 each
+
+          // for both 1 and 4 days a week
+          //    ((Agei + schooli) % 5) + 1
+          // is a constant weekday for each person
+          // for one day a week, the person *attends* on that day
+          // for four days a week, the person doesn't attend
+
+
+          attends_today = ((Agei + schooli) % 5) + 1 == wday;
+        } else if (daysPerWk_Agei == 4) {
+          attends_today = ((Agei + schooli) % 5) + 1 != wday;
         } else {
-          attends_today = combn3[coli][0] == wday || combn3[coli][1] == wday || combn3[coli][2] == wday;
+          // 2, 3 days per week. We need to access the
+          // list of combinations
+          int coli = (Agei + schooli) % 10;
+          if (daysPerWk_Agei == 2) {
+            attends_today = combn2[coli][0] == wday || combn2[coli][1] == wday;
+          } else {
+            attends_today = combn3[coli][0] == wday || combn3[coli][1] == wday || combn3[coli][2] == wday;
+          }
         }
       }
+      AttendsWday[k2] = attends_today;
     }
-    AttendsToday[k] = attends_today;
   }
 
 
 
 
-
   for (int k = 0; k < n_pupils; ++k) {
-    if (!AttendsToday[k]) {
+    int k2 = wday + (7 * k);
+    if (!AttendsWday[k2]) {
       continue;
     }
     int i = schoolIndices[k];
@@ -677,7 +660,8 @@ void infect_school(IntegerVector Status,
   }
 
   for (int k = 0; k < n_pupils; ++k) {
-    if (!AttendsToday[k]) {
+    int k2 = wday + (7 * k);
+    if (!AttendsWday[k2]) {
       continue;
     }
     int i = schoolIndices[k];
@@ -685,7 +669,6 @@ void infect_school(IntegerVector Status,
       continue;
     }
     int schooli = School[i] - 1;
-    int Agei = (Age[i] > 20) ? 20 : Age[i];
 
     // N.B. This logic means the 'first' people in the table get infected
     // first.  We could randomize this, but I don't think it matters.
@@ -694,7 +677,6 @@ void infect_school(IntegerVector Status,
     if (i_visits[schooli][0]) {
       Status[i] = STATUS_NOSYMP;
       InfectedOn[i] = yday;
-      // i_visits[schooli][Agei] -= i_visits[schooli][Agei] > 0;
       i_visits[schooli][0] -= 1;
     }
   }
@@ -934,11 +916,16 @@ List do_au_simulate(IntegerVector Status,
       schoolsIndex.push_back(i);
     }
   }
-  if (n_pupils > (2 * NPUPILS)) {
+  if (n_pupils != NPUPILS) {
     Rcout << NPUPILS << "\n";
     Rcout << n_pupils << "\n";
     stop("n_pupils much larger than expected: likely an overestimate of schools.");
   }
+
+  IntegerVector AttendsWday = no_init(NPUPILS * 7);
+  // memset(AttendsWday, 0, sizeof AttendsWday);
+
+
 
   // variables which will be updated on day = 0
   // int n_schools = -1;
@@ -978,6 +965,8 @@ List do_au_simulate(IntegerVector Status,
   // Note these are < N
   IntegerVector TodaysK = dqsample_int2(1000, 262144);
   IntegerVector TodayHz = dqsample_int2(365, 262144);
+
+
 
 
 
@@ -1155,6 +1144,7 @@ List do_au_simulate(IntegerVector Status,
 
     if (is_weekday && schools_open) {
       infect_school(Status, InfectedOn, School, Age,
+                    AttendsWday,
                     day, yday, wday,
                     N,
                     State,
@@ -1197,7 +1187,7 @@ List do_au_simulate(IntegerVector Status,
                       ptest_per_mille_sympto,
                       TodaysK,
                       ct_days_before_test,
-                      ct_days_before_test,
+                      ct_days_until_result,
                       nThread,
                       TestedOn);
     }
