@@ -189,6 +189,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
       .[, .(Date, VicCases, VicRecovered, VicDeaths = coalesce(VIC, 0L))] %>%
       .[, Date := as.Date(Date)] %>%
       .[, Concluded := VicRecovered + VicDeaths] %>%
+      .[, Concluded := cummax(Concluded)] %>%  # protect against falls in reports
       .[, NewCases := diff_along(VicCases)] %>%
       .[, dConcluded := diff_along(Concluded)] %>%
       .[-1] %>%
