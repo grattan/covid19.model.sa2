@@ -23,7 +23,12 @@ Epi2 <-
   .[only_Year12 %implies% schools_open] %>%
   .[, e := .I]
 
-EpiSims <- vector(mode = "list", length = nrow(Epi2))
+EpiSims <-
+  if (file.exists("data-raw/EpiSims-2020-04-29.rds")) {
+    readRDS("data-raw/EpiSims-2020-04-29.rds")
+  } else {
+    vector(mode = "list", length = nrow(Epi2))
+  }
 
 # Avoid lapply in case the function barfs and we have to restart
 for (e in seq_along(EpiSims)) {
