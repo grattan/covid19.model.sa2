@@ -117,7 +117,7 @@ uint64_t lehmer64() {
   return g_lehmer64_state >> 64;
 }
 
-#else INTPTR_MAX == INT32_MAX
+#else
 
 int g_lehmer64_state = 3353;
 

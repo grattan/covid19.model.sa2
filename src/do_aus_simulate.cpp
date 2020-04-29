@@ -518,12 +518,77 @@ void infect_school(IntegerVector Status,
     school_days_per_wk.containsElementNamed("all_full_time") &&
     school_days_per_wk["all_full_time"];
 
+  int combn2_0[2] = {1, 2};
+  int combn2_1[2] = {1, 3};
+  int combn2_2[2] = {1, 4};
+  int combn2_3[2] = {1, 5};
+  int combn2_4[2] = {2, 3};
+  int combn2_5[2] = {2, 4};
+  int combn2_6[2] = {2, 5};
+  int combn2_7[2] = {3, 4};
+  int combn2_8[2] = {3, 5};
+  int combn2_9[2] = {4, 5};
+  int combn3_0[3] = {1, 2, 3};
+  int combn3_1[3] = {1, 2, 4};
+  int combn3_2[3] = {1, 2, 5};
+  int combn3_3[3] = {1, 3, 4};
+  int combn3_4[3] = {1, 3, 5};
+  int combn3_5[3] = {1, 4, 5};
+  int combn3_6[3] = {2, 3, 4};
+  int combn3_7[3] = {2, 3, 5};
+  int combn3_8[3] = {2, 4, 5};
+  int combn3_9[3] = {3, 4, 5};
+
+
+  int combn2[10][2] =
+    {{1, 2},
+    {1, 3},
+    {1, 4},
+    {1, 5},
+    {2, 3},
+    {2, 4},
+    {2, 5},
+    {3, 4},
+    {3, 5},
+    {4, 5}};
+
+  int combn3[10][3] =
+    {{1, 2, 3},
+    {1, 2, 4},
+    {1, 2, 5},
+    {1, 3, 4},
+    {1, 3, 5},
+    {1, 4, 5},
+    {2, 3, 4},
+    {2, 3, 5},
+    {2, 4, 5},
+    {3, 4, 5}};
+
+
+  // int combn4_0[4] = {1, 2, 3, 4};
+  // int combn4_1[4] = {1, 2, 3, 5};
+  // int combn4_2[4] = {1, 2, 4, 5};
+  // int combn4_3[4] = {1, 3, 4, 5};
+  // int combn4_4[4] = {2, 3, 4, 5};
+
+
+
+  int DaysPerWk[NSTATES1][21] = {};
+  for (int s = 0; s < NSTATES1; ++s) {
+    IntegerVector sDaysPerWk = school_days_per_wk[s];
+    for (int a = 0; a < 21; ++a) {
+      int da = sDaysPerWk[a];
+      DaysPerWk[s][a] = da;
+    }
+  }
+
 
 
 
   // This should be parallelizable!!
   // But accessing a list is not thread safe so can't be done directly.
   LogicalVector AttendsToday = no_init(n_pupils);
+#pragma omp parallel for num_threads(nThread)
   for (int k = 0; k < n_pupils; ++k) {
     int i = schoolIndices[k];
     int schooli = School[i] - 1;
@@ -539,8 +604,13 @@ void infect_school(IntegerVector Status,
 
     // schools_days_per_wk
     int statei = State[i];
-    IntegerVector DaysPerWk = school_days_per_wk[statei];
-    int daysPerWk_Agei = DaysPerWk[Agei];
+    int daysPerWk_Agei = DaysPerWk[statei][Agei];
+    if (daysPerWk_Agei <= 0 || daysPerWk_Agei > 5) {
+      // only daysPerWk_Agei == 0 should be valid but we presume
+      // any other values are zero
+      AttendsToday[k] = false;
+      continue;
+    }
 
 
     // if daysPerWk_Agei == 5 then they go to school every day
@@ -571,23 +641,15 @@ void infect_school(IntegerVector Status,
       } else if (daysPerWk_Agei == 4) {
         attends_today = ((Agei + schooli) % 5) + 1 != wday;
       } else {
-        // 2, 3, 4 days per week. We need to access the
+        // 2, 3 days per week. We need to access the
         // list of combinations
-        IntegerMatrix W = week15combns[daysPerWk_Agei];
-        int Wcol = W.ncol(); // 10 or 5
-        int Wrow = W.nrow();
-        int coli = (Agei + schooli) % Wcol;
-        IntegerVector WdaysAttend = W(_, coli);
-
-        for (int wr = 0; wr < Wrow; ++wr) {
-          if (attends_today) {
-            break;
-          }
-          attends_today = WdaysAttend[wr] == wday;
+        int coli = (Agei + schooli) % 10;
+        if (daysPerWk_Agei == 2) {
+          attends_today = combn2[coli][0] == wday || combn2[coli][1] == wday;
+        } else {
+          attends_today = combn3[coli][0] == wday || combn3[coli][1] == wday || combn3[coli][2] == wday;
         }
       }
-
-
     }
     AttendsToday[k] = attends_today;
   }
