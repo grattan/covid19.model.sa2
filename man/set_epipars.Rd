@@ -42,6 +42,12 @@ infected person, one of `"cauchy"`, `"lnorm"`, `"pois"`, or `"dirac"`.}
 \item{r_location, r_scale}{Parameters for \code{r_distribution}. The number of
 infections \strong{per day}.}
 
+\item{r_schools_distribution, r_schools_location, r_schools_scale}{Variables
+particular for schools.}
+
+\item{r_supermarket_location, r_supermarket_scale}{Variables particular
+for supermarket.}
+
 \item{resistance_threshold}{An integer in \code{[0, 1000]}, the resistance
 required to not be infected. A value of 0
 means no-one will be infected; a value of 1000 means everyone will.}

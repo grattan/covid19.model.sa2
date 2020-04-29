@@ -52,6 +52,10 @@ ill with COVID-19 based on imputed duration of infection.}
 \item{dataEnv}{An environment into which the data will be saved and
 retrieved. Used to save time reading after the first time.}
 
+\item{use_dataEnv}{\code{FALSE|TRUE} Whether or not to save the
+underlying Australia table to \code{dataEnv} (and retrieve it on
+subsequent uses).}
+
 \item{nThread}{\describe{
 \item{\code{integer(1)}}{Number of threads to use in the C++ code.}
 }}

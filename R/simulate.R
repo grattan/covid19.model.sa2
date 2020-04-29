@@ -32,6 +32,10 @@
 #' @param dataEnv An environment into which the data will be saved and
 #' retrieved. Used to save time reading after the first time.
 #'
+#' @param use_dataEnv \code{FALSE|TRUE} Whether or not to save the
+#' underlying Australia table to \code{dataEnv} (and retrieve it on
+#' subsequent uses).
+#'
 #' @param nThread \describe{
 #' \item{\code{integer(1)}}{Number of threads to use in the C++ code.}
 #' }
