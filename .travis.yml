@@ -4,3 +4,7 @@ language: R
 cache: packages
 
 warnings_are_errors: false
+
+os:
+  - linux
+  - osx

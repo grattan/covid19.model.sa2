@@ -7,7 +7,7 @@
 #' @param schools_open \code{FALSE|TRUE}. Should schools remain open?
 #' @param only_Year12 \code{FALSE|TRUE}. If schools open, should they be
 #' restricted to Year 12 students only? No effect if \code{schools_open = FALSE}.
-#' @param schools_days_per_wk Specifies how many days a week pupils attend
+#' @param school_days_per_wk Specifies how many days a week pupils attend
 #' school. By default, students attend full-time. Only applied after
 #' \code{schools_open} and \code{only_Year12}. In particular, has no
 #' effect if \code{schools_open = FALSE} and if \code{only_Year12 = TRUE} then

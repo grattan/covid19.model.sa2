@@ -163,6 +163,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
     hh_ss("Start\t")
 
     aus <- read_sys("australia.fst")
+
     nSupermarkets_by_sa2 <- read_sys("nSupermarkets_by_sa2.fst")
 
     demo_by_person <- read_sys("person_demography.fst")
