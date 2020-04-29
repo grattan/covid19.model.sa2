@@ -254,7 +254,7 @@ schools_profile <- read_excel("data-raw/acara/school-profile.xlsx",
          non_teachers_n = non_teaching_staff,
          non_teachers_fte = full_time_equivalent_non_teaching_staff,
          students_n = total_enrolments,
-         stdents_fte = full_time_equivalent_enrolments)
+         students_fte = full_time_equivalent_enrolments)
 
 schools_location <- read_excel("data-raw/acara/school-locations.xlsx",
            sheet = 2) %>%
@@ -287,7 +287,13 @@ schools <- schools_profile %>%
 
 schools %>%
   as.data.table() %>%
-  write_fst("inst/extdata/schools.fst")
+  # Avoid flagging the file as executable
+  # verify with shell("file inst/extdata/schools.fst")
+  .[, lapply(.SD, hutilscpp::as_integer_if_safe)] %>%
+  .[, school_name := stringi::stri_enc_toascii(school_name)] %>%
+  .[, state_id := match(state, c("NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT", "OTH"))] %>%
+  setkey(state_id, school_id) %>%
+  write_fst("inst/extdata/schools.fst", compress = 50, uniform_encoding = F)
 
 
 
