@@ -18,7 +18,7 @@ test_that("Able to model partial return to school", {
                                                simplify = FALSE))
 
   NSWPupils1DayAWeek_A <-
-     simulate_sa2(50,
+     simulate_sa2(20,
                   PolicyPars = PolicyNSW1DayAWk_A,
                   nThread = 2)[[1]]
 
@@ -37,9 +37,10 @@ test_that("Able to model partial return to school", {
                                           OTH = 0L))
 
   NSWPupils1DayAWeek_B <-
-    simulate_sa2(50,
+    simulate_sa2(20,
                  PolicyPars = PolicyNSW1DayAWk_B,
                  nThread = 2)[[1]]
+  expect_true(is.numeric(NSWPupils1DayAWeek_A))
 
   # schools days default is 7
   PolicyNSW1DayAWk_C <-
@@ -47,14 +48,16 @@ test_that("Able to model partial return to school", {
                    only_Year12 = TRUE,
                    school_days_per_wk = c(NSW = 1L))
 
+  expect_true(is.numeric(NSWPupils1DayAWeek_B))
+
   NSWPupils1DayAWeek_C <-
-    simulate_sa2(50,
+    simulate_sa2(20,
                  PolicyPars = PolicyNSW1DayAWk_C,
                  nThread = 2)[[1]]
 
   # Just a simple test to show completion
-  expect_true(is.numeric(NSWPupils1DayAWeek_A))
-  expect_true(is.numeric(NSWPupils1DayAWeek_B))
+
+
   expect_true(is.numeric(NSWPupils1DayAWeek_C))
 
 })
