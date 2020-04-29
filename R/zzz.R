@@ -1,7 +1,14 @@
 
 .onLoad <- function(libname = find.package("covid19.model.sa2"), pkgname = "covid19.model.sa2") {
   if (getRversion() >= "2.15.1") {
-    utils::globalVariables(".")
+    utils::globalVariables(c(".",
+                             unlist(sapply(dir(file.path(find.package("covid19.model.sa2"),
+                                                         "extdata"),
+                                               pattern = "\\.fst",
+                                               full.names = TRUE,
+                                               recursive = TRUE),
+                                           fst_columns))))
+
   }
 
   if (is.null(getOption("covid19.model.sa2_dataEnv"))) {

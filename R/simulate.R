@@ -230,6 +230,8 @@ simulate_sa2 <- function(days_to_simulate = 5,
               w = c(IS$dead, IS$healed, n_status0, IS$active * c(asympto, sympto), IS$critical))
       aus[, Status := samp_status]
     }
+
+    InfectedOn <- NULL
     # If infected, they are infected days ago
     # according to N_by_Duration
     aus[Status > 0L,
@@ -237,7 +239,10 @@ simulate_sa2 <- function(days_to_simulate = 5,
                                          size = .N,
                                          w = N_by_Duration$N)]
 
+    Age <- i.age <- NULL
     aus[demo_by_person, Age := i.age, on = "pid"]
+
+    Resistance <- NULL
     aus[, Resistance := rep_len(sample(1:1000, size = 13381L, replace = TRUE), .N)]
 
     nPlacesByDestType <-
@@ -265,6 +270,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
 
 
+    i.nSupermarkets <- nSupermarketsAvbl <- SupermarketTypical <- SupermarketHour <- NULL
     # Quicker to do it this way(!)
     aus[nSupermarkets_by_sa2, nSupermarketsAvbl := pmin.int(8L, i.nSupermarkets), on = "sa2"]
 
@@ -273,6 +279,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
         by = "nSupermarketsAvbl"]
     aus[, SupermarketHour := rep_len(samp(0:7), .N)]
 
+    short_school_id <- NULL
     # Turn School Id into short id to use for school id
     # Crucially, must be dense (no gaps) so can't prepare unique
     aus[!is.na(school_id), short_school_id := frank(school_id, ties.method = "dense")]

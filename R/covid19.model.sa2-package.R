@@ -18,6 +18,7 @@
 #' @importFrom stats rbeta
 #' @importFrom utils packageName
 #' @importFrom utils hasName
+#' @importFrom utils combn
 #'
 #' @useDynLib covid19.model.sa2, .registration = TRUE
 ## usethis namespace: end

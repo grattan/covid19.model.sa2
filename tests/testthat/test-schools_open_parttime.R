@@ -1,4 +1,7 @@
 test_that("Able to model partial return to school", {
+  skip_if_not(identical(.Platform$r_arch, "x64"))  # i386 too small memory-wise
+
+
   states <- c("AUS", "NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT", "OTH")
   NAGES <- 21L
 

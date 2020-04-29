@@ -127,3 +127,10 @@ end_progress <- function(start.time, fst2_progress, file.fst) {
   }
   invisible(finish.time)
 }
+
+fst_columns <- function(file.fst) {
+  fst::metadata_fst(file.fst)[["columnNames"]]
+}
+
+
+
