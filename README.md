@@ -15,6 +15,12 @@ See `?simulate_sa2` for further arguments.
 
 
 
+# Installation
+
+## Mac
+
+Enable OpenMP by installing `clang7`: https://github.com/rmacoslib/r-macos-rtools/releases/tag/v3.2.2
+
 
 # Model notes
 
@@ -115,8 +121,14 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
                         illness_mean = 15,
                         illness_sigma = 1,
                         r_distribution = c("cauchy", "lnorm", "pois", "dirac"),
-                        r_location = 2,
+                        r_location = 2/5,
                         r_scale = 1,
+                        r_schools_distribution = r_distribution,
+                        r_schools_location = r_location,
+                        r_schools_scale = r_scale,
+                        r_supermarket_location = r_location,
+                        r_supermarket_scale = r_scale,
+                        resistance_threshold = 400L,
                         p_asympto = 0.48,
                         p_critical = 0.02,
                         p_death = 0.01)
@@ -150,6 +162,16 @@ By default, this is a Poisson distribution with mean `15` days and sigma `1`.
 
 The reproduction number distribution is, by default, a Cauchy distribution with location 2 and scale 1. In circumstances that require a reproduction number -- e.g. when there is an infected person in a supermarket, or at a school -- a figure is drawn that determines the number of people they go onto infect.
 
+
+
+[_note:_ citations for defaults; justification for distribution]
+
+[_note:_ graphic of distribution with defaults and with plausible alternative]
+
+
+### Reproduction parameters in schools and supermarkets: `r_*_distribution`, `r_*_location`, `r_*_sigma`
+
+The reproduction number settings particular for school and supermarket scenarios. By default, these are set to the standard reproduction number.
 
 
 [_note:_ citations for defaults; justification for distribution]
@@ -348,6 +370,7 @@ Policy parameters are set by the `set_policypars()` function. The default values
 set_policypars <- function(supermarkets_open = TRUE,
                            schools_open = FALSE,
                            only_Year12 = FALSE,
+                           school_days_per_wk = NULL,
                            do_contact_tracing = TRUE,
                            contact_tracing_days_before_test = 0L,
                            contact_tracing_days_until_result = 3L,
@@ -438,7 +461,7 @@ With the daily status of everyone in the country determined, some people head to
 
 ### The supermarket
 
-If the supermarket is open (see policy parameters), some adults will go to a supermarket nearby their home on a given day. How often they go to the supermarket is random for each person, ranging uniformly from 1 to 365 times per year. 
+If the supermarket is open (see policy parameters), some adults will go to a supermarket nearby their home on a given day. How often they go to the supermarket in a year is a random number between 0 and 360, drawn from a beta distribution. 
 
 Supermarkets have 8 hours of operation, and people are randomly assigned an hour to shop in.
 
