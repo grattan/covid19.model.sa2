@@ -429,16 +429,17 @@ void infect_supermarkets(IntegerVector Status,
   for (int hr = 0; hr < hrs_open; ++hr) {
     int s_supermarkets[NSA2][maxSupermarketsBySA2];
     memset(s_supermarkets, 0, sizeof s_supermarkets);
-    for (int i = 0; i < N; ++i) {
+    for (int i = hr; i < N; i += hrs_open) {
+      int sa2i = shortSA2[i];
+      int supermarketi = SupermarketTypical[i];
+      if (i_supermarkets[sa2i][supermarketi][hr] <= 0) {
+        continue;
+      }
       if (Status[i] || !nSupermarketsAvbl[i] || TodaysHz[(i * 11 + yday) % NTODAY] > SupermarketFreq[i]) {
         continue;
       }
-      int hri = i % hrs_open;
-      if (hri != hr) {
-        continue;
-      }
-      int sa2i = shortSA2[i];
-      int supermarketi = SupermarketTypical[i];
+
+
       s_supermarkets[sa2i][supermarketi] += 1;
       int s_supermarketi = s_supermarkets[sa2i][supermarketi];
 
@@ -446,12 +447,9 @@ void infect_supermarkets(IntegerVector Status,
         continue;
       }
 
-      // note we may be running in parallel so we don't count the infections
-      // we infect others probabilistically based on the number visiting in that
-      // hour
-      if (i_supermarkets[sa2i][supermarketi][hri]) {
+      if (i_supermarkets[sa2i][supermarketi][hr]) {
         if (Resistance[i] < resistance1) {
-          i_supermarkets[sa2i][supermarketi][hri] -= 1;
+          // i_supermarkets[sa2i][supermarketi][hr] -= 1;
           Status[i] = STATUS_NOSYMP;
           InfectedOn[i] = yday;
         }
