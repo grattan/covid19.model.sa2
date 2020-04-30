@@ -1041,7 +1041,7 @@ List do_au_simulate(IntegerVector Status,
         p.increment();
       } else {
 
-        int pbar_w = console_width - 17 - 8;
+        int pbar_w = console_width - 20 - 8;
 
         // daily increment
         double di = ((double)pbar_w)  / ((double)(days_to_sim));
