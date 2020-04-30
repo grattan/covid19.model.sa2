@@ -91,9 +91,6 @@ set_policypars <- function(supermarkets_open = TRUE,
   if (!missing(max_persons_per_event)) {
     .NotYetUsed("max_persons_per_event")
   }
-  if (!missing(max_persons_per_supermarket)) {
-    .NotYetUsed("max_persons_per_supermarket")
-  }
 
 
   mget(ls())

@@ -785,7 +785,6 @@ List do_au_simulate(IntegerVector Status,
                     List Epi, /* Epidemiological parameters */
                     IntegerVector nSupermarketsAvbl,
                     IntegerVector SupermarketTypical,
-                    IntegerVector SupermarketHour,
                     int yday_start,
                     int days_to_sim,
                     int N = 25e6,
@@ -840,6 +839,9 @@ List do_au_simulate(IntegerVector Status,
   if (Policy.length() && Policy.containsElementNamed("supermarkets_open")) {
     supermarkets_open = Policy["supermarkets_open"];
   }
+  bool use_mpps = Policy.length() && Policy.containsElementNamed("max_persons_per_supermarket");
+  const int max_persons_per_supermarket =
+    use_mpps ? Policy["max_persons_per_supermarket"] : 2e9;
 
   // school policies
   bool schools_open = false;
@@ -1152,14 +1154,15 @@ List do_au_simulate(IntegerVector Status,
                           maxSupermarketsBySA2,
                           nSupermarketsAvbl,
                           Resistance,
+                          wday,
                           yday,
                           N,
                           SupermarketTypical,
-                          SupermarketHour,
                           r_supermarket_location, r_scale, r_d,
                           SupermarketFreq,
                           TodayHz,
-                          resistance_threshold);
+                          resistance_threshold,
+                          max_persons_per_supermarket);
     }
 
 
@@ -1167,7 +1170,7 @@ List do_au_simulate(IntegerVector Status,
     if (is_weekday && schools_open) {
       infect_school(Status, InfectedOn, School, Age,
                     AttendsWday,
-                    day, yday, wday,
+                    day, wday, yday,
                     N,
                     State,
                     schoolsIndex,

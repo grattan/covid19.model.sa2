@@ -52,12 +52,20 @@ status_critic <- function() {
     .Call(`_covid19_model_sa2_status_critic`)
 }
 
+supermarket_weekday_hrs <- function() {
+    .Call(`_covid19_model_sa2_supermarket_weekday_hrs`)
+}
+
+supermarket_weekend_hrs <- function() {
+    .Call(`_covid19_model_sa2_supermarket_weekend_hrs`)
+}
+
 do_max_par_int <- function(x, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_max_par_int`, x, nThread)
 }
 
-do_au_simulate <- function(Status, InfectedOn, SA2, State, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, SupermarketHour, yday_start, days_to_sim, N = 25e6L, display_progress = TRUE, by_state = TRUE, console_width = 80L, optionz = 0L, nThread = 1L) {
-    .Call(`_covid19_model_sa2_do_au_simulate`, Status, InfectedOn, SA2, State, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, SupermarketHour, yday_start, days_to_sim, N, display_progress, by_state, console_width, optionz, nThread)
+do_au_simulate <- function(Status, InfectedOn, SA2, State, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, yday_start, days_to_sim, N = 25e6L, display_progress = TRUE, by_state = TRUE, console_width = 80L, optionz = 0L, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_au_simulate`, Status, InfectedOn, SA2, State, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, yday_start, days_to_sim, N, display_progress, by_state, console_width, optionz, nThread)
 }
 
 do_exp_dbl2int <- function(x, nThread = 1L) {
@@ -120,12 +128,20 @@ do_modulo_d <- function(x, m, divisor, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_modulo_d`, x, m, divisor, nThread)
 }
 
+do_modulo_16 <- function(x, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_modulo_16`, x, nThread)
+}
+
 do_lag_in_place <- function(x) {
     .Call(`_covid19_model_sa2_do_lag_in_place`, x)
 }
 
 do_pminCppp <- function(x, a = 0L, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_pminCppp`, x, a, nThread)
+}
+
+test_threadsafe_mod <- function(x, y, nThread = 1L) {
+    .Call(`_covid19_model_sa2_test_threadsafe_mod`, x, y, nThread)
 }
 
 do_is_unsorted_pint <- function(x) {

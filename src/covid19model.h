@@ -19,6 +19,7 @@ const int NSTATES1 = 10;
 const int NSA2 = 2310;
 const int NSCHOOLS = 9501;
 const int NPUPILS = 3135825;
+const int NDZN = 9077; // includes NA
 
 const int NTODAY = 262144; // good cache length
 
@@ -41,6 +42,17 @@ const int CRITIC_MINUS_INSYMP = 1;
 
 const int SPECIFICITY = 992;
 const int SENSITIVITY = 800;
+
+// LFS = Labour force status
+const int LFS_NOTINLFS = -1;
+const int LFS_UNEMPLOY = 0;
+const int LFS_PARTTIME = 1;
+const int LFS_FULLTIME = 2;
+
+const int SUPERMARKET_WEEKDAY_HRS = 16;
+const int SUPERMARKET_WEEKEND_HRS = 12;
+
+
 
 int which_unsorted_int(IntegerVector x);
 

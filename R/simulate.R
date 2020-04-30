@@ -277,7 +277,6 @@ simulate_sa2 <- function(days_to_simulate = 5,
     # Choose a default supermarket for each person
     aus[, SupermarketTypical := if (.BY[[1]]) samp(seq_len(.BY[[1]]) - 1L, size = .N) else 0L,
         by = "nSupermarketsAvbl"]
-    aus[, SupermarketHour := rep_len(samp(0:7), .N)]
 
     short_school_id <- NULL
     # Turn School Id into short id to use for school id
@@ -321,7 +320,6 @@ simulate_sa2 <- function(days_to_simulate = 5,
                         Epi = EpiPars,
                         nSupermarketsAvbl = nSupermarketsAvbl,
                         SupermarketTypical = SupermarketTypical,
-                        SupermarketHour = SupermarketHour,
                         yday_start = .first_day,
                         days_to_sim = days_to_simulate,
                         N = nrow(aus),
