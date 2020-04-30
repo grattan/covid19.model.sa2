@@ -994,20 +994,45 @@ List do_au_simulate(IntegerVector Status,
         p.increment();
       } else {
 
-        int pbar_w = console_width - 16 - 8;
-        int a = (day * pbar_w) / days_to_sim;
-        int b = (days_to_sim * pbar_w) / days_to_sim;
+        int pbar_w = console_width - 17 - 8;
 
-        Rcout << "|";
-        for (int w = 0; w < a; ++w) {
-          Rcout << "=";
-        }
-        for (int w = a; w < b; ++w) {
-          Rcout << " ";
-        }
-        int last_yday = (days_to_sim + yday_start);
+        // daily increment
+        double di = ((double)pbar_w)  / ((double)(days_to_sim));
+        double b_d = ((double)day + 1) * di;
 
-        Rcout << "yday = " << yday << "/" << last_yday << " ";
+        double w_d = 0;
+        double r_d = 0; // remainder
+
+        Rcout << "| ";
+        int w = 2;
+        // w < 1024 in case of very large console width
+        while (w < pbar_w && w < 1024) {
+          Rcpp::checkUserInterrupt();
+          int w_yday = w_d + yday_start + 0.5;
+          int w_wday = wday_2020[((w_yday - 1) % 7)];
+          w_d += di;
+          r_d += di;
+          int max_reds = 2;
+          while (r_d > 1 && w < 1024) {
+            ++w;
+            r_d -= 1;
+            if ((w_d + 0.5) < b_d) {
+              if (w_wday < 6 || max_reds <= 0) {
+                Rcout << "=";
+              } else {
+                --max_reds;
+                Rcout << "\033[31m" << "=" << "\033[39m";
+              }
+            } else {
+              Rcout << "_";
+            }
+          }
+        }
+        Rcout << " | ";
+
+        // int last_yday = (days_to_sim + yday_start);
+
+        Rcout << "day = " << day << "/" << days_to_sim << " ";
 
         // asking for log(0) = -Inf number of console outputs will do exactly
         // what is asked
@@ -1020,7 +1045,7 @@ List do_au_simulate(IntegerVector Status,
 
 
         Rcout << n_infected_today << "\r";
-        if (day == days_to_sim) {
+        if (day == days_to_sim - 1) {
           Rcout << "\n";
 
         }
