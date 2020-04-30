@@ -29,6 +29,14 @@ int status_insymp() {
 int status_critic() {
   return STATUS_CRITIC;
 }
+// [[Rcpp::export(rng = false)]]
+int supermarket_weekday_hrs() {
+  return SUPERMARKET_WEEKDAY_HRS;
+}
+// [[Rcpp::export(rng = false)]]
+int supermarket_weekend_hrs() {
+  return SUPERMARKET_WEEKEND_HRS;
+}
 
 
 // [[Rcpp::export(rng = false)]]
@@ -370,17 +378,17 @@ void infect_supermarkets(IntegerVector Status,
                          int maxSupermarketsBySA2,
                          IntegerVector nSupermarketsAvbl,
                          IntegerVector Resistance,
+                         int wday,
                          int yday,
                          int N,
                          IntegerVector SupermarketTypical,
-                         IntegerVector SupermarketHour,
                          double r_location,
                          double r_scale,
                          int r_d,
                          IntegerVector SupermarketFreq,
                          IntegerVector TodaysHz,
                          int resistance1,
-                         int hrs_open = 8,
+                         int max_persons_per_supermarket,
                          int resistance2 = 3,
                          double r_div = 36, // divide r_ by this // TODO: model is highly sensitive to this par!
                          bool verbose = false) {
@@ -388,90 +396,124 @@ void infect_supermarkets(IntegerVector Status,
   // (some sa2s have 17 supermarkets; others will just record 0 there)
 
   // int i_supermarkets[NSA2][maxSupermarketsBySA2][hrs_open];
-  // memset(i_supermarkets, 0, sizeof i_supermarkets);
+
   if (resistance1 < 0 || resistance1 > 1000) {
     stop("Internal error: resistance1 was not in [0, 1]");
   }
 
+  const int hrs_open = (wday < 6) ? SUPERMARKET_WEEKDAY_HRS : SUPERMARKET_WEEKEND_HRS;
 
-  int nInfections_len = NSA2 * hrs_open;
-  nInfections_len *= 8;
-  IntegerVector nInfections = no_init(nInfections_len);
+  int i_supermarkets[NSA2][maxSupermarketsBySA2][hrs_open];
+  memset(i_supermarkets, 0, sizeof i_supermarkets);
 
-#pragma omp parallel for num_threads(nThread)
-  for (int k = 0; k < nInfections_len; ++k) {
-    nInfections[k] = 0;
-  }
+  bool check_max_persons = max_persons_per_supermarket < 10e3;
 
-#pragma omp parallel for num_threads(nThread)
+
+#pragma omp parallel for num_threads(nThread) reduction(+:i_supermarkets[:NSA2][:maxSupermarketsBySA2][:hrs_open])
   for (int i = 0; i < N; ++i) {
     if (Status[i] != STATUS_NOSYMP || TodaysHz[(i * 11 + yday) % NTODAY] > SupermarketFreq[i]) {
       continue;
     }
-    int supermarketi = SupermarketTypical[i];
-    int random32 = unifRand(0, 31);
     int sa2i = shortSA2[i];
-    int k = 0;
-
-    // Mix if supermarket not defined then shift it around
-    if (!nSupermarketsAvbl[i]) {
-      // most of the time we do just assume isolated
-      if ((random32 >> 2)) {
-        continue;
-      }
-      // otherwise we choose the 'central' supermarket
-      k += array3k(sa2i, supermarketi, 0, 0, 0) + random32;
-    } else {
-      k += array3k(sa2i, supermarketi, SupermarketHour[i], 8, hrs_open);
-      if ((random32 >> 4)) {
-        k -= (i % 4) + 1;
-      }
-    }
-
-    if (k >= nInfections_len || k < 0) {
+    int supermarketi = SupermarketTypical[i];
+    int hri = i % hrs_open;
+    if (sa2i >= NSA2 || supermarketi >= maxSupermarketsBySA2 || hri >= hrs_open) {
       continue;
     }
-
-    // threadsafety
-#ifdef _OPENMP
-    if ((k % omp_get_num_threads()) != omp_get_thread_num()) {
-      continue;
-    }
-#endif
-
-    double loc = r_location / r_div;
-    double sca = r_scale / r_div;
-
-    nInfections[k] += r_Rand(loc, sca, r_d);
+    i_supermarkets[sa2i][supermarketi][hri] += r_Rand(r_location, r_scale, r_d);
   }
 
+
+
 #pragma omp parallel for num_threads(nThread)
-  for (int i = 0; i < N; ++i) {
-    if (Status[i] || !nSupermarketsAvbl[i] || TodaysHz[(i * 11 + yday) % NTODAY] > SupermarketFreq[i]) {
-      continue;
-    }
+  for (int hr = 0; hr < hrs_open; ++hr) {
+    int s_supermarkets[NSA2][maxSupermarketsBySA2];
+    memset(s_supermarkets, 0, sizeof s_supermarkets);
+    for (int i = 0; i < N; ++i) {
+      if (Status[i] || !nSupermarketsAvbl[i] || TodaysHz[(i * 11 + yday) % NTODAY] > SupermarketFreq[i]) {
+        continue;
+      }
+      int hri = i % hrs_open;
+      if (hri != hr) {
+        continue;
+      }
+      int sa2i = shortSA2[i];
+      int supermarketi = SupermarketTypical[i];
+      s_supermarkets[sa2i][supermarketi] += 1;
+      int s_supermarketi = s_supermarkets[sa2i][supermarketi];
 
-    int sa2i = shortSA2[i];
+      if (check_max_persons && s_supermarketi > max_persons_per_supermarket) {
+        continue;
+      }
 
-    int k = array3k(sa2i, SupermarketTypical[i], SupermarketHour[i], 8, hrs_open);
-
-
-    // threadsafety
-#ifdef _OPENMP
-    if ((k % omp_get_num_threads()) != omp_get_thread_num()) {
-      continue;
-    }
-#endif
-
-    if (nInfections[k]) {
-      nInfections[k] -= 1;
-      if (Resistance[i] < resistance1) {
-        Status[i] = STATUS_NOSYMP;
-        InfectedOn[i] = yday;
+      // note we may be running in parallel so we don't count the infections
+      // we infect others probabilistically based on the number visiting in that
+      // hour
+      if (i_supermarkets[sa2i][supermarketi][hri]) {
+        if (Resistance[i] < resistance1) {
+          i_supermarkets[sa2i][supermarketi][hri] -= 1;
+          Status[i] = STATUS_NOSYMP;
+          InfectedOn[i] = yday;
+        }
       }
     }
   }
 }
+
+void infect_dzn(IntegerVector Status,
+                IntegerVector DZN,
+                IntegerVector nColleagues,
+                IntegerVector LabourForceStatus,
+                int day,
+                int wday,
+                int yday,
+                int N,
+                double r_location,
+                double r_scale,
+                int r_d,
+                IntegerVector TodaysK,
+                int nThread = 1) {
+
+  IntegerVector InfectionsByDZN = no_init(NDZN);
+
+  for (int i = 0; i < N; ++i) {
+    if (Status[i] != STATUS_INSYMP) {
+      continue;
+    }
+
+    int dzni = DZN[i];
+    // if zero or NA
+    if (dzni <= 0) {
+      continue;
+    }
+
+    // unlikely at this point so don't worry about branches
+    if (LabourForceStatus[i] != LFS_FULLTIME &&
+        LabourForceStatus[i] != LFS_PARTTIME) {
+      continue;
+    }
+
+
+
+    if ((dzni % omp_get_num_threads()) != omp_get_thread_num()) {
+      continue;
+    }
+
+
+    InfectionsByDZN[dzni] += 1;
+
+
+
+
+
+  }
+
+
+
+  // void infect_dzn
+}
+
+
 
 void infect_school(IntegerVector Status,
                    IntegerVector InfectedOn,
@@ -479,8 +521,8 @@ void infect_school(IntegerVector Status,
                    IntegerVector Age,
                    IntegerVector AttendsWday,
                    int day,
-                   int yday,
                    int wday,
+                   int yday,
                    int N,
                    IntegerVector State,
                    const std::vector<int>& schoolIndices,
@@ -510,6 +552,9 @@ void infect_school(IntegerVector Status,
     }
     if (school_days_per_wk.length() < 9) {
       stop("school_days_per_wk had wrong length");
+    }
+    if (AttendsWday.length() != (NPUPILS * 5)) {
+      stop("Internal error: AttendsWday.length() != (NPUPILS * 5)");
     }
   }
 
@@ -1049,7 +1094,6 @@ List do_au_simulate(IntegerVector Status,
         Rcout << n_infected_today << "\r";
         if (day == days_to_sim - 1) {
           Rcout << "\n";
-
         }
       }
     }
