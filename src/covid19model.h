@@ -52,6 +52,33 @@ const int LFS_FULLTIME = 2;
 const int SUPERMARKET_WEEKDAY_HRS = 16;
 const int SUPERMARKET_WEEKEND_HRS = 12;
 
+//// https://www.education.gov.au/school-term-dates-2020
+const int NSW_TERM2_START_YDAY = 118; /// yday(as.Date("2020-04-27"))
+const int VIC_TERM2_START_YDAY = 105;
+const int QLD_TERM2_START_YDAY = 111;
+const int  SA_TERM2_START_YDAY = 118;
+const int  WA_TERM2_START_YDAY = 119;
+const int TAS_TERM2_START_YDAY = 118;
+const int ACT_TERM2_START_YDAY = 118;
+const int  NT_TERM2_START_YDAY = 111;
+
+const int NSW_TERM2_FINAL_YDAY = 185;
+const int VIC_TERM2_FINAL_YDAY = 178;
+const int QLD_TERM2_FINAL_YDAY = 178;
+const int  SA_TERM2_FINAL_YDAY = 185;
+const int  WA_TERM2_FINAL_YDAY = 185;
+const int TAS_TERM2_FINAL_YDAY = 185;
+const int ACT_TERM2_FINAL_YDAY = 185;
+const int  NT_TERM2_FINAL_YDAY = 178;
+
+const int NSW_TERM3_START_YDAY = 202;
+const int VIC_TERM3_START_YDAY = 195;
+const int QLD_TERM3_START_YDAY = 195;
+const int  SA_TERM3_START_YDAY = 202;
+const int  WA_TERM3_START_YDAY = 202;
+const int TAS_TERM3_START_YDAY = 202;
+const int ACT_TERM3_START_YDAY = 202;
+const int  NT_TERM3_START_YDAY = 203;
 
 
 int which_unsorted_int(IntegerVector x);
