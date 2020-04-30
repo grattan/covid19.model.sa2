@@ -545,14 +545,6 @@ void infect_school(IntegerVector Status,
     {3, 4, 5}};
 
 
-  // int combn4_0[4] = {1, 2, 3, 4};
-  // int combn4_1[4] = {1, 2, 3, 5};
-  // int combn4_2[4] = {1, 2, 4, 5};
-  // int combn4_3[4] = {1, 3, 4, 5};
-  // int combn4_4[4] = {2, 3, 4, 5};
-
-
-
   int DaysPerWk[NSTATES1][21] = {};
   for (int s = 0; s < NSTATES1; ++s) {
     IntegerVector sDaysPerWk = school_days_per_wk[s];
@@ -560,6 +552,11 @@ void infect_school(IntegerVector Status,
       int da = sDaysPerWk[a];
       DaysPerWk[s][a] = da;
     }
+  }
+
+  const int wday0 = wday - 1;
+  if (wday0 < 0 || wday0 >= 5) {
+    stop("'wday' out of range (1:5).");
   }
 
 
@@ -570,17 +567,16 @@ void infect_school(IntegerVector Status,
   if (day < 7 && wday < 6) {
 #pragma omp parallel for num_threads(nThread)
     for (int k = 0; k < n_pupils; ++k) {
-
-      int k2 = wday + (7 * k);
+      int k5 = wday0 + (5 * k);
       int i = schoolIndices[k];
       int schooli = School[i] - 1;
       int Agei = (Age[i] > 20) ? 20 : Age[i];
       if (only_Year12 && Agei < 17) {
-        AttendsWday[k2] = 0;
+        AttendsWday[k5] = 0;
         continue;
       }
       if (all_full_time) {
-        AttendsWday[k2] = 1;
+        AttendsWday[k5] = 1;
         continue;
       }
 
@@ -590,7 +586,7 @@ void infect_school(IntegerVector Status,
       if (daysPerWk_Agei <= 0 || daysPerWk_Agei > 5) {
         // only daysPerWk_Agei == 0 should be valid but we presume
         // any other values are zero
-        AttendsWday[k2] = 0;
+        AttendsWday[k5] = 0;
         continue;
       }
 
@@ -633,7 +629,7 @@ void infect_school(IntegerVector Status,
           }
         }
       }
-      AttendsWday[k2] = attends_today;
+      AttendsWday[k5] = attends_today;
     }
   }
 
@@ -641,8 +637,8 @@ void infect_school(IntegerVector Status,
 
 
   for (int k = 0; k < n_pupils; ++k) {
-    int k2 = wday + (7 * k);
-    if (!AttendsWday[k2]) {
+    int k5 = wday0 + (5 * k);
+    if (!AttendsWday[k5]) {
       continue;
     }
     int i = schoolIndices[k];
@@ -660,8 +656,8 @@ void infect_school(IntegerVector Status,
   }
 
   for (int k = 0; k < n_pupils; ++k) {
-    int k2 = wday + (7 * k);
-    if (!AttendsWday[k2]) {
+    int k5 = wday0 + (5 * k);
+    if (!AttendsWday[k5]) {
       continue;
     }
     int i = schoolIndices[k];
@@ -922,7 +918,8 @@ List do_au_simulate(IntegerVector Status,
     stop("n_pupils much larger than expected: likely an overestimate of schools.");
   }
 
-  IntegerVector AttendsWday = no_init(NPUPILS * 7);
+  // 5 days (at most) in a school week
+  IntegerVector AttendsWday = no_init(NPUPILS * 5);
   // memset(AttendsWday, 0, sizeof AttendsWday);
 
 
