@@ -105,6 +105,14 @@ simulate_sa2 <- function(days_to_simulate = 5,
     options(covid19.model.sa2.fst2_progress = prev_fst2_opt)
   })
 
+  hh_ss <- function (x. = "", form = "%H:%M:%S") {
+    if (.showProgress) {
+      cat(as.character(format(Sys.time(), format = form)), x., "\n")
+    } else {
+      invisible(NULL)
+    }
+  }
+
   Policy  <- PolicyPars
   if (!isTRUE(use_dataEnv) ||
       is.null(aus <- get0("aus_", envir = dataEnv)) ||
@@ -153,13 +161,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
     ### next day
 
 
-    hh_ss <- function (x. = "", form = "%H:%M:%S") {
-      if (.showProgress) {
-        cat(as.character(format(Sys.time(), format = form)), x., "\n")
-      } else {
-        invisible(NULL)
-      }
-    }
+
     hh_ss("Start\t")
 
     aus <- read_sys("australia.fst")
@@ -296,14 +298,16 @@ simulate_sa2 <- function(days_to_simulate = 5,
     }
   }
 
+  copied_Status <- copy(.subset2(aus, "Status"))
+  copied_InfectedOn <- copy(.subset2(aus, "InfectedOn"))
   hh_ss("pre-C++")
 
 
 
   out <-
     with(aus,
-         do_au_simulate(Status = copy(.subset2(aus, "Status")),
-                        InfectedOn = copy(.subset2(aus, "InfectedOn")),
+         do_au_simulate(Status = copied_Status,
+                        InfectedOn = copied_InfectedOn,
                         sa2,
                         State = state,
                         hid = hid,
@@ -328,7 +332,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
                         console_width = getOption("width", 80L),
                         optionz = getOption("optionz", 0L),  # for debugging may be changed without notice
                         nThread = nThread))
-
+  hh_ss("final")
 
   out <- copy(out)
 
@@ -340,8 +344,6 @@ simulate_sa2 <- function(days_to_simulate = 5,
     set(out[[2]], j = j, value = aus[[j]])
   }
   hutils::set_cols_first(out[[2]], names(aus))
-
-  hh_ss("final")
   out
 }
 
