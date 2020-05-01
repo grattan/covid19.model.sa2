@@ -3,9 +3,9 @@
 
 
 # Settings ---------------------------------------------------------------------
-rebuild_people <- TRUE
-rebuild_schools <- TRUE
-rebuild_jobs <- TRUE
+rebuild_people <- FALSE
+rebuild_schools <- FALSE
+rebuild_jobs <- FALSE
   rebuild_distance <- FALSE
 
 
@@ -621,7 +621,16 @@ occ_ind %>%
 
 
 
+# Business data
 
+bus <- read_csv("data-raw/abs/businesses_in_australia.zip",
+                skip = 9,
+                col_types = "_cccd__",
+                col_names = c("state", "anzsic", "employees", "n")) %>%
+  filter(state != "Total",
+         n > 0)
+
+write_fst(bus, "inst/extdata/businesses.fst")
 
 ## Maybe it should be a submodule?
 try({
