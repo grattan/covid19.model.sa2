@@ -44,7 +44,20 @@
 #' or \code{NA}, the most recent day's number of tests performed are
 #' used.
 #'
-#' @param max_persons_per_event,max_persons_per_supermarket Not yet used.
+#'
+#' @param max_persons_per_supermarket Maximum number of people allowed in a
+#' supermarket (within one hour i.e. concurrently).
+#' @param max_persons_per_event Not yet used.
+#'
+#' @param workplaces_open Are workplaces to be open?
+#' Can be logical \code{FALSE} or \code{TRUE} or a number in \code{[0, 1]},
+#' the proportion of workplaces that remain open.
+#' @param workplace_size_max The maximum size of any workplace (we assume
+#' that everyone interacts on a single day).
+#' @param workplace_size_beta,workplace_size_lmu,workplace_size_lsi
+#' Parameters for the distribution of workplace sizes. \code{_beta} is the
+#' rate distribution for the geometric distribution; \code{_lmu} and
+#' \code{_lsi} are the parameters for the lognormal distribution.
 #'
 #' @return A list of the components.
 #'
@@ -67,7 +80,12 @@ set_policypars <- function(supermarkets_open = TRUE,
                            contact_tracing_only_sympto = TRUE,
                            tests_by_state = NULL,
                            max_persons_per_event = 5L,
-                           max_persons_per_supermarket = 200L) {
+                           max_persons_per_supermarket = 200L,
+                           workplaces_open = FALSE,
+                           workplace_size_max = 1L,
+                           workplace_size_beta = 13,
+                           workplace_size_lmu = -1,
+                           workplace_size_lsi = -1) {
   checkmate::assert_logical(supermarkets_open,
                             any.missing = FALSE,
                             len = 1L)
@@ -91,6 +109,16 @@ set_policypars <- function(supermarkets_open = TRUE,
   if (!missing(max_persons_per_event)) {
     .NotYetUsed("max_persons_per_event")
   }
+
+  workplaces_open <- as.double(workplaces_open)
+  checkmate::assert_number(workplaces_open, any.missing = FALSE, lower = 0, upper = 1, finite = TRUE)
+  checkmate::assert_int(workplace_size_max, lower = 0L, finite = TRUE)
+  checkmate::assert_number(workplace_size_beta, finite = TRUE)
+  checkmate::assert_number(workplace_size_lmu, finite = TRUE)
+  checkmate::assert_number(workplace_size_lsi, finite = TRUE)
+
+  workplaces_open <- as.integer(workplaces_open * 1000)
+
 
 
   mget(ls())
@@ -231,5 +259,8 @@ set_policypars <- function(supermarkets_open = TRUE,
 
   out
 }
+
+
+
 
 

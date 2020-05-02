@@ -103,6 +103,36 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// do_rep
+IntegerVector do_rep(IntegerVector r, int nThread);
+RcppExport SEXP _covid19_model_sa2_do_rep(SEXP rSEXP, SEXP nThreadSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type r(rSEXP);
+    Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
+    rcpp_result_gen = Rcpp::wrap(do_rep(r, nThread));
+    return rcpp_result_gen;
+END_RCPP
+}
+// get_nColleagues
+IntegerVector get_nColleagues(int nr, int N, IntegerVector LabourForceStatus, int nThread, int c_d, double beta, double mu, double sigma);
+RcppExport SEXP _covid19_model_sa2_get_nColleagues(SEXP nrSEXP, SEXP NSEXP, SEXP LabourForceStatusSEXP, SEXP nThreadSEXP, SEXP c_dSEXP, SEXP betaSEXP, SEXP muSEXP, SEXP sigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type nr(nrSEXP);
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type LabourForceStatus(LabourForceStatusSEXP);
+    Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
+    Rcpp::traits::input_parameter< int >::type c_d(c_dSEXP);
+    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_nColleagues(nr, N, LabourForceStatus, nThread, c_d, beta, mu, sigma));
+    return rcpp_result_gen;
+END_RCPP
+}
 // do_au_simulate
 List do_au_simulate(IntegerVector Status, IntegerVector InfectedOn, IntegerVector SA2, IntegerVector State, IntegerVector hid, IntegerVector seqN, IntegerVector HouseholdSize, IntegerVector Age, IntegerVector School, IntegerVector PlaceTypeBySA2, IntegerVector Employment, IntegerVector Resistance, List Policy, List nPlacesByDestType, List FreqsByDestType, List Epi, /* Epidemiological parameters */                     IntegerVector nSupermarketsAvbl, IntegerVector SupermarketTypical, int yday_start, int days_to_sim, int N, bool display_progress, bool by_state, int console_width, int optionz, int nThread);
 RcppExport SEXP _covid19_model_sa2_do_au_simulate(SEXP StatusSEXP, SEXP InfectedOnSEXP, SEXP SA2SEXP, SEXP StateSEXP, SEXP hidSEXP, SEXP seqNSEXP, SEXP HouseholdSizeSEXP, SEXP AgeSEXP, SEXP SchoolSEXP, SEXP PlaceTypeBySA2SEXP, SEXP EmploymentSEXP, SEXP ResistanceSEXP, SEXP PolicySEXP, SEXP nPlacesByDestTypeSEXP, SEXP FreqsByDestTypeSEXP, SEXP EpiSEXP, SEXP nSupermarketsAvblSEXP, SEXP SupermarketTypicalSEXP, SEXP yday_startSEXP, SEXP days_to_simSEXP, SEXP NSEXP, SEXP display_progressSEXP, SEXP by_stateSEXP, SEXP console_widthSEXP, SEXP optionzSEXP, SEXP nThreadSEXP) {

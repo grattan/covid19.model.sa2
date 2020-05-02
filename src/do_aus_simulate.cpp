@@ -458,10 +458,127 @@ void infect_supermarkets(IntegerVector Status,
   }
 }
 
+
+
+// [[Rcpp::export]]
+IntegerVector do_rep(IntegerVector r, int nThread = 1) {
+  int n = 0, nr = r.length();
+#pragma omp parallel for num_threads(nThread) reduction(+:n)
+  for (int i = 0; i < nr; ++i) {
+    n += r[i];
+  }
+  IntegerVector out = no_init(n);
+  for (int i = 0, k = 0, j = 0; i < nr; ++i) {
+    int ri = r[i];
+    while (k < ri) {
+      out[j] = ri;
+      ++j;
+      ++k;
+    }
+    k = 0;
+  }
+  return out;
+}
+
+
+// [[Rcpp::export]]
+IntegerVector get_nColleagues(int nr, int N,
+                              IntegerVector LabourForceStatus,
+                              int nThread = 1,
+                              int c_d = 0,
+                              double beta = 27,
+                              double mu = 2.2,
+                              double sigma = 0.62) {
+  // N = vector length desired, the number of individuals
+  // nr intermediate estimate for number of lognormal draws
+  // plausibly the number of 'workplaces'
+  if (N != LabourForceStatus.length()) {
+    stop("Internal error: get_nColleagues(): N != LabourForceStatus.length().");
+  }
+
+  IntegerVector r = no_init(nr);
+  int n = 0;
+
+  // possibly neater to put this inside a loop but (a) I don't think my
+  // compiler is that smart and (b) 'breaks' and 'continues' make me nervous
+  switch(c_d) {
+  case 0:
+#pragma omp parallel for num_threads(nThread) reduction(+:n)
+    for (int i = 0; i < nr; ++i) {
+      int ri = geomRand(1 / beta); // beta = average so 1/beta gives the 'rate'
+      if (ri <= 1) {
+        // partners are far more common than single-person employers
+        if ((i % 4)) {
+          ri = 2;
+        } else {
+          ri = 1;
+        }
+      }
+      n += ri;
+      r[i] = ri;
+    }
+    break;
+  case 1:
+#pragma omp parallel for num_threads(nThread) reduction(+:n)
+    for (int i = 0; i < nr; ++i) {
+      int ri = dbl2int(lnormRand(mu, sigma));
+      n += ri;
+      r[i] = ri;
+    }
+    break;
+  default:
+    stop("Internal error: unsupported c_d.");
+  }
+
+  IntegerVector out = no_init(N);
+  // j index of out
+  // i index of workplaces (new i => new number of colleagues)
+  // k new position within same workplace
+
+  int j = 0;
+  for (int i = 0, k = 0; i < nr && j < N; ++i) {
+    int ri = r[i];
+    while (k < ri && j < N) {
+      if (LabourForceStatus[j] != LFS_FULLTIME &&
+          LabourForceStatus[j] != LFS_PARTTIME) {
+        out[j] = 0;
+        // don't increment k because we need to keep it for next employee
+      } else {
+        out[j] = ri;
+        ++k;
+      }
+      ++j;
+    }
+    k = 0;
+  }
+  if (j < N) {
+    // just select from the lognormal repeater already created
+    for (int i = 0, k = 0; i < nr && j < N; ++i) {
+      int ri = r[i];
+      while (k < ri && j < N) {
+        if (LabourForceStatus[j] != LFS_FULLTIME &&
+            LabourForceStatus[j] != LFS_PARTTIME) {
+          out[j] = 0;
+        } else {
+          out[j] = ri;
+          ++k;
+        }
+        ++j;
+      }
+      k = 0;
+    }
+  }
+  return out;
+}
+
+
+
+
+
 void infect_dzn(IntegerVector Status,
                 IntegerVector DZN,
-                IntegerVector nColleagues,
                 IntegerVector LabourForceStatus,
+                IntegerVector nColleagues,
                 int day,
                 int wday,
                 int yday,
@@ -472,8 +589,9 @@ void infect_dzn(IntegerVector Status,
                 IntegerVector TodaysK,
                 int nThread = 1) {
 
-  IntegerVector InfectionsByDZN = no_init(NDZN);
+  int InfectionsByDZN[NDZN] = {};
 
+#pragma omp parallel for reduction(+:InfectionsByDZN[:NDZN])
   for (int i = 0; i < N; ++i) {
     if (Status[i] != STATUS_INSYMP) {
       continue;
@@ -493,18 +611,10 @@ void infect_dzn(IntegerVector Status,
 
 
 
-    if ((dzni % omp_get_num_threads()) != omp_get_thread_num()) {
-      continue;
-    }
-
-
-    InfectionsByDZN[dzni] += 1;
-
-
-
-
-
+    InfectionsByDZN[dzni] += r_Rand(r_location, r_scale, r_d);
   }
+
+
 
 
 
@@ -812,15 +922,16 @@ void infect_household(IntegerVector Status,
 // [[Rcpp::export]]
 List do_au_simulate(IntegerVector Status,
                     IntegerVector InfectedOn,
-                    IntegerVector SA2,
                     IntegerVector State,
+                    IntegerVector SA2,
+                    IntegerVector DZN,
                     IntegerVector hid,
                     IntegerVector seqN,
                     IntegerVector HouseholdSize,
                     IntegerVector Age,
                     IntegerVector School,
                     IntegerVector PlaceTypeBySA2,
-                    IntegerVector Employment,
+                    IntegerVector LabourForceStatus,
                     IntegerVector Resistance,
                     List Policy,
                     List nPlacesByDestType,
@@ -922,6 +1033,13 @@ List do_au_simulate(IntegerVector Status,
   int ct_days_before_test = Policy["contact_tracing_days_before_test"];
   int ct_days_until_result = Policy["contact_tracing_days_until_result"];
 
+  int workplaces_open = Policy["workplaces_open"];
+  double workplace_size_beta = Policy["workplaces_size_beta"];
+  double workplace_size_lmu = Policy["workplaces_size_lmu"];
+  double workplace_size_lsi = Policy["workplaces_size_lsi"];
+  int w_c_u = (workplace_size_lmu < 0) ? 0 : 1;
+
+
 
   IntegerVector TestedOn = no_init(N);
 
@@ -938,6 +1056,7 @@ List do_au_simulate(IntegerVector Status,
   // double r_location = Epi["r_location"];
   double r_schools_location = Epi["r_schools_location"];
   double r_supermarket_location = Epi["r_supermarket_location"];
+  double r_work_location = Epi["r_work_location"];
   double r_scale = Epi["r_scale"];
   int resistance_threshold = Epi["resistance_threshold"];
   int p_asympto = Epi["p_asympto"];
@@ -979,6 +1098,7 @@ List do_au_simulate(IntegerVector Status,
 
   // These could potentially be smaller vectors
   IntegerVector HouseholdInfectedToday = no_init(N); // was the household infected today?
+  IntegerVector nColleagues = no_init(N);
 
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
@@ -1191,7 +1311,7 @@ List do_au_simulate(IntegerVector Status,
                           shortSA2,
                           nThread,
                           Age,
-                          Employment,
+                          LabourForceStatus,
                           nSupermarketsBySA2,
                           maxSupermarketsBySA2,
                           nSupermarketsAvbl,
@@ -1224,6 +1344,20 @@ List do_au_simulate(IntegerVector Status,
                     n_pupils,
                     nThread);
     }
+    if (day == 0) {
+      nColleagues = get_nColleagues(N / 8,
+                                    N,
+                                    LabourForceStatus,
+                                    nThread,
+                                    w_c_u,
+                                    workplace_size_beta,
+                                    workplace_size_lmu,
+                                    workplace_size_lsi);
+    }
+    infect_dzn(Status,
+               DZN, LabourForceStatus, nColleagues,
+               day, wday, yday, N,
+               r_work_location, r_scale, r_d, TodaysK, nThread);
 
 
 
