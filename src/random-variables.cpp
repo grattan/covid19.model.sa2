@@ -36,6 +36,12 @@ double cauchyRand(const double & a, const double & b) {
   return distribution(generator);
 }
 
+int geomRand(const double & lambda) {
+  static thread_local std::mt19937 generator;
+  std::geometric_distribution<int> distribution(lambda);
+  return distribution(generator);
+}
+
 int cauchyRand0(const double & a, const double & b) {
   double out = cauchyRand(a, b);
   return (out > 1 && out < 1024) ? out : 0;

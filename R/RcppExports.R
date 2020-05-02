@@ -64,6 +64,14 @@ do_max_par_int <- function(x, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_max_par_int`, x, nThread)
 }
 
+do_rep <- function(r, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_rep`, r, nThread)
+}
+
+get_nColleagues <- function(nr, N, LabourForceStatus, nThread = 1L, c_d = 0L, beta = 27, mu = 2.2, sigma = 0.62) {
+    .Call(`_covid19_model_sa2_get_nColleagues`, nr, N, LabourForceStatus, nThread, c_d, beta, mu, sigma)
+}
+
 do_au_simulate <- function(Status, InfectedOn, SA2, State, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, yday_start, days_to_sim, N = 25e6L, display_progress = TRUE, by_state = TRUE, console_width = 80L, optionz = 0L, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_au_simulate`, Status, InfectedOn, SA2, State, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, yday_start, days_to_sim, N, display_progress, by_state, console_width, optionz, nThread)
 }

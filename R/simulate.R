@@ -169,6 +169,13 @@ simulate_sa2 <- function(days_to_simulate = 5,
     nSupermarkets_by_sa2 <- read_sys("nSupermarkets_by_sa2.fst")
 
     demo_by_person <- read_sys("person_demography.fst")
+    demo_by_person[, lfsi := ematch(as.character(lfs),
+                                    c("Not applicable",
+                                      "Not working",
+                                      "Employed, worked full-time",
+                                      "Employed, worked part-time"))]
+    demo_by_person[, lfsi := lfsi - 2L]
+    demo_by_person[, lfs := NULL]
 
     Cases.csv <- read_sys("time_series_cases.fst")
     Recovered.csv <- read_sys("time_series_recovered.fst")
@@ -241,8 +248,9 @@ simulate_sa2 <- function(days_to_simulate = 5,
                                          size = .N,
                                          w = N_by_Duration$N)]
 
-    Age <- i.age <- NULL
+    Age <- i.age <- LabourForceStatus <- lfsi <- NULL
     aus[demo_by_person, Age := i.age, on = "pid"]
+    aus[demo_by_person, LabourForceStatus := i.lfsi, on = "pid"]
 
     Resistance <- NULL
     aus[, Resistance := rep_len(sample(1:1000, size = 13381L, replace = TRUE), .N)]
@@ -284,6 +292,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
     # Turn School Id into short id to use for school id
     # Crucially, must be dense (no gaps) so can't prepare unique
     aus[!is.na(school_id), short_school_id := frank(school_id, ties.method = "dense")]
+    aus[!is.na(work_dzn) , short_dzn := frank(work_dzn, ties.method = "dense")]
 
     # from Stevenson-Lancet-COVID19.md
     # aus[, Incubation := dq_rnlorm(.N, m = EpiPars[["incubation_m"]], s = 0.44)]
@@ -308,15 +317,16 @@ simulate_sa2 <- function(days_to_simulate = 5,
     with(aus,
          do_au_simulate(Status = copied_Status,
                         InfectedOn = copied_InfectedOn,
-                        sa2,
                         State = state,
+                        SA2 = sa2,
+                        DZN = short_dzn,
                         hid = hid,
                         seqN = seqN,
                         HouseholdSize = HouseholdSize,
                         Age = Age,
                         School = short_school_id,
                         PlaceTypeBySA2 = integer(0),
-                        Employment = Age, # not implemented
+                        LabourForceStatus = LabourForceStatus,
                         Resistance = Resistance,
                         Policy = Policy,
                         nPlacesByDestType = nPlacesByDestType,
