@@ -85,7 +85,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
                          showProgress = 1L,
                          by_state = TRUE,
                          dataEnv = getOption("covid19.model.sa2_dataEnv", new.env()),
-                         use_dataEnv = FALSE,
+                         use_dataEnv = getOption("covid19.model.sa2_useDataEnv", FALSE),
                          nThread = getOption("covid19.model.sa2_nThread", 1L),
                          myaus = NULL) {
   nThread <- checkmate::assert_int(nThread, lower = 1L, coerce = TRUE)
