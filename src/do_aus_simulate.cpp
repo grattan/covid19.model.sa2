@@ -86,7 +86,9 @@ int illRand(double m, double s, int d) {
   return m;
 }
 
-int r_Rand(double m, double s, int d) {
+int r_Rand(double m, double s, int d, bool dper, int e, int per, int yday) {
+  if (dper)
+    return (yday % per) ? 0 : e;
   if (d == 1)
     return poisRand(m);
   if (d == 2)
@@ -385,6 +387,7 @@ void infect_supermarkets(IntegerVector Status,
                          double r_location,
                          double r_scale,
                          int r_d,
+                         bool do_dirac_every, int dirac_num, int dirac_per,
                          IntegerVector SupermarketFreq,
                          IntegerVector TodaysHz,
                          int resistance1,
@@ -420,7 +423,8 @@ void infect_supermarkets(IntegerVector Status,
     if (sa2i >= NSA2 || supermarketi >= maxSupermarketsBySA2 || hri >= hrs_open) {
       continue;
     }
-    i_supermarkets[sa2i][supermarketi][hri] += r_Rand(r_location, r_scale, r_d);
+    i_supermarkets[sa2i][supermarketi][hri] +=
+      r_Rand(r_location, r_scale, r_d, do_dirac_every, dirac_num, dirac_per, yday);
   }
 
 
@@ -479,6 +483,7 @@ void infect_place(int place_id,
                   double r_location,
                   double r_scale,
                   int r_d,
+                  bool do_dirac_every, int dirac_num, int dirac_per,
                   int max_persons_per_place,
                   IntegerVector TodaysK) {
 
@@ -590,7 +595,7 @@ void infect_place(int place_id,
       }
 
 
-      int n_new_infections = r_Rand(r_location, r_scale, r_d);
+      int n_new_infections = r_Rand(r_location, r_scale, r_d, do_dirac_every, dirac_num, dirac_per, yday);
       i_places[placei][hri] += n_new_infections;
 
       int excess_persons = i_places[placei][hri] - max_persons_per_place;
@@ -705,6 +710,7 @@ void infect_dzn(IntegerVector Status,
                 double r_location,
                 double r_scale,
                 int r_d,
+                bool do_dirac_every, int dirac_num, int dirac_per,
                 IntegerVector TodaysK,
                 IntegerVector Resistance,
                 int zero,
@@ -875,6 +881,7 @@ void infect_school(IntegerVector Status,
                    double r_location,
                    double r_scale,
                    int r_d,
+                   bool do_dirac_every, int dirac_num, int dirac_per,
                    IntegerVector TodaysK,
                    bool only_Year12,
                    List school_days_per_wk,
@@ -1040,7 +1047,7 @@ void infect_school(IntegerVector Status,
     s_visits[schooli][Agei] += 1;
     // rcauchy relates to the single day
     if (Status[i] == STATUS_NOSYMP) {
-      int infectedi = r_Rand(r_location, r_scale, r_d);
+      int infectedi = r_Rand(r_location, r_scale, r_d, do_dirac_every, dirac_num, dirac_per, i);
       i_visits[schooli][0] += infectedi;
       i_visits[schooli][Agei] += infectedi;
     }
@@ -1310,6 +1317,12 @@ List do_au_simulate(IntegerVector Status,
   int illness_d = Epi["illness_distribution"];
   int r_d = Epi["r_distribution"];
 
+  bool do_dirac_every = Epi.containsElementNamed("dirac_num");
+  int dirac_num = do_dirac_every ? Epi["dirac_num"] : 0;
+  int dirac_per = do_dirac_every ? Epi["dirac_per"] : 0;
+
+
+
   int n_pupils = 0;
   std::vector<int> schoolsIndex;
   schoolsIndex.reserve(NPUPILS);
@@ -1572,6 +1585,7 @@ List do_au_simulate(IntegerVector Status,
                           N,
                           SupermarketTypical,
                           r_supermarket_location, r_scale, r_d,
+                          do_dirac_every, dirac_num, dirac_per,
                           SupermarketFreq,
                           TodayHz,
                           resistance_threshold,
@@ -1602,6 +1616,7 @@ List do_au_simulate(IntegerVector Status,
                    r_location,
                    r_scale,
                    r_d,
+                   do_dirac_every, dirac_num, dirac_per,
                    max_persons_per_cafe,
                    TodaysK);
     }
@@ -1616,6 +1631,7 @@ List do_au_simulate(IntegerVector Status,
                     State,
                     schoolsIndex,
                     r_schools_location, r_scale, r_d,
+                    do_dirac_every, dirac_num, dirac_per,
                     TodaysK,
                     only_Year12,
                     school_days_per_wk,
@@ -1631,7 +1647,9 @@ List do_au_simulate(IntegerVector Status,
                  workplaces_open,
                  workplace_size_max,
                  a_workplace_rate,
-                 r_work_location, r_scale, r_d, TodaysK, Resistance, 0, wid_supremum, optionz, nThread);
+                 r_work_location, r_scale, r_d,
+                 do_dirac_every, dirac_num, dirac_per,
+                 TodaysK, Resistance, 0, wid_supremum, optionz, nThread);
     }
 
 

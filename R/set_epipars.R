@@ -17,6 +17,13 @@
 #' @param r_location,r_scale Parameters for \code{r_distribution}. The number of
 #' infections \strong{per day}.
 #'
+#' If \code{r_distribution = "dirac"} there is no distribution;
+#' the infection will be deterministic. If an integer is provided, all infectious
+#' persons infect the same number of people. Can also be provided in the form
+#' \code{a/b} where \code{a} and {b} are whole numbers, in which case each
+#' infectious person will infect \code{a} individuals every \code{b} days
+#' (precisely, not on average).
+#'
 #' @param r_schools_distribution,r_schools_location,r_schools_scale Variables
 #' particular for schools.
 #'
@@ -51,7 +58,7 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
                         illness_sigma = 1,
                         r_distribution = c("cauchy", "lnorm", "pois", "dirac"),
                         r_location = 2/5,
-                        r_scale = 1,
+                        r_scale = 1/5,
                         r_schools_distribution = r_distribution,
                         r_schools_location = r_location,
                         r_schools_scale = r_scale,
@@ -64,6 +71,7 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
                         p_critical = 0.02,
                         p_death = 0.01) {
   incubation_distribution <- match.arg(incubation_distribution)
+
   switch(incubation_distribution,
          "pois" = {
            checkmate::assert_number(incubation_mean, lower = 0)
@@ -91,10 +99,21 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
 
   r_distribution <- match.arg(r_distribution)
   if (r_distribution == "dirac") {
-    # integerish
-    checkmate::assert_int(r_location, lower = 1)
-    checkmate::assert_int(r_supermarket_location, lower = 1)
-    checkmate::assert_int(r_schools_location, lower = 1)
+    if (is.double(r_location) &&
+        is.call(substitute(r_location)) &&
+        length(substitute(r_location)) == 3L &&
+        as.character(substitute(r_location))[[1]] == "/") {
+      # e.g. 1/5
+      dirac_num <- eval(substitute(r_location)[[2]])
+      dirac_per <- eval(substitute(r_location)[[3]])
+      checkmate::assert_int(dirac_num, lower = 1)
+      checkmate::assert_int(dirac_per, lower = 1)
+    } else {
+      # integerish
+      checkmate::assert_int(r_location, lower = 1)
+      checkmate::assert_int(r_supermarket_location, lower = 1)
+      checkmate::assert_int(r_schools_location, lower = 1)
+    }
   } else {
     checkmate::assert_number(r_location, finite = TRUE, lower = 0)
     checkmate::assert_number(r_supermarket_location, finite = TRUE, lower = 0)
