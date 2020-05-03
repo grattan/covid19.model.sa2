@@ -13,7 +13,7 @@ set_epipars(
   illness_sigma = 1,
   r_distribution = c("cauchy", "lnorm", "pois", "dirac"),
   r_location = 2/5,
-  r_scale = 1,
+  r_scale = 1/5,
   r_schools_distribution = r_distribution,
   r_schools_location = r_location,
   r_schools_scale = r_scale,
@@ -42,7 +42,14 @@ positive, and a whole number for `"pois"` and `"diract"`.}
 infected person, one of `"cauchy"`, `"lnorm"`, `"pois"`, or `"dirac"`.}
 
 \item{r_location, r_scale}{Parameters for \code{r_distribution}. The number of
-infections \strong{per day}.}
+infections \strong{per day}.
+
+If \code{r_distribution = "dirac"} there is no distribution;
+the infection will be deterministic. If an integer is provided, all infectious
+persons infect the same number of people. Can also be provided in the form
+\code{a/b} where \code{a} and {b} are whole numbers, in which case each
+infectious person will infect \code{a} individuals every \code{b} days
+(precisely, not on average).}
 
 \item{r_schools_distribution, r_schools_location, r_schools_scale}{Variables
 particular for schools.}

@@ -270,6 +270,12 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
     FreqsByDestType <-
       lapply(1:106, function(i) {
+        if (i == 15L) {
+          # cafes
+          # assume uniformly n/week
+          cafe <- 52L * (0:7)
+          return(dqrng::dqsample(cafe, size = 1e6, replace = TRUE))
+        }
         if (i == 98L) {
           ## Assume supermarket visits are beta distributed
           rep_len(as.integer(360 * rbeta(1e6, 3, 1)), nrow(aus))
@@ -277,6 +283,9 @@ simulate_sa2 <- function(days_to_simulate = 5,
           weekly
         }
       })
+
+    FreqsByDestType <-
+      lapply(FreqsByDestType, function(x) rep_len(as.integer(x), nrow(aus)))
 
 
 
