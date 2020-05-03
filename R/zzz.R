@@ -23,6 +23,11 @@
     options("covid19.model.sa2.fst2_progress" = interactive())
   }
 
+  if (is.null(getOption("covid19.model.sa2_useDataEnv"))) {
+    options(covid19.model.sa2_useDataEnv = FALSE)
+  }
+
+
   invisible(NULL)
 }
 

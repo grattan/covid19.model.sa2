@@ -13,7 +13,7 @@ simulate_sa2(
   showProgress = 1L,
   by_state = TRUE,
   dataEnv = getOption("covid19.model.sa2_dataEnv", new.env()),
-  use_dataEnv = FALSE,
+  use_dataEnv = getOption("covid19.model.sa2_useDataEnv", FALSE),
   nThread = getOption("covid19.model.sa2_nThread", 1L),
   myaus = NULL
 )
