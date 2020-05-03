@@ -695,6 +695,44 @@ read_fst("data-raw/google/TypeInt_by_place_id.fst") %>%
   write_fst(provide.file("data-raw/google/tmp/nSupermarkets_by_sa2.fst")) %>%
   .[]
 
+maxTypeInt <- read_sys("data-raw/google/Type_by_TypeInt.fst")[, max(TypeInt)]
+
+PlaceInt_by_shortSA2_TypeInt <-
+  read_sys("data-raw/google/TypeInt_by_place_id.fst") %>%
+  .[read_sys("data-raw/google/sa2_by_place_id.fst")] %>%
+  .[read_sys("data-raw/google/Type_by_TypeInt.fst"), on = "TypeInt"] %>%
+  .[complete.cases(sa2)] %>%
+  setkey(sa2, TypeInt) %>%
+  .[, PlaceInt := chmatch(place_id, unique(place_id)), by = .(TypeInt)] %>%
+  .[, PlaceInt := PlaceInt - 1L] %>%
+  .[, shortSA2 := covid19.model.sa2:::shorten_sa2s_ordered(sa2)] %>%
+  .[, .(shortSA2, TypeInt, PlaceInt)] %>%
+  setkey(TypeInt, shortSA2) %>%
+
+  # Needs to match shortSA2
+  .[CJ(TypeInt = seq_len(maxTypeInt),
+       shortSA2 = 0:2309)] %>%
+  .[]
+
+maxTypeInt <- PlaceInt_by_shortSA2_TypeInt[, max(TypeInt)]
+
+
+#' A list of TypeInt elements, each a data.table
+#' nPlaces the number of such places in this shortSA2
+#' minPlaceId the minimum place id of this sa2-place_id
+#' Idea is to use sortedness of SA2
+minPlaceID_nPlacesByDestType <-
+  lapply(seq_len(maxTypeInt), function(j) {
+    PlaceInt_by_shortSA2_TypeInt[TypeInt == j,
+                                 .(nPlaces = .N - sum(is.na(PlaceInt)),
+                                   minPlaceId = min(PlaceInt)),
+                                 keyby = .(shortSA2)]
+
+  })
+
+usethis::use_data(minPlaceID_nPlacesByDestType, internal = TRUE)
+
+
 
 move_fst_to_inst <- function() {
   sapply(dir(path = "data-raw/int", pattern = "\\.fst$", full.names = TRUE),
