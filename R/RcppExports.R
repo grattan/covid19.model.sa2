@@ -68,12 +68,8 @@ do_rep <- function(r, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_rep`, r, nThread)
 }
 
-get_nColleagues <- function(nr, N, LabourForceStatus, nThread = 1L, c_d = 0L, beta = 27, mu = 2.2, sigma = 0.62) {
-    .Call(`_covid19_model_sa2_get_nColleagues`, nr, N, LabourForceStatus, nThread, c_d, beta, mu, sigma)
-}
-
-do_au_simulate <- function(Status, InfectedOn, SA2, State, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, yday_start, days_to_sim, N = 25e6L, display_progress = TRUE, by_state = TRUE, console_width = 80L, optionz = 0L, nThread = 1L) {
-    .Call(`_covid19_model_sa2_do_au_simulate`, Status, InfectedOn, SA2, State, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, yday_start, days_to_sim, N, display_progress, by_state, console_width, optionz, nThread)
+do_au_simulate <- function(Status, InfectedOn, State, SA2, hid, seqN, HouseholdSize, Age, School, DZN, wid, nColleagues, PlaceTypeBySA2, LabourForceStatus, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, yday_start, days_to_sim, N = 25e6L, display_progress = TRUE, by_state = TRUE, console_width = 80L, optionz = 0L, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_au_simulate`, Status, InfectedOn, State, SA2, hid, seqN, HouseholdSize, Age, School, DZN, wid, nColleagues, PlaceTypeBySA2, LabourForceStatus, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, yday_start, days_to_sim, N, display_progress, by_state, console_width, optionz, nThread)
 }
 
 do_exp_dbl2int <- function(x, nThread = 1L) {
@@ -88,8 +84,20 @@ do_seqN_N <- function(hid, pid, check_hid_sorted = TRUE) {
     .Call(`_covid19_model_sa2_do_seqN_N`, hid, pid, check_hid_sorted)
 }
 
+get_nColleagues <- function(nr, N, LabourForceStatus, nThread = 1L, c_d = 0L, beta = 27, mu = 2.2, sigma = 0.62) {
+    .Call(`_covid19_model_sa2_get_nColleagues`, nr, N, LabourForceStatus, nThread, c_d, beta, mu, sigma)
+}
+
+do_workplaces <- function(AusByDZN, nThread = 1L, c_d = 0L, beta = 15, mu = 2.2, sigma = 0.62) {
+    .Call(`_covid19_model_sa2_do_workplaces`, AusByDZN, nThread, c_d, beta, mu, sigma)
+}
+
 testOpenmp <- function(x, nThread = 1L) {
     .Call(`_covid19_model_sa2_testOpenmp`, x, nThread)
+}
+
+postcode_to_sa2_sorted <- function(postcode, POSTCODE, SA2_MAINCODE) {
+    .Call(`_covid19_model_sa2_postcode_to_sa2_sorted`, postcode, POSTCODE, SA2_MAINCODE)
 }
 
 punif_int <- function(n, a, b, nThread = 1L) {
@@ -152,7 +160,7 @@ test_threadsafe_mod <- function(x, y, nThread = 1L) {
     .Call(`_covid19_model_sa2_test_threadsafe_mod`, x, y, nThread)
 }
 
-do_is_unsorted_pint <- function(x) {
-    .Call(`_covid19_model_sa2_do_is_unsorted_pint`, x)
+do_is_unsorted_pint <- function(x, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_is_unsorted_pint`, x, nThread)
 }
 

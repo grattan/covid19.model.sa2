@@ -294,6 +294,13 @@ simulate_sa2 <- function(days_to_simulate = 5,
     aus[!is.na(school_id), short_school_id := frank(school_id, ties.method = "dense")]
     aus[!is.na(work_dzn) , short_dzn := frank(work_dzn, ties.method = "dense")]
 
+    # Add colleagues and wid (work id)
+    AusByDZN <- aus[!is.na(short_dzn), .(NDz = .N, pid, LabourForceStatus), keyby = .(dzn = short_dzn)]
+    AusByDZN[, c("wid", "nColleagues") := do_workplaces(.SD, nThread = 12)]
+    setkeyv(AusByDZN, "pid")
+    aus[AusByDZN, wid := i.wid, on = "pid"]
+    aus[AusByDZN, nColleagues := i.nColleagues, on = "pid"]
+
     # from Stevenson-Lancet-COVID19.md
     # aus[, Incubation := dq_rnlorm(.N, m = EpiPars[["incubation_m"]], s = 0.44)]
     # aus[, Illness := dq_rnlorm(.N, m = EpiPars[["illness_m"]], s = 0.99)]
@@ -320,6 +327,8 @@ simulate_sa2 <- function(days_to_simulate = 5,
                         State = state,
                         SA2 = sa2,
                         DZN = short_dzn,
+                        wid = wid,
+                        nColleagues = nColleagues,
                         hid = hid,
                         seqN = seqN,
                         HouseholdSize = HouseholdSize,

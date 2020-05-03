@@ -448,6 +448,7 @@ void infect_supermarkets(IntegerVector Status,
       }
 
       if (i_supermarkets[sa2i][supermarketi][hr]) {
+        i_supermarkets[sa2i][supermarketi][hr] -= 1;
         if (Resistance[i] < resistance1) {
           // i_supermarkets[sa2i][supermarketi][hr] -= 1;
           Status[i] = STATUS_NOSYMP;
@@ -481,127 +482,74 @@ IntegerVector do_rep(IntegerVector r, int nThread = 1) {
 }
 
 
-// [[Rcpp::export]]
-IntegerVector get_nColleagues(int nr, int N,
-                              IntegerVector LabourForceStatus,
-                              int nThread = 1,
-                              int c_d = 0,
-                              double beta = 27,
-                              double mu = 2.2,
-                              double sigma = 0.62) {
-  // N = vector length desired, the number of individuals
-  // nr intermediate estimate for number of lognormal draws
-  // plausibly the number of 'workplaces'
-  if (N != LabourForceStatus.length()) {
-    stop("Internal error: get_nColleagues(): N != LabourForceStatus.length().");
-  }
-
-  IntegerVector r = no_init(nr);
-  int n = 0;
-
-  // possibly neater to put this inside a loop but (a) I don't think my
-  // compiler is that smart and (b) 'breaks' and 'continues' make me nervous
-  switch(c_d) {
-  case 0:
-#pragma omp parallel for num_threads(nThread) reduction(+:n)
-    for (int i = 0; i < nr; ++i) {
-      int ri = geomRand(1 / beta); // beta = average so 1/beta gives the 'rate'
-      if (ri <= 1) {
-        // partners are far more common than single-person employers
-        if ((i % 4)) {
-          ri = 2;
-        } else {
-          ri = 1;
-        }
-      }
-      n += ri;
-      r[i] = ri;
-    }
-    break;
-  case 1:
-#pragma omp parallel for num_threads(nThread) reduction(+:n)
-    for (int i = 0; i < nr; ++i) {
-      int ri = dbl2int(lnormRand(mu, sigma));
-      n += ri;
-      r[i] = ri;
-    }
-    break;
-  default:
-    stop("Internal error: unsupported c_d.");
-  }
-
-  IntegerVector out = no_init(N);
-  // j index of out
-  // i index of workplaces (new i => new number of colleagues)
-  // k new position within same workplace
-
-  int j = 0;
-  for (int i = 0, k = 0; i < nr && j < N; ++i) {
-    int ri = r[i];
-    while (k < ri && j < N) {
-      if (LabourForceStatus[j] != LFS_FULLTIME &&
-          LabourForceStatus[j] != LFS_PARTTIME) {
-        out[j] = 0;
-        // don't increment k because we need to keep it for next employee
-      } else {
-        out[j] = ri;
-        ++k;
-      }
-      ++j;
-    }
-    k = 0;
-  }
-  if (j < N) {
-    // just select from the lognormal repeater already created
-    for (int i = 0, k = 0; i < nr && j < N; ++i) {
-      int ri = r[i];
-      while (k < ri && j < N) {
-        if (LabourForceStatus[j] != LFS_FULLTIME &&
-            LabourForceStatus[j] != LFS_PARTTIME) {
-          out[j] = 0;
-        } else {
-          out[j] = ri;
-          ++k;
-        }
-        ++j;
-      }
-      k = 0;
-    }
-  }
-  return out;
-}
-
-
-
 
 
 void infect_dzn(IntegerVector Status,
+                IntegerVector InfectedOn,
                 IntegerVector DZN,
+                IntegerVector wid,
                 IntegerVector LabourForceStatus,
                 IntegerVector nColleagues,
                 int day,
                 int wday,
                 int yday,
                 int N,
+                int resistance1,
+                int workplaces_open,
+                int workplace_size_max,
+                int a_workplace_rate,
                 double r_location,
                 double r_scale,
                 int r_d,
                 IntegerVector TodaysK,
+                IntegerVector Resistance,
+                int zero,
+                int &wid_supremum,
+                int optionz,
                 int nThread = 1) {
+  if (zero != 0) {
+    stop("zero != 0");
+  }
 
-  int InfectionsByDZN[NDZN] = {};
+  if (day == 0) {
+    // check that DZN is short and ranges from 1 to (NDZN - 1)
+    // check that wid_supremum0
+    int max_dzn = 0;
+    int wid_supremeum0 = wid_supremum + 0;
+#pragma omp parallel for num_threads(nThread) reduction(max:max_dzn) reduction(max:wid_supremeum0)
+    for (int i = 0; i < N; ++i) {
+      if (DZN[i] > max_dzn) {
+        max_dzn = DZN[i];
+      }
+      if (wid[i] > wid_supremeum0) {
+        wid_supremeum0 = wid[i];
+      }
+    }
+    if (wid_supremeum0 > wid_supremum) {
+      wid_supremum = wid_supremeum0;
+    }
+  }
 
-#pragma omp parallel for reduction(+:InfectionsByDZN[:NDZN])
+  const int wid_s = wid_supremum + 1;
+
+
+  int InfectionsByWorkplace[wid_s];
+  memset(InfectionsByWorkplace, 0, sizeof InfectionsByWorkplace);
+  int nWorkers[wid_s];
+  memset(nWorkers, 0, sizeof nWorkers);
+
+#pragma omp parallel for num_threads(nThread) reduction(+:InfectionsByWorkplace[:wid_s]) reduction(+:nWorkers[:wid_s])
   for (int i = 0; i < N; ++i) {
-    if (Status[i] != STATUS_INSYMP) {
+    int widi = wid[i];
+    if (widi <= 0) {
       continue;
     }
-
     int dzni = DZN[i];
     // if zero or NA
     if (dzni <= 0) {
       continue;
     }
+
 
     // unlikely at this point so don't worry about branches
     if (LabourForceStatus[i] != LFS_FULLTIME &&
@@ -609,15 +557,98 @@ void infect_dzn(IntegerVector Status,
       continue;
     }
 
+    if (!Status[i] || Status[i] == STATUS_HEALED || Status[i] == STATUS_NOSYMP) {
+      nWorkers[widi - 1] += 1;
+    }
+    if (Status[i] != STATUS_INSYMP) {
+      continue;
+    }
 
-
-    InfectionsByDZN[dzni] += r_Rand(r_location, r_scale, r_d);
+    InfectionsByWorkplace[widi - 1] += 1;// r_Rand(r_location, r_scale, r_d);
   }
 
+  for (int i = 0; i < N; ++i) {
+    int widi = wid[i];
+    if (widi < 1 || widi > wid_s) {
+      continue;
+    }
+
+    if (InfectionsByWorkplace[widi - 1] <= 0) {
+      continue;
+    }
+
+    if (nWorkers[widi - 1] <= 1) {
+      continue;
+    }
+
+    int excess_workers = nWorkers[widi - 1] - workplace_size_max;
+    if (excess_workers > 0) {
+      nWorkers[widi - 1] = workplace_size_max;
+      if (excess_workers > InfectionsByWorkplace[widi - 1]) {
+        // assume infections are strictly less likely to attend work
+        InfectionsByWorkplace[widi - 1] = 0;
+        continue;
+      } else {
+        InfectionsByWorkplace[widi - 1] -= excess_workers;
+      }
+    }
+
+    if (Resistance[i] < resistance1 &&
+        TodaysK[(yday + 2 * widi + 7 * i) % NTODAY] < a_workplace_rate) {
+      Status[i] = STATUS_NOSYMP;
+      InfectedOn[i] = yday;
+      --InfectionsByWorkplace[widi - 1];
+    }
+  }
+/*
+
+#pragma omp parallel for num_threads(nThread)
+  for (int widj = 1; widj <= wid_supremum; ++widj) {
+    int n_workers = 0;
+    int n_infections = InfectionsByWorkplace[widj - 1]; // 1-indexed
+    if (n_infections == 0) {
+      continue;
+    }
+    if (TodaysK[(yday + widj) % NTODAY] < workplaces_open) {
+      continue;
+    }
+    for (int i = 0; i < N; ++i) {
+      int widi = wid[i];
+      if (widi != widj) {
+        continue;
+      }
 
 
+      if (Status[i]) {
+        if (Status[i] != STATUS_HEALED) {
+          // comes to work but won't get sick
+          ++n_workers;
+          continue;
+        }
+        if (Status[i] != STATUS_NOSYMP) {
+          ++n_workers;
+        } else {
+          // won't come to work,
+          continue;
+        }
+      }
+      if (++n_workers > workplace_size_max) {
+        continue;
+      }
 
+      if (Resistance[i] < resistance1 &&
+          TodaysK[(yday + 2 * widj) % NTODAY] < a_workplace_rate) {
+        Status[i] = STATUS_NOSYMP;
+        InfectedOn[i] = yday;
+        --n_infections;
+        if (n_infections == 0) {
+          break;
+        }
+      }
+    }
+  }
 
+  */
   // void infect_dzn
 }
 
@@ -924,12 +955,14 @@ List do_au_simulate(IntegerVector Status,
                     IntegerVector InfectedOn,
                     IntegerVector State,
                     IntegerVector SA2,
-                    IntegerVector DZN,
                     IntegerVector hid,
                     IntegerVector seqN,
                     IntegerVector HouseholdSize,
                     IntegerVector Age,
                     IntegerVector School,
+                    IntegerVector DZN,
+                    IntegerVector wid,
+                    IntegerVector nColleagues,
                     IntegerVector PlaceTypeBySA2,
                     IntegerVector LabourForceStatus,
                     IntegerVector Resistance,
@@ -1034,12 +1067,8 @@ List do_au_simulate(IntegerVector Status,
   int ct_days_until_result = Policy["contact_tracing_days_until_result"];
 
   int workplaces_open = Policy["workplaces_open"];
-  double workplace_size_beta = Policy["workplaces_size_beta"];
-  double workplace_size_lmu = Policy["workplaces_size_lmu"];
-  double workplace_size_lsi = Policy["workplaces_size_lsi"];
-  int w_c_u = (workplace_size_lmu < 0) ? 0 : 1;
-
-
+  int workplace_size_max = Policy["workplace_size_max"];
+  int a_workplace_rate = Epi["a_workplace_rate"];
 
   IntegerVector TestedOn = no_init(N);
 
@@ -1098,7 +1127,6 @@ List do_au_simulate(IntegerVector Status,
 
   // These could potentially be smaller vectors
   IntegerVector HouseholdInfectedToday = no_init(N); // was the household infected today?
-  IntegerVector nColleagues = no_init(N);
 
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
@@ -1130,7 +1158,7 @@ List do_au_simulate(IntegerVector Status,
 
 
 
-
+  int wid_supremum = WID_SUPREMUM;
 
 
   for (int day = 0; day < days_to_sim; ++day) {
@@ -1344,20 +1372,16 @@ List do_au_simulate(IntegerVector Status,
                     n_pupils,
                     nThread);
     }
-    if (day == 0) {
-      nColleagues = get_nColleagues(N / 8,
-                                    N,
-                                    LabourForceStatus,
-                                    nThread,
-                                    w_c_u,
-                                    workplace_size_beta,
-                                    workplace_size_lmu,
-                                    workplace_size_lsi);
+    if (workplaces_open) {
+      infect_dzn(Status, InfectedOn,
+                 DZN, wid, LabourForceStatus, nColleagues,
+                 day, wday, yday, N,
+                 resistance_threshold,
+                 workplaces_open,
+                 workplace_size_max,
+                 a_workplace_rate,
+                 r_work_location, r_scale, r_d, TodaysK, Resistance, 0, wid_supremum, optionz, nThread);
     }
-    infect_dzn(Status,
-               DZN, LabourForceStatus, nColleagues,
-               day, wday, yday, N,
-               r_work_location, r_scale, r_d, TodaysK, nThread);
 
 
 

@@ -115,41 +115,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// get_nColleagues
-IntegerVector get_nColleagues(int nr, int N, IntegerVector LabourForceStatus, int nThread, int c_d, double beta, double mu, double sigma);
-RcppExport SEXP _covid19_model_sa2_get_nColleagues(SEXP nrSEXP, SEXP NSEXP, SEXP LabourForceStatusSEXP, SEXP nThreadSEXP, SEXP c_dSEXP, SEXP betaSEXP, SEXP muSEXP, SEXP sigmaSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type nr(nrSEXP);
-    Rcpp::traits::input_parameter< int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type LabourForceStatus(LabourForceStatusSEXP);
-    Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
-    Rcpp::traits::input_parameter< int >::type c_d(c_dSEXP);
-    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
-    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
-    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_nColleagues(nr, N, LabourForceStatus, nThread, c_d, beta, mu, sigma));
-    return rcpp_result_gen;
-END_RCPP
-}
 // do_au_simulate
-List do_au_simulate(IntegerVector Status, IntegerVector InfectedOn, IntegerVector SA2, IntegerVector State, IntegerVector hid, IntegerVector seqN, IntegerVector HouseholdSize, IntegerVector Age, IntegerVector School, IntegerVector PlaceTypeBySA2, IntegerVector Employment, IntegerVector Resistance, List Policy, List nPlacesByDestType, List FreqsByDestType, List Epi, /* Epidemiological parameters */                     IntegerVector nSupermarketsAvbl, IntegerVector SupermarketTypical, int yday_start, int days_to_sim, int N, bool display_progress, bool by_state, int console_width, int optionz, int nThread);
-RcppExport SEXP _covid19_model_sa2_do_au_simulate(SEXP StatusSEXP, SEXP InfectedOnSEXP, SEXP SA2SEXP, SEXP StateSEXP, SEXP hidSEXP, SEXP seqNSEXP, SEXP HouseholdSizeSEXP, SEXP AgeSEXP, SEXP SchoolSEXP, SEXP PlaceTypeBySA2SEXP, SEXP EmploymentSEXP, SEXP ResistanceSEXP, SEXP PolicySEXP, SEXP nPlacesByDestTypeSEXP, SEXP FreqsByDestTypeSEXP, SEXP EpiSEXP, SEXP nSupermarketsAvblSEXP, SEXP SupermarketTypicalSEXP, SEXP yday_startSEXP, SEXP days_to_simSEXP, SEXP NSEXP, SEXP display_progressSEXP, SEXP by_stateSEXP, SEXP console_widthSEXP, SEXP optionzSEXP, SEXP nThreadSEXP) {
+List do_au_simulate(IntegerVector Status, IntegerVector InfectedOn, IntegerVector State, IntegerVector SA2, IntegerVector hid, IntegerVector seqN, IntegerVector HouseholdSize, IntegerVector Age, IntegerVector School, IntegerVector DZN, IntegerVector wid, IntegerVector nColleagues, IntegerVector PlaceTypeBySA2, IntegerVector LabourForceStatus, IntegerVector Resistance, List Policy, List nPlacesByDestType, List FreqsByDestType, List Epi, /* Epidemiological parameters */                     IntegerVector nSupermarketsAvbl, IntegerVector SupermarketTypical, int yday_start, int days_to_sim, int N, bool display_progress, bool by_state, int console_width, int optionz, int nThread);
+RcppExport SEXP _covid19_model_sa2_do_au_simulate(SEXP StatusSEXP, SEXP InfectedOnSEXP, SEXP StateSEXP, SEXP SA2SEXP, SEXP hidSEXP, SEXP seqNSEXP, SEXP HouseholdSizeSEXP, SEXP AgeSEXP, SEXP SchoolSEXP, SEXP DZNSEXP, SEXP widSEXP, SEXP nColleaguesSEXP, SEXP PlaceTypeBySA2SEXP, SEXP LabourForceStatusSEXP, SEXP ResistanceSEXP, SEXP PolicySEXP, SEXP nPlacesByDestTypeSEXP, SEXP FreqsByDestTypeSEXP, SEXP EpiSEXP, SEXP nSupermarketsAvblSEXP, SEXP SupermarketTypicalSEXP, SEXP yday_startSEXP, SEXP days_to_simSEXP, SEXP NSEXP, SEXP display_progressSEXP, SEXP by_stateSEXP, SEXP console_widthSEXP, SEXP optionzSEXP, SEXP nThreadSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< IntegerVector >::type Status(StatusSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type InfectedOn(InfectedOnSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type SA2(SA2SEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type State(StateSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type SA2(SA2SEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type hid(hidSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type seqN(seqNSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type HouseholdSize(HouseholdSizeSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type Age(AgeSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type School(SchoolSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type DZN(DZNSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type wid(widSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type nColleagues(nColleaguesSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type PlaceTypeBySA2(PlaceTypeBySA2SEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type Employment(EmploymentSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type LabourForceStatus(LabourForceStatusSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type Resistance(ResistanceSEXP);
     Rcpp::traits::input_parameter< List >::type Policy(PolicySEXP);
     Rcpp::traits::input_parameter< List >::type nPlacesByDestType(nPlacesByDestTypeSEXP);
@@ -165,7 +150,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type console_width(console_widthSEXP);
     Rcpp::traits::input_parameter< int >::type optionz(optionzSEXP);
     Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
-    rcpp_result_gen = Rcpp::wrap(do_au_simulate(Status, InfectedOn, SA2, State, hid, seqN, HouseholdSize, Age, School, PlaceTypeBySA2, Employment, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, yday_start, days_to_sim, N, display_progress, by_state, console_width, optionz, nThread));
+    rcpp_result_gen = Rcpp::wrap(do_au_simulate(Status, InfectedOn, State, SA2, hid, seqN, HouseholdSize, Age, School, DZN, wid, nColleagues, PlaceTypeBySA2, LabourForceStatus, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, yday_start, days_to_sim, N, display_progress, by_state, console_width, optionz, nThread));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -205,6 +190,40 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// get_nColleagues
+IntegerVector get_nColleagues(int nr, int N, IntegerVector LabourForceStatus, int nThread, int c_d, double beta, double mu, double sigma);
+RcppExport SEXP _covid19_model_sa2_get_nColleagues(SEXP nrSEXP, SEXP NSEXP, SEXP LabourForceStatusSEXP, SEXP nThreadSEXP, SEXP c_dSEXP, SEXP betaSEXP, SEXP muSEXP, SEXP sigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type nr(nrSEXP);
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type LabourForceStatus(LabourForceStatusSEXP);
+    Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
+    Rcpp::traits::input_parameter< int >::type c_d(c_dSEXP);
+    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_nColleagues(nr, N, LabourForceStatus, nThread, c_d, beta, mu, sigma));
+    return rcpp_result_gen;
+END_RCPP
+}
+// do_workplaces
+List do_workplaces(List AusByDZN, int nThread, int c_d, double beta, double mu, double sigma);
+RcppExport SEXP _covid19_model_sa2_do_workplaces(SEXP AusByDZNSEXP, SEXP nThreadSEXP, SEXP c_dSEXP, SEXP betaSEXP, SEXP muSEXP, SEXP sigmaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type AusByDZN(AusByDZNSEXP);
+    Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
+    Rcpp::traits::input_parameter< int >::type c_d(c_dSEXP);
+    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< double >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma(sigmaSEXP);
+    rcpp_result_gen = Rcpp::wrap(do_workplaces(AusByDZN, nThread, c_d, beta, mu, sigma));
+    return rcpp_result_gen;
+END_RCPP
+}
 // testOpenmp
 NumericVector testOpenmp(NumericVector x, int nThread);
 RcppExport SEXP _covid19_model_sa2_testOpenmp(SEXP xSEXP, SEXP nThreadSEXP) {
@@ -214,6 +233,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
     Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
     rcpp_result_gen = Rcpp::wrap(testOpenmp(x, nThread));
+    return rcpp_result_gen;
+END_RCPP
+}
+// postcode_to_sa2_sorted
+IntegerVector postcode_to_sa2_sorted(IntegerVector postcode, IntegerVector POSTCODE, IntegerVector SA2_MAINCODE);
+RcppExport SEXP _covid19_model_sa2_postcode_to_sa2_sorted(SEXP postcodeSEXP, SEXP POSTCODESEXP, SEXP SA2_MAINCODESEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type postcode(postcodeSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type POSTCODE(POSTCODESEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type SA2_MAINCODE(SA2_MAINCODESEXP);
+    rcpp_result_gen = Rcpp::wrap(postcode_to_sa2_sorted(postcode, POSTCODE, SA2_MAINCODE));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -410,12 +442,13 @@ BEGIN_RCPP
 END_RCPP
 }
 // do_is_unsorted_pint
-bool do_is_unsorted_pint(IntegerVector x);
-RcppExport SEXP _covid19_model_sa2_do_is_unsorted_pint(SEXP xSEXP) {
+bool do_is_unsorted_pint(IntegerVector x, int nThread);
+RcppExport SEXP _covid19_model_sa2_do_is_unsorted_pint(SEXP xSEXP, SEXP nThreadSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(do_is_unsorted_pint(x));
+    Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
+    rcpp_result_gen = Rcpp::wrap(do_is_unsorted_pint(x, nThread));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -431,11 +464,15 @@ static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_supermarket_weekday_hrs", (DL_FUNC) &_covid19_model_sa2_supermarket_weekday_hrs, 0},
     {"_covid19_model_sa2_supermarket_weekend_hrs", (DL_FUNC) &_covid19_model_sa2_supermarket_weekend_hrs, 0},
     {"_covid19_model_sa2_do_max_par_int", (DL_FUNC) &_covid19_model_sa2_do_max_par_int, 2},
-    {"_covid19_model_sa2_do_au_simulate", (DL_FUNC) &_covid19_model_sa2_do_au_simulate, 26},
+    {"_covid19_model_sa2_do_rep", (DL_FUNC) &_covid19_model_sa2_do_rep, 2},
+    {"_covid19_model_sa2_do_au_simulate", (DL_FUNC) &_covid19_model_sa2_do_au_simulate, 29},
     {"_covid19_model_sa2_do_exp_dbl2int", (DL_FUNC) &_covid19_model_sa2_do_exp_dbl2int, 2},
     {"_covid19_model_sa2_do_lag_int", (DL_FUNC) &_covid19_model_sa2_do_lag_int, 2},
     {"_covid19_model_sa2_do_seqN_N", (DL_FUNC) &_covid19_model_sa2_do_seqN_N, 3},
+    {"_covid19_model_sa2_get_nColleagues", (DL_FUNC) &_covid19_model_sa2_get_nColleagues, 8},
+    {"_covid19_model_sa2_do_workplaces", (DL_FUNC) &_covid19_model_sa2_do_workplaces, 6},
     {"_covid19_model_sa2_testOpenmp", (DL_FUNC) &_covid19_model_sa2_testOpenmp, 2},
+    {"_covid19_model_sa2_postcode_to_sa2_sorted", (DL_FUNC) &_covid19_model_sa2_postcode_to_sa2_sorted, 3},
     {"_covid19_model_sa2_punif_int", (DL_FUNC) &_covid19_model_sa2_punif_int, 4},
     {"_covid19_model_sa2_dqsample_int2", (DL_FUNC) &_covid19_model_sa2_dqsample_int2, 2},
     {"_covid19_model_sa2_prlnorm_dbl", (DL_FUNC) &_covid19_model_sa2_prlnorm_dbl, 4},
@@ -451,7 +488,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_do_lag_in_place", (DL_FUNC) &_covid19_model_sa2_do_lag_in_place, 1},
     {"_covid19_model_sa2_do_pminCppp", (DL_FUNC) &_covid19_model_sa2_do_pminCppp, 3},
     {"_covid19_model_sa2_test_threadsafe_mod", (DL_FUNC) &_covid19_model_sa2_test_threadsafe_mod, 3},
-    {"_covid19_model_sa2_do_is_unsorted_pint", (DL_FUNC) &_covid19_model_sa2_do_is_unsorted_pint, 1},
+    {"_covid19_model_sa2_do_is_unsorted_pint", (DL_FUNC) &_covid19_model_sa2_do_is_unsorted_pint, 2},
     {NULL, NULL, 0}
 };
 

@@ -132,5 +132,22 @@ fst_columns <- function(file.fst) {
   fst::metadata_fst(file.fst)[["columnNames"]]
 }
 
+read_business <- function(maxmax = 500L) {
+  business <- read_sys("inst/extdata/businesses.fst")
+
+  # 10 to 19 employees => list(10, 19)  # i.e. two new cols
+  empl_col_to_minmax <- function(x) {
+    x1 <- sub(" employees$", "", x)
+    X <- tstrsplit(x1, split = "( to )|[+]")
+    lapply(X, as.integer)
+  }
+
+  business[endsWith(employees, "employees"),
+           c("mine", "maxe") := empl_col_to_minmax(employees)]
+  # Provide an upper bound
+  business[mine == max(mine, na.rm = TRUE), maxe := coalesce(maxe, maxmax)]
+}
+
+
 
 

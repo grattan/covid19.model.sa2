@@ -30,3 +30,13 @@ accel <- function(x, FUN) {
   }
   setDT(list(x = x))[, "ans" := FUN(.BY[[1]]), by = "x"][["ans"]]
 }
+
+# put in hutils soon
+ematch <- function(x, table) {
+  # exists and match
+  if (anyNA(out <- fastmatch::fmatch(x, table))) {
+    stop(glue("{vname(x)} contained elements, no matched with {vname(table)}"))
+  }
+  out
+}
+
