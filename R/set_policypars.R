@@ -111,8 +111,8 @@ set_policypars <- function(supermarkets_open = TRUE,
   }
 
   workplaces_open <- as.double(workplaces_open)
-  checkmate::assert_number(workplaces_open, any.missing = FALSE, lower = 0, upper = 1, finite = TRUE)
-  checkmate::assert_int(workplace_size_max, lower = 0L, finite = TRUE)
+  checkmate::assert_number(workplaces_open, lower = 0, upper = 1, finite = TRUE)
+  checkmate::assert_int(workplace_size_max, lower = 0L)
   checkmate::assert_number(workplace_size_beta, finite = TRUE)
   checkmate::assert_number(workplace_size_lmu, finite = TRUE)
   checkmate::assert_number(workplace_size_lsi, finite = TRUE)

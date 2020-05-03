@@ -2,8 +2,11 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-int maxii(int a, int b) {
+int maxii(int &a, int &b) {
   return (a < b) ? b : a;
+}
+int minii(int &a, int &b) {
+  return (a < b) ? a : b;
 }
 
 int max0(int x) {
@@ -132,7 +135,7 @@ IntegerVector test_threadsafe_mod(IntegerVector x, IntegerVector y, int nThread 
   if (ymin != 0) {
     stop("ymin != 0");
   }
-  int ymax1 = ymax + 1;
+  const int ymax1 = ymax + 1;
 
   IntegerVector out(ymax1);
   int out2[ymax][ymax1];
@@ -151,5 +154,9 @@ IntegerVector test_threadsafe_mod(IntegerVector x, IntegerVector y, int nThread 
   }
   return out;
 }
+
+
+
+
 
 

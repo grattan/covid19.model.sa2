@@ -15,10 +15,10 @@ int which_unsorted_int(IntegerVector x) {
 
 
 // [[Rcpp::export(rng = false)]]
-bool do_is_unsorted_pint(IntegerVector x) {
+bool do_is_unsorted_pint(IntegerVector x, int nThread = 1) {
   bool o = false;
   int n = x.size();
-#pragma omp parallel for reduction(|| : o)
+#pragma omp parallel for num_threads(nThread) reduction(|| : o)
   for (int i = 1; i < n; ++i) {
     o = o || x[i - 1] > x[i];
   }

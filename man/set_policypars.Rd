@@ -15,7 +15,12 @@ set_policypars(
   contact_tracing_only_sympto = TRUE,
   tests_by_state = NULL,
   max_persons_per_event = 5L,
-  max_persons_per_supermarket = 200L
+  max_persons_per_supermarket = 200L,
+  workplaces_open = FALSE,
+  workplace_size_max = 1L,
+  workplace_size_beta = 13,
+  workplace_size_lmu = -1,
+  workplace_size_lsi = -1
 )
 }
 \arguments{
@@ -63,7 +68,21 @@ If any entry is negative,
 or \code{NA}, the most recent day's number of tests performed are
 used.}
 
-\item{max_persons_per_event, max_persons_per_supermarket}{Not yet used.}
+\item{max_persons_per_event}{Not yet used.}
+
+\item{max_persons_per_supermarket}{Maximum number of people allowed in a
+supermarket (within one hour i.e. concurrently).}
+
+\item{workplaces_open}{Are workplaces to be open?
+Can be logical \code{FALSE} or \code{TRUE} or a number in \code{[0, 1]},
+the proportion of workplaces that remain open.}
+
+\item{workplace_size_max}{The maximum size of any workplace (we assume
+that everyone interacts on a single day).}
+
+\item{workplace_size_beta, workplace_size_lmu, workplace_size_lsi}{Parameters for the distribution of workplace sizes. \code{_beta} is the
+rate distribution for the geometric distribution; \code{_lmu} and
+\code{_lsi} are the parameters for the lognormal distribution.}
 }
 \value{
 A list of the components.

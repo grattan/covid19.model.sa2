@@ -53,6 +53,7 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
                         r_schools_scale = r_scale,
                         r_supermarket_location = r_location,
                         r_supermarket_scale = r_scale,
+                        r_work_location = r_location,
                         a_workplace_rate = 0.07,
                         resistance_threshold = 400L,
                         p_asympto = 0.48,
@@ -105,6 +106,7 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
   p_asympto <- as.integer(1000 * p_asympto)
   p_critical <- as.integer(1000 * p_critical)
   p_death <- as.integer(1000 * p_death)
+  a_workplace_rate <- as.integer(1000 * a_workplace_rate)
 
   # Convert to int for convenience
   incubation_distribution <- match_distr(incubation_distribution)

@@ -19,6 +19,8 @@ set_epipars(
   r_schools_scale = r_scale,
   r_supermarket_location = r_location,
   r_supermarket_scale = r_scale,
+  r_work_location = r_location,
+  a_workplace_rate = 0.07,
   resistance_threshold = 400L,
   p_asympto = 0.48,
   p_critical = 0.02,

@@ -21,7 +21,12 @@ const int NSCHOOLS = 9501;
 const int NPUPILS = 3135825;
 const int NDZN = 9077; // includes NA
 
-const int NTODAY = 262144; // good cache length
+
+
+const int NTODAY = 261167; // prime just below a good cache length (262144)
+const int MWORKPLACES = 5e6; // number of workpalces approximately
+
+const int WID_SUPREMUM = 701146; // approximate number of WIDs
 
 const int STATUS_KILLED = -2;
 const int STATUS_HEALED = -1;
@@ -82,6 +87,7 @@ const int  NT_TERM3_START_YDAY = 203;
 
 
 int which_unsorted_int(IntegerVector x);
+bool do_is_unsorted_pint(IntegerVector x, int nThread);
 
 int short_sa2(int sa2);
 
@@ -99,14 +105,26 @@ double lnormRand(const double & a, const double & b);
 double cauchyRand(const double & a, const double & b);
 int cauchyRand0(const double & a, const double & b);
 
+int geomRand(const double & lambda);
+
 int dbl2int(double x);
 
-int maxii(int a, int b);
+int maxii(int &a, int &b);
+int minii(int &a, int &b);
 int max0(int x);
 int max0(double x);
 
 IntegerVector do_lag_int(IntegerVector s, int nThread);
 IntegerVector modulo(IntegerVector x, int m, int d, int nThread);
+IntegerVector prlnorm_int(int n, double a, double b, int nThread);
+
+IntegerVector get_nColleagues(int nr, int N,
+                              IntegerVector LabourForceStatus,
+                              int nThread,
+                              int c_d,
+                              double beta,
+                              double mu,
+                              double sigma);
 
 
 #endif
