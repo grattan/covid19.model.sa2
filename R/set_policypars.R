@@ -50,6 +50,9 @@
 #' @param max_persons_per_event Not yet used.
 #'
 #' @param cafes_open (TEMPORARY).
+#' @param age_based_lockdown Integer vector of ages to lockdown. Either a vector
+#' of the ages (1-100) or a length-100 vector specifying the ages to be lockdown
+#' (as 1).
 #'
 #' @param workplaces_open Are workplaces to be open?
 #' Can be logical \code{FALSE} or \code{TRUE} or a number in \code{[0, 1]},
@@ -84,6 +87,7 @@ set_policypars <- function(supermarkets_open = TRUE,
                            max_persons_per_event = 5L,
                            max_persons_per_supermarket = 200L,
                            cafes_open = TRUE,
+                           age_based_lockdown = integer(100),
                            workplaces_open = FALSE,
                            workplace_size_max = 1L,
                            workplace_size_beta = 13,
@@ -121,6 +125,8 @@ set_policypars <- function(supermarkets_open = TRUE,
   checkmate::assert_number(workplace_size_lsi, finite = TRUE)
 
   workplaces_open <- as.integer(workplaces_open * 1000)
+
+  age_based_lockdown <- .fix_age_based_lockdown(age_based_lockdown)
 
 
 
@@ -262,6 +268,27 @@ set_policypars <- function(supermarkets_open = TRUE,
 
   out
 }
+
+.fix_age_based_lockdown <- function(x) {
+  if (anyNA(x)) {
+    stop(vname(x), " contained missing value.")
+  }
+  if (length(x) == 100L && is.integer(x)) {
+    return(x)
+  }
+  if (is.integer(x) &&
+      length(x) <= 100 &&
+      min(x, na.rm = TRUE) >= 0 &&
+      max(x, na.rm = TRUE) <= 100) {
+    # interpret as the ages to lockdown
+    out <- integer(100)
+    out[x] <- 1L
+    return(out)
+  }
+  stop(vname(x), " unfixable at this time.")
+}
+
+
 
 
 
