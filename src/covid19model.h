@@ -129,6 +129,7 @@ IntegerVector get_nColleagues(int nr, int N,
                               double beta,
                               double mu,
                               double sigma);
+List sa2_firsts_finals(IntegerVector SA2, int nsa2);
 
 
 #endif

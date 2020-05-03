@@ -463,9 +463,10 @@ void infect_place(int place_id,
                   IntegerVector Status,
                   IntegerVector InfectedOn,
                   IntegerVector shortSA2,
+                  IntegerVector SA2_firsts,
+                  IntegerVector SA2_finals,
                   int nThread,
                   List minPlaceID_nPlacesByDestType,
-
                   int day,
                   int wday,
                   int yday,
@@ -475,7 +476,6 @@ void infect_place(int place_id,
                   IntegerVector PlaceFreq,
                   IntegerVector TodaysHz,
                   int hrs_open,
-                  IntegerVector PlaceTypical,
                   double r_location,
                   double r_scale,
                   int r_d,
@@ -485,7 +485,7 @@ void infect_place(int place_id,
   List minPlaceID_nPlaces = minPlaceID_nPlacesByDestType[place_id];
 
   IntegerVector nPlacesBySA2 = minPlaceID_nPlaces["nPlaces"];
-  IntegerVector minPlaceIdBySA2 = minPlaceID_nPlacesByDestType["minPlaceInt"];
+  IntegerVector minPlaceIdBySA2 = minPlaceID_nPlaces["minPlaceId"];
 
   if (day == 0) {
     // poor man's static assertions
@@ -493,6 +493,10 @@ void infect_place(int place_id,
     // infected implies positive status
     if (STATUS_KILLED > 0 || STATUS_HEALED > 0 || STATUS_SUSCEP > 0) {
       stop("Unexpected error(infect_place): 'infected implies positive status' violated");
+    }
+
+    if (SA2_firsts.length() != NSA2 || SA2_finals.length() != NSA2) {
+      stop("Internal error(infect_place): SA2_firsts.length() != NSA2 || SA2_finals.length() != NSA2");
     }
 
     // make sure there
@@ -509,9 +513,6 @@ void infect_place(int place_id,
     }
     if (N != PlaceFreq.length()) {
       stop("Internal error(infect_place): N != PlaceFreq.length().");
-    }
-    if (N != PlaceTypical.length()) {
-      stop("Internal error(infect_place): N != PlaceTypical.length().");
     }
 
     if (NTODAY != TodaysHz.length()) {
@@ -542,7 +543,9 @@ void infect_place(int place_id,
   // if place_id_x < place_id_y  then  sa2(place_id_x) <= sa2(place_id_y)
   // sa2
   int i_places[n_places][hrs_open];
+  // int n_visitors[n_places][hrs_open];
   memset(i_places, 0, sizeof i_places);
+  // memset(n_visitors, 0, sizeof i_places);
 
   int n_infections_per_sa2[NSA2] = {};
 
@@ -553,7 +556,13 @@ void infect_place(int place_id,
       continue;
     }
     int min_place_id = minPlaceIdBySA2[sa2i]; // 0-indexed
-    for (int i = 0; i < N; ++i) {
+    int start_sa2i = SA2_firsts[sa2i];
+    int end_sa2i   = SA2_finals[sa2i];
+    if (start_sa2i == end_sa2i) {
+      continue;
+    }
+
+    for (int i = start_sa2i; i < end_sa2i; ++i) {
       // sa2 is ordered
       // if we are below continue; if above skip
       if (shortSA2[i] != sa2i) {
@@ -563,9 +572,7 @@ void infect_place(int place_id,
           break;
         }
       }
-      if (Status[i] <= 0) {
-        continue;
-      }
+
       if (Status[i] != STATUS_INSYMP && Status[i] != STATUS_NOSYMP) {
         continue;
       }
@@ -576,22 +583,30 @@ void infect_place(int place_id,
       // both these should be deterministic
       int placei = min_place_id + (i % n_places_this_sa2);
       int hri = i % hrs_open;
-      int randi = TodaysK[(i + irandd) % N];
+      int randi = TodaysK[(i + irandd) % NTODAY];
       // occasionally (1/8 times) go at a different time
       if (randi < 128) {
         hri = randi % hrs_open;
       }
 
-      int n_new_infections = r_Rand(r_location, r_scale, r_d);
 
+      int n_new_infections = r_Rand(r_location, r_scale, r_d);
       i_places[placei][hri] += n_new_infections;
 
-      // threadsafety ok as sa2i allocated indivi thread
-      n_infections_per_sa2[sa2i] += n_new_infections;
+      int excess_persons = i_places[placei][hri] - max_persons_per_place;
+      if (excess_persons >= 0) {
+        i_places[placei][hri] += -1 - excess_persons;
+        n_infections_per_sa2[sa2i] -= excess_persons;
+      } else {
+        // threadsafety ok as sa2i allocated indivi thread
+        n_infections_per_sa2[sa2i] += n_new_infections;
+      }
     }
   }
 
-#pragma omp parallel for num_threads(nThread) reduction(+ : i_places[:n_places][:hrs_open])
+
+
+#pragma omp parallel for num_threads(nThread)
   for (int sa2i = 0; sa2i < NSA2; ++sa2i) {
     int n_places_this_sa2 = nPlacesBySA2[sa2i];
     if (n_places_this_sa2 <= 0) {
@@ -601,9 +616,15 @@ void infect_place(int place_id,
     if (n_infections_this_sa2 <= 0) {
       continue;
     }
+    int start_sa2i = SA2_firsts[sa2i];
+    int end_sa2i   = SA2_finals[sa2i];
+    if (start_sa2i == end_sa2i) {
+      continue;
+    }
+
     int min_place_id = minPlaceIdBySA2[sa2i]; // 0-indexed
 
-    for (int i = 0; i < N; ++i) {
+    for (int i = start_sa2i; i < end_sa2i; ++i) {
       // sa2 is ordered
       // if we are below continue; if above skip
       if (shortSA2[i] != sa2i) {
@@ -618,13 +639,14 @@ void infect_place(int place_id,
       if (!Status[i]) {
         continue;
       }
+
       if (TodaysHz[(i + irandd) % NTODAY] > PlaceFreq[i]) {
         continue;
       }
       // both these should be deterministic
       int placei = min_place_id + (i % n_places_this_sa2);
       int hri = i % hrs_open;
-      int randi = TodaysK[(i + irandd) % N];
+      int randi = TodaysK[(i + irandd) % NTODAY];
       // occasionally (1/8 times) go at a different time
       if (randi < 128) {
         hri = randi % hrs_open;
@@ -1274,7 +1296,7 @@ List do_au_simulate(IntegerVector Status,
   double incubation_s = Epi["incubation_sigma"];
   double illness_m = Epi["illness_mean"];
   double illness_s = Epi["illness_sigma"];
-  // double r_location = Epi["r_location"];
+  double r_location = Epi["r_location"];
   double r_schools_location = Epi["r_schools_location"];
   double r_supermarket_location = Epi["r_supermarket_location"];
   double r_work_location = Epi["r_work_location"];
@@ -1345,12 +1367,21 @@ List do_au_simulate(IntegerVector Status,
   // regardless; if TodaysHz[i] = 1 they will visit everything.
 
   // Note these are < N
-  IntegerVector TodaysK = dqsample_int2(1000, 262144);
-  IntegerVector TodayHz = dqsample_int2(365, 262144);
+  IntegerVector TodaysK = dqsample_int2(1000, NTODAY);
+  IntegerVector TodayHz = dqsample_int2(365, NTODAY);
 
 
 
   int wid_supremum = WID_SUPREMUM;
+
+  if (minPlaceID_nPlacesByDestType.length() != 106) {
+    stop("minPlaceID_nPlacesByDestType.length() != 106.");
+  }
+
+  List FirstFinalsSA2 = sa2_firsts_finals(shortSA2, NSA2);
+  IntegerVector SA2_firsts = FirstFinalsSA2[0];
+  IntegerVector SA2_finals = FirstFinalsSA2[1];
+
 
 
   for (int day = 0; day < days_to_sim; ++day) {
@@ -1549,28 +1580,30 @@ List do_au_simulate(IntegerVector Status,
 
     // infect cafes
     if (cafes_open) {
+      IntegerVector nCafes = FreqsByDestType[15 - 1];
+
       infect_place(15 - 1, // 15 is place id for cafe -1 for 0-index
                    Status,
                    InfectedOn,
                    shortSA2,
+                   SA2_firsts,
+                   SA2_finals,
                    nThread,
-                   nPlacesBySA2,
-                   minPlaceIDBySA2,
+                   minPlaceID_nPlacesByDestType,
                    day,
                    wday,
                    yday,
                    N,
                    Resistance,
                    resistance_threshold,
-                   PlaceFreq,
-                   TodaysHz,
-                   hrs_open,
-                   PlaceTypical,
+                   nCafes,
+                   TodayHz,
+                   8,
                    r_location,
                    r_scale,
                    r_d,
                    max_persons_per_cafe,
-                   TodaysK)
+                   TodaysK);
     }
 
 
