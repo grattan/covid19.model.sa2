@@ -16,6 +16,7 @@ set_policypars(
   tests_by_state = NULL,
   max_persons_per_event = 5L,
   max_persons_per_supermarket = 200L,
+  cafes_open = TRUE,
   workplaces_open = FALSE,
   workplace_size_max = 1L,
   workplace_size_beta = 13,
@@ -72,6 +73,8 @@ used.}
 
 \item{max_persons_per_supermarket}{Maximum number of people allowed in a
 supermarket (within one hour i.e. concurrently).}
+
+\item{cafes_open}{(TEMPORARY).}
 
 \item{workplaces_open}{Are workplaces to be open?
 Can be logical \code{FALSE} or \code{TRUE} or a number in \code{[0, 1]},
