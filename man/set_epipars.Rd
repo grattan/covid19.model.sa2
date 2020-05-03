@@ -50,6 +50,11 @@ particular for schools.}
 \item{r_supermarket_location, r_supermarket_scale}{Variables particular
 for supermarket.}
 
+\item{r_work_location}{Parameters for work infection distribution.}
+
+\item{a_workplace_rate}{\code{double(1)} in \code{[0, 1]}, the (average)
+proportion of colleagues that will be infected in any day.}
+
 \item{resistance_threshold}{An integer in \code{[0, 1000]}, the resistance
 required to not be infected. A value of 0
 means no-one will be infected; a value of 1000 means everyone will.}
