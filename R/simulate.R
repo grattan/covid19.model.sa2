@@ -248,7 +248,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
                                          size = .N,
                                          w = N_by_Duration$N)]
 
-    Age <- i.age <- LabourForceStatus <- lfsi <- NULL
+    Age <- i.age <- LabourForceStatus <- lfsi <- i.lfsi <- NULL
     aus[demo_by_person, Age := i.age, on = "pid"]
     aus[demo_by_person, LabourForceStatus := i.lfsi, on = "pid"]
 
@@ -288,13 +288,14 @@ simulate_sa2 <- function(days_to_simulate = 5,
     aus[, SupermarketTypical := if (.BY[[1]]) samp(seq_len(.BY[[1]]) - 1L, size = .N) else 0L,
         by = "nSupermarketsAvbl"]
 
-    short_school_id <- NULL
+    short_school_id <- short_dzn <- NULL
     # Turn School Id into short id to use for school id
     # Crucially, must be dense (no gaps) so can't prepare unique
     aus[!is.na(school_id), short_school_id := frank(school_id, ties.method = "dense")]
     aus[!is.na(work_dzn) , short_dzn := frank(work_dzn, ties.method = "dense")]
 
     # Add colleagues and wid (work id)
+    wid <- nColleagues <- i.nColleagues <- i.wid <- NULL
     AusByDZN <- aus[!is.na(short_dzn), .(NDz = .N, pid, LabourForceStatus), keyby = .(dzn = short_dzn)]
     AusByDZN[, c("wid", "nColleagues") := do_workplaces(.SD, nThread = 12)]
     setkeyv(AusByDZN, "pid")
