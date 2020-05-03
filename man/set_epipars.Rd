@@ -15,7 +15,7 @@ set_epipars(
   r_location = 2/5,
   r_scale = 1/5,
   r_schools_distribution = r_distribution,
-  r_schools_location = r_location,
+  r_schools_location = r_location * 0.25,
   r_schools_scale = r_scale,
   r_supermarket_location = r_location,
   r_supermarket_scale = r_scale,

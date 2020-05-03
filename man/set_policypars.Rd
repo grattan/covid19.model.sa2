@@ -17,6 +17,7 @@ set_policypars(
   max_persons_per_event = 5L,
   max_persons_per_supermarket = 200L,
   cafes_open = TRUE,
+  age_based_lockdown = integer(100),
   workplaces_open = FALSE,
   workplace_size_max = 1L,
   workplace_size_beta = 13,
@@ -75,6 +76,10 @@ used.}
 supermarket (within one hour i.e. concurrently).}
 
 \item{cafes_open}{(TEMPORARY).}
+
+\item{age_based_lockdown}{Integer vector of ages to lockdown. Either a vector
+of the ages (1-100) or a length-100 vector specifying the ages to be lockdown
+(as 1).}
 
 \item{workplaces_open}{Are workplaces to be open?
 Can be logical \code{FALSE} or \code{TRUE} or a number in \code{[0, 1]},

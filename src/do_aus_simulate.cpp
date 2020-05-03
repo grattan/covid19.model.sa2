@@ -1297,6 +1297,24 @@ List do_au_simulate(IntegerVector Status,
   int ptest_per_mille_sympto = 1000; // 100%
   int ptest_per_mille_asympto = 10; // 1%
 
+  // Age-based lockdown
+  bool age_based_lockdown = false;
+  IntegerVector AgesLockdown(100);
+  if (Policy.containsElementNamed("age_based_lockdown")) {
+    AgesLockdown = Policy["age_based_lockdown"];
+    if (AgesLockdown.length() == 100) {
+      for (int i = 0; i < 100; ++i) {
+        if (AgesLockdown[i] != 0) {
+          age_based_lockdown = true;
+        }
+      }
+    }
+  }
+
+
+
+
+
 
   // attach epipars
   double incubation_m = Epi["incubation_mean"];
@@ -1413,7 +1431,7 @@ List do_au_simulate(IntegerVector Status,
 #pragma omp parallel for num_threads(nThread) reduction(+:n_infected_today)
     for (int i = 0; i < N; ++i) {
       int statusi = Status[i];
-      n_infected_today += (statusi > 0) && (statusi != ISOLATED_PLUS);
+      n_infected_today += (statusi > 0) && ((statusi - ISOLATED_PLUS) != 0);
     }
 
     nInfected[day] = n_infected_today;
@@ -1491,6 +1509,16 @@ List do_au_simulate(IntegerVector Status,
     }
     if (optionz == 3) {
       continue;
+    }
+
+    if (age_based_lockdown && day == 0) {
+#pragma omp parallel for num_threads(nThread)
+      for (int i = 0; i < N; ++i) {
+        int agei = Age[i];
+        if (AgesLockdown[agei]) {
+          Status[i] += ISOLATED_PLUS;
+        }
+      }
     }
 
 
