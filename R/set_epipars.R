@@ -27,6 +27,10 @@
 #' required to not be infected. A value of 0
 #' means no-one will be infected; a value of 1000 means everyone will.
 #'
+#' @param r_work_location Parameters for work infection distribution.
+#' @param a_workplace_rate \code{double(1)} in \code{[0, 1]}, the (average)
+#' proportion of colleagues that will be infected in any day.
+#'
 #' @param p_asympto A number in \code{[0, 1]}, the proportion of cases that
 #' are asymptomatic.
 #' @param p_critical A number in \code{[0, 1]}, the proportion of
