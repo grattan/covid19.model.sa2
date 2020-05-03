@@ -3,6 +3,7 @@
 
 #include "covid19model.h"
 #include <vector>
+#include <random>
 #include <numeric>      // std::iota
 #include <algorithm>
 // [[Rcpp::depends(RcppProgress)]]
@@ -20,6 +21,9 @@ const int NSA2 = 2310;
 const int NSCHOOLS = 9501;
 const int NPUPILS = 3135825;
 const int NDZN = 9077; // includes NA
+
+const int NCAFES = 9730;
+const int NRESTAURANTS = 20026;
 
 
 
