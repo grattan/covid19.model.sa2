@@ -142,6 +142,7 @@ read_business <- function(maxmax = 500L) {
     lapply(X, as.integer)
   }
 
+  mine <- maxe <- NULL
   business[endsWith(employees, "employees"),
            c("mine", "maxe") := empl_col_to_minmax(employees)]
   # Provide an upper bound
