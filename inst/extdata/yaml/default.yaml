@@ -1,57 +1,57 @@
-- name: MyPolicyA
-  epidemiology:
-    illness:
-      distribution: pois
-      mean: 15.0
-      sigma: 1.0
-    incubation:
-      distribution: pois
-      mean: 5.0
-      sigma: 0.44
-    prognosis:
-      critical: 0.02
-      death: 0.01
-    reinfection:
-      distribution: cauchy
-      location:
-        default: 0.4
-        supermarket: 0.2
-        schools: 0.2
-      scale:
-        default: 0.2
-    resistance:
-      work: 0.93
-      default: 0.60
-  policy:
-  - start_date: '2020-03-01'
-    schools:
-      aus:
-        open: no
-        only_Year12: no
-    places:
-      aus:
-        default:
-          max_visitors: 10
-        supermarkets:
-          max_visitors: 150
-    work:
-      aus:
-        open: no
-    age_lockdown:
-      in_force: no
-    contact_tracing:
-      tests_by_state: auto
-      aus:
-        in_force: yes
-        days_before_test: 0
-        days_until_result: 3
-        p_asympto_cases: 0.05
-  - start_date: '2020-05-08'
-    schools:
-      aus:
-        open: yes
-      nsw:
-        days_per_wk: 1
-        only_Year12: yes
-      vic:
-        open: no
+epidemiology:
+  illness:
+    distribution: pois
+    mean: 15.0
+    sigma: 1.0
+  incubation:
+    distribution: pois
+    mean: 5.0
+    sigma: 0.44
+  prognosis:
+    critical: 0.02
+    death: 0.01
+  reinfection:
+    distribution: cauchy
+    location:
+      default: 0.4
+      supermarket: 0.2
+      schools: 0.2
+    scale:
+      default: 0.2
+
+  resistance:  # resistance in (0,1) required to overcome infection
+    work: 0.07
+    default: 0.1
+policy:
+- start_date: '2020-03-01'
+  schools:
+    aus:
+      open: no
+      only_Year12: no
+  places:
+    aus:
+      default:
+        max_visitors: 10
+      supermarkets:
+        max_visitors: 150
+  work:
+    aus:
+      open: no
+  age_lockdown:
+    in_force: no
+  contact_tracing:
+    tests_by_state: auto
+    aus:
+      in_force: yes
+      days_before_test: 0
+      days_until_result: 3
+      p_asympto_cases: 0.05
+- start_date: '2020-05-08'
+  schools:
+    aus:
+      open: yes
+    nsw:
+      days_per_wk: 1
+      only_Year12: yes
+    vic:
+      open: no
