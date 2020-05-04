@@ -411,8 +411,9 @@ void infect_supermarkets(IntegerVector Status,
 
   bool check_max_persons = max_persons_per_supermarket < 10e3;
 
-
+#if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread) reduction(+:i_supermarkets[:NSA2][:maxSupermarketsBySA2][:hrs_open])
+#endif
   for (int i = 0; i < N; ++i) {
     if (Status[i] != STATUS_NOSYMP || TodaysHz[(i * 11 + yday) % NTODAY] > SupermarketFreq[i]) {
       continue;
@@ -554,7 +555,9 @@ void infect_place(int place_id,
 
   int n_infections_per_sa2[NSA2] = {};
 
+#if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread) reduction(+ : i_places[:n_places][:hrs_open])
+#endif
   for (int sa2i = 0; sa2i < NSA2; ++sa2i) {
     int n_places_this_sa2 = nPlacesBySA2[sa2i];
     if (n_places_this_sa2 <= 0) {
@@ -748,7 +751,9 @@ void infect_dzn(IntegerVector Status,
   int nWorkers[wid_s];
   memset(nWorkers, 0, sizeof nWorkers);
 
+#if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread) reduction(+:InfectionsByWorkplace[:wid_s]) reduction(+:nWorkers[:wid_s])
+#endif
   for (int i = 0; i < N; ++i) {
     int widi = wid[i];
     if (widi <= 0) {
