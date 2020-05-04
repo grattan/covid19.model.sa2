@@ -112,6 +112,7 @@ set_policypars <- function(supermarkets_open = TRUE,
   checkmate::assert_int(contact_tracing_days_until_result)
   checkmate::assert_int(contact_tracing_days_before_test)
 
+  tests_by_state_was_null <- is.null(tests_by_state)
   tests_by_state <- .fix_tests_by_state(tests_by_state)
   if (!missing(max_persons_per_event)) {
     .NotYetUsed("max_persons_per_event")
@@ -130,7 +131,9 @@ set_policypars <- function(supermarkets_open = TRUE,
 
 
 
-  mget(ls())
+  out <- mget(ls())
+  attr(out, "original_call") <- match.call()
+  out
 }
 
 
@@ -289,6 +292,180 @@ set_policypars <- function(supermarkets_open = TRUE,
 }
 
 
+
+#' @rdname set_policypars
+#' @export
+read_yaml_config <- function(config.yaml) {
+  config <- yaml::read_yaml(config.yaml)
+  if (!hasName(config, "policy")) {
+    stop(vname(config.yaml), " did not have a field 'policy:' at top level.")
+  }
+  Policy <- config[["policy"]]
+
+
+}
+
+write_yaml_config <- function(Epi, Policies) {
+
+  # if we have a number that has been converted to an integer [0,1000]
+  # convert it back for yaml
+  ki2dbl <- function(x) if (is.integer(x)) x / 1000 else x
+
+  if (hasName(Policies, "multiple")) {
+
+  }
+
+
+  config <- list(
+    epidemiology = list(
+      illness = list(
+        distribution = dollars(Epi, illness_distribution),
+                mean = dollars(Epi, illness_mean),
+               sigma = dollars(Epi, illness_sigma)
+      ),
+      incubation = list(
+        distribution = dollars(Epi, incubation_distribution),
+                mean = dollars(Epi, incubation_mean),
+               sigma = dollars(Epi, incubation_sigma)
+      ),
+      prognosis = list(
+        critical = ki2dbl(dollars(Epi, p_critical)),
+           death = ki2dbl(dollars(Epi, p_death))
+
+      ),
+      reinfection = list(
+        distribution = decode_distr(dollars(Epi, r_distribution)),
+        location = list(
+          default = dollars(Epi, r_location),
+          supermarket = dollars(Epi, r_supermarket_location),
+          schools = dollars(Epi, r_schools_location),
+        ),
+        scale = list(
+          default = dollars(Epi, r_scale),
+          supermarket = dollars(Epi, r_supermarket_scale),
+          schools: dollars(Epi, r_schools_scale)
+        )
+      ),
+      resistance = list(
+        default = dollars(Epi, resistance_threshold),
+        work = dollars(Epi, resistance_threshold)
+      )
+    ),
+    policy = 1)
+}
+
+unpack_multipolicy <- function(MultiPolicy) {
+  if (length(MultiPolicy) == 1) {
+    ki2dbl <- function(x) if (is.integer(x)) x / 1000 else x
+
+    Policy <- MultiPolicy[[1L]]
+
+    .start_date <- Policy[["start_date"]] %||% "2020-01-01"
+
+    schools_all_full_time <-
+      hasName(Policy, "school_days_per_wk") &&
+      hasName(Policy[["school_days_per_wk"]], "all_full_time") &&
+      isTRUE(dollars(Policy, school_days_per_wk, all_full_time))
+
+    .schools <-
+      if (schools_all_full_time) {
+        list(aus = list(open = dollars(Policy, schools_open),
+                        only_Year12 = dollars(Policy, only_Year12),
+                        all_full_time = TRUE))
+      } else {
+        days_per_wk_2_list <- function(state) {
+          x <- dollars(Policy, school_days_per_wk)[[state]]
+          if (is.constant(x)) {
+            x <- x[1L]
+            if (x == 5L) {
+              x <- NULL  # i.e. erase
+            }
+          }
+          x
+        }
+        list(aus = list(open = dollars(Policy, schools_open),
+                        only_Year12 = dollars(Policy, only_Year12),
+                        all_full_time = FALSE),
+             aus = list(days_per_wk = days_per_wk2_list('AUS')),
+             nsw = list(days_per_wk = days_per_wk2_list('NSW')),
+             vic = list(days_per_wk = days_per_wk2_list('VIC')),
+             qld = list(days_per_wk = days_per_wk2_list('QLD')),
+              wa = list(days_per_wk = days_per_wk2_list('WA')),
+              sa = list(days_per_wk = days_per_wk2_list('SA')),
+             tas = list(days_per_wk = days_per_wk2_list('TAS')),
+             act = list(days_per_wk = days_per_wk2_list('ACT')),
+              nt = list(days_per_wk = days_per_wk2_list('NT')),
+             oth = list(days_per_wk = days_per_wk2_list('OTH')))
+      }
+    .schools <- .schools[!vapply(.schools, is.null, FALSE)]
+
+    .age_lockdown <- dollars(Policy, age_based_lockdown)
+    .age_lockdown_in_force <- any(as.logical(.age_lockdown))
+    if (.age_lockdown_in_force) {
+      .age_lockdown <- list(in_force = TRUE,
+                            age_lwr = which_first(.age_lockdown > 0L),
+                            age_upr = which_last(.age_lockdown > 0L))
+    } else {
+      .age_lockdown <- list(in_force = FALSE)
+    }
+
+
+    tests_by_state_was_null <- dollars(Policy, tests_by_state_was_null)
+    .tests_by_state <-
+      if (tests_by_state_was_null) {
+        "auto"
+      } else {
+        dollars(Policy, tests_by_state)
+      }
+
+
+
+    # assume
+    list(start_date = "2020-01-01",
+         schools = .schools,
+         places = list(
+           default = list(
+             max_visitors = dollars(Policy, max_persons_per_event)
+           ),
+           supermarkets = list(
+             max_visitors = dollars(Policy, max_persons_per_supermarket)
+           )
+         ),
+         work = list(
+           prop_open = dollars(Policy, workplaces_open),
+           workplace_size = list(
+             max = dollars(Policy, workplace_size_max),
+             beta = dollars(Policy, workplace_size_beta),
+             lmu = dollars(Policy, workplace_size_lmu),
+             lsi = dollars(Policy, workplace_size_lsi)
+           )),
+         age_lockdown = .age_lockdown,
+         contact_tracing = list(
+           tests_by_state = .tests_by_state,
+           aus = list(
+             in_force = dollars(Policy, "do_contact_tracing"),
+             days_before_test = dollars(Policy, "contact_tracing_days_before_test"),
+             days_until_result = dollars(Policy, "contact_tracing_days_until_result"),
+             p_asympto_cases = 0.5 * as.double(dollars(Policy, "contact_tracing_only_sympto")))))
+  } else {
+    lapply(MultiPolicy, unpack_multipolicy)
+  }
+}
+
+dollars <- function(x, .name, ..., .x = vname(x), TRY_EVAL = FALSE) {
+  # equiv to x$name$..1$..2 but safer if name is misspelled
+  name <- as.character(substitute(.name))
+  if (!hasName(x, name)) {
+    if (!hasName(x, .name) && isFALSE(TRY_EVAL)) {
+      stop(.x, " did not contain a subelement '", name, "'.")
+    }
+    name <- .name
+  }
+  if (missing(..1)) {
+    return(.subset2(x, name))
+  }
+  dollars(.subset2(x, name), ..., .x = .x)
+}
 
 
 
