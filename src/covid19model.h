@@ -89,6 +89,15 @@ const int TAS_TERM3_START_YDAY = 202;
 const int ACT_TERM3_START_YDAY = 202;
 const int  NT_TERM3_START_YDAY = 203;
 
+const int NSW_TERM3_FINAL_YDAY = 269;
+const int VIC_TERM3_FINAL_YDAY = 262;
+const int QLD_TERM3_FINAL_YDAY = 262;
+const int  SA_TERM3_FINAL_YDAY = 269;
+const int  WA_TERM3_FINAL_YDAY = 269;
+const int TAS_TERM3_FINAL_YDAY = 269;
+const int ACT_TERM3_FINAL_YDAY = 269;
+const int  NT_TERM3_FINAL_YDAY = 269;
+
 
 int which_unsorted_int(IntegerVector x);
 bool do_is_unsorted_pint(IntegerVector x, int nThread);

@@ -145,7 +145,24 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
   mget(ls())
 }
 
+distrs <- function() {
+  c("pois", "lnorm", "dirac", "cauchy")
+}
+
 # to integer
-match_distr <- function(arg, choices = c("pois", "lnorm", "dirac", "cauchy")) {
-  match(arg, choices)
+match_distr <- function(arg) {
+  match(arg, distrs())
+}
+
+decode_distr <- function(d) {
+  if (is.integer(d)) {
+    return(distrs()[d])
+  }
+  # may already be decoded
+  if (!anyNA(match_distr(d))) {
+    return(d)
+  }
+
+  stop("Internal error: decode_distr() encountered bad encoding.\n\t",
+       "d[1] = ", d[1])
 }
