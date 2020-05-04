@@ -140,8 +140,9 @@ IntegerVector test_threadsafe_mod(IntegerVector x, IntegerVector y, int nThread 
   IntegerVector out(ymax1);
   int out2[ymax][ymax1];
   memset(out2, 0, sizeof out2);
-
+#if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread) reduction(+:out2[:ymax][:ymax1])
+#endif
   for (int i = 0; i < nx; ++i) {
     int yi = y[i];
     int xj = (x[i] == 2) ? 1 : 0;
