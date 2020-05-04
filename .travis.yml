@@ -2,8 +2,6 @@
 dist: bionic
 
 language: R
-latex: false
-pandoc: false
 cache: packages
 
 
@@ -22,6 +20,6 @@ matrix:
 
 script:
 - Rscript -e "if (!requireNamespace('devtools', quietly = TRUE)) install.packages(c('devtools', 'remotes'), repos  = 'https://cloud.r-project.org')"
-- Rscript -e "devtools::install()"
+- Rscript -e "devtools::install(quiet = TRUE)"
 - R CMD build .
 - travis_wait 30 R CMD check *tar.gz

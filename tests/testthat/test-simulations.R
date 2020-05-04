@@ -1,5 +1,6 @@
-test_that("multiplication works", {
+test_that("simulation works", {
   skip_on_cran()
+  skip_if_not(identical(.Platform$r_arch, "x64"))
   skip_if_not_installed("data.table")
   library(data.table)
   DAYS <- 18L
