@@ -2,6 +2,8 @@
 dist: bionic
 
 language: R
+latex: false
+pandoc: false
 cache: packages
 
 
@@ -17,3 +19,10 @@ matrix:
       env:
         - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
     - os: osx
+
+install:
+- R -e 'devtools::install_deps(dep = TRUE)'
+
+script:
+- R CMD build .
+- travis_wait 30 R CMD check *tar.gz
