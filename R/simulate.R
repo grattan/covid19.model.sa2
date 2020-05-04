@@ -105,7 +105,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
     options(covid19.model.sa2.fst2_progress = prev_fst2_opt)
   })
 
-  hh_ss <- function (x. = "", form = "%H:%M:%S") {
+  hh_ss <- function (x. = "", form = "%H:%M:%OS3") {
     if (.showProgress) {
       cat(as.character(format(Sys.time(), format = form)), x., "\n")
     } else {
