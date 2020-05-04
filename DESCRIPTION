@@ -20,6 +20,7 @@ Imports:
     fst,
     glue,
     hutils,
+    hutilscpp,
     magrittr,
     stats,
     utils,

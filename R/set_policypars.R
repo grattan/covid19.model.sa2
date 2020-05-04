@@ -264,8 +264,8 @@ set_policypars <- function(supermarkets_open = TRUE,
 
         out[[s]] <- rep_len(as.integer(xs), NAGES)
       }
-      return(out)
     }
+    return(out)
   }
   warning(glue("`{vname(x)}` was not in a recognized format and will be ignored."))
 
@@ -373,12 +373,12 @@ unpack_multipolicy <- function(MultiPolicy) {
                         only_Year12 = dollars(Policy, only_Year12),
                         all_full_time = TRUE))
       } else {
-        days_per_wk_2_list <- function(state) {
+        days_per_wk2_list <- function(state) {
           x <- dollars(Policy, school_days_per_wk)[[state]]
-          if (is.constant(x)) {
+          if (is_constant(x)) {
             x <- x[1L]
             if (x == 5L) {
-              x <- NULL  # i.e. erase
+              x <- NA_integer_  # i.e. erase
             }
           }
           x
@@ -397,7 +397,7 @@ unpack_multipolicy <- function(MultiPolicy) {
               nt = list(days_per_wk = days_per_wk2_list('NT')),
              oth = list(days_per_wk = days_per_wk2_list('OTH')))
       }
-    .schools <- .schools[!vapply(.schools, is.null, FALSE)]
+    .schools <- .schools[!vapply(.schools, function(x) length(x[[1]]) == 1 && is.na(x[[1]]), FALSE)]
 
     .age_lockdown <- dollars(Policy, age_based_lockdown)
     .age_lockdown_in_force <- any(as.logical(.age_lockdown))
