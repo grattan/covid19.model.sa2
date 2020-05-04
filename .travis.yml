@@ -19,7 +19,7 @@ matrix:
     - os: osx
 
 script:
-- Rscript -e "if (!requireNamespace('devtools', quietly = TRUE)) install.packages(c('devtools', 'remotes'), repos  = 'https://cloud.r-project.org')"
+- Rscript -e "if (!requireNamespace('devtools', quietly = TRUE)) install.packages(c('devtools', 'remotes'), repos  = 'https://cloud.r-project.org', quiet = TRUE)"
 - Rscript -e "devtools::install(quiet = TRUE)"
 - R CMD build .
 - travis_wait 30 R CMD check *tar.gz
