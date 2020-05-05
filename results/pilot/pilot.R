@@ -83,7 +83,7 @@ for (pr in 1:nrow(PolicyGrid)) {
     cols_to_drop <- c("state", "pid", "Age",
                       "short_school_id", "short_dzn",
                       "seqN", "HouseholdSize")
-    invisible(S$Statuses[, (cols_to_drop) := NULL]
+    invisible(S$Statuses[, (cols_to_drop) := NULL])
 
     writeLines(as.character(S$nInfected), file.path(thisResultsDir, "nInfected.txt"))
     write_fst(S$Statuses, file.path(thisResultsDir, "SStatuses.fst"))
