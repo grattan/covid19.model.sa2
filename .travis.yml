@@ -20,6 +20,8 @@ matrix:
 
 script:
 - Rscript -e "if (!requireNamespace('devtools', quietly = TRUE)) install.packages(c('devtools', 'remotes'), repos  = 'https://cloud.r-project.org', quiet = TRUE)"
+# for which_last
+- Rscript -e "if (!requireNamespace('hutilscpp', quietly = TRUE) || packageVersion('hutilscpp') < '0.4.0') remotes::install_github('hughparsonage/hutilscpp', quick = FALSE, args = '')"
 - Rscript -e "devtools::install(quiet = TRUE)"
 - R CMD build .
 - travis_wait 20 R CMD check *tar.gz --no-manual
