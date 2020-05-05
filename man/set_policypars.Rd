@@ -2,7 +2,6 @@
 % Please edit documentation in R/set_policypars.R
 \name{set_policypars}
 \alias{set_policypars}
-\alias{read_yaml_config}
 \title{Set policy parameters}
 \usage{
 set_policypars(
@@ -25,8 +24,6 @@ set_policypars(
   workplace_size_lmu = -1,
   workplace_size_lsi = -1
 )
-
-read_yaml_config(config.yaml)
 }
 \arguments{
 \item{supermarkets_open}{\code{TRUE|FALSE}. Should supermarkets remain open?}

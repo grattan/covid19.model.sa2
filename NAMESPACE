@@ -2,7 +2,6 @@
 
 export(attachme)
 export(read_sys)
-export(read_yaml_config)
 export(set_epipars)
 export(set_initial_by_state)
 export(set_policypars)
