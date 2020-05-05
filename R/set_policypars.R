@@ -293,8 +293,7 @@ set_policypars <- function(supermarkets_open = TRUE,
 
 
 
-#' @rdname set_policypars
-#' @export
+
 read_yaml_config <- function(config.yaml) {
   config <- yaml::read_yaml(config.yaml)
   if (!hasName(config, "policy")) {
@@ -310,10 +309,6 @@ write_yaml_config <- function(Epi, Policies) {
   # if we have a number that has been converted to an integer [0,1000]
   # convert it back for yaml
   ki2dbl <- function(x) if (is.integer(x)) x / 1000 else x
-
-  if (hasName(Policies, "multiple")) {
-
-  }
 
 
   config <- list(
@@ -351,7 +346,7 @@ write_yaml_config <- function(Epi, Policies) {
         work = dollars(Epi, resistance_threshold)
       )
     ),
-    policy = 1)
+    policy = unpack_multipolicy(Policies))
 }
 
 unpack_multipolicy <- function(MultiPolicy) {
