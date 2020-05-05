@@ -156,10 +156,6 @@ do_pminCppp <- function(x, a = 0L, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_pminCppp`, x, a, nThread)
 }
 
-test_threadsafe_mod <- function(x, y, nThread = 1L) {
-    .Call(`_covid19_model_sa2_test_threadsafe_mod`, x, y, nThread)
-}
-
 sa2_firsts_finals <- function(SA2, nsa2 = 2310L) {
     .Call(`_covid19_model_sa2_sa2_firsts_finals`, SA2, nsa2)
 }

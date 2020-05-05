@@ -377,9 +377,9 @@ void infect_supermarkets(IntegerVector Status,
                          IntegerVector Age,
                          IntegerVector Employment,
                          IntegerVector nSupermarketsBySA2,
-                         int maxSupermarketsBySA2,
                          IntegerVector nSupermarketsAvbl,
                          IntegerVector Resistance,
+                         int day,
                          int wday,
                          int yday,
                          int N,
@@ -395,24 +395,51 @@ void infect_supermarkets(IntegerVector Status,
                          int resistance2 = 3,
                          double r_div = 36, // divide r_ by this // TODO: model is highly sensitive to this par!
                          bool verbose = false) {
+  if (day < 0) {
+    stop("Internal error(infect_supermarkets): day < 0");
+  }
+  if (day == 0) {
+    // poor man's assert()
+    if (SupermarketTypical.length() != N) {
+      stop("Internal error(infect_supermarkets): SupermarketTypical.length() != N");
+    }
+    int maxSupermarketBySA2 = SupermarketTypical[0];
+#pragma omp parallel for num_threads(nThread) reduction(max : maxSupermarketBySA2)
+    for (int i = 0; i < N; ++i) {
+      if (SupermarketTypical[i] > maxSupermarketBySA2) {
+        maxSupermarketBySA2 = SupermarketTypical[i];
+      }
+    }
+
+    // note maxSupermarketBySA2 is the index and MAXSUPER.. is the array size
+    // so strict inequality is correct assertion
+    if (maxSupermarketBySA2 > MAXSUPERMARKETSBYSA2) {
+      stop("Internal error(infect_supermarkets): maxSupermarketBySA2 > MAXSUPERMARKETSBYSA2");
+    }
+
+    if (SUPERMARKET_WEEKDAY_HRS < SUPERMARKET_WEEKEND_HRS) {
+      stop("Internal error(infect_supermarkets): SUPERMARKET_WEEKDAY_HRS < SUPERMARKET_WEEKEND_HRS");
+    }
+    if (resistance1 < 0 || resistance1 > 1000) {
+      stop("Internal error(infect_supermarkets): resistance1 was not in [0, 1]");
+    }
+  }
+
   // array of supermarkets: SA2 x Supermarkets each SA2 x hour
   // (some sa2s have 17 supermarkets; others will just record 0 there)
 
   // int i_supermarkets[NSA2][maxSupermarketsBySA2][hrs_open];
 
-  if (resistance1 < 0 || resistance1 > 1000) {
-    stop("Internal error: resistance1 was not in [0, 1]");
-  }
+
 
   const int hrs_open = (wday < 6) ? SUPERMARKET_WEEKDAY_HRS : SUPERMARKET_WEEKEND_HRS;
 
-  int i_supermarkets[NSA2][maxSupermarketsBySA2][hrs_open];
-  memset(i_supermarkets, 0, sizeof i_supermarkets);
+  int i_supermarkets[NSA2][MAXSUPERMARKETSBYSA2][SUPERMARKET_WEEKDAY_HRS] = {};
 
   bool check_max_persons = max_persons_per_supermarket < 10e3;
 
 #if defined _OPENMP && _OPENMP >= 201511
-#pragma omp parallel for num_threads(nThread) reduction(+:i_supermarkets[:NSA2][:maxSupermarketsBySA2][:hrs_open])
+#pragma omp parallel for num_threads(nThread) reduction(+:i_supermarkets[:NSA2][:MAXSUPERMARKETSBYSA2][:SUPERMARKET_WEEKDAY_HRS])
 #endif
   for (int i = 0; i < N; ++i) {
     if (Status[i] != STATUS_NOSYMP || TodaysHz[(i * 11 + yday) % NTODAY] > SupermarketFreq[i]) {
@@ -421,9 +448,6 @@ void infect_supermarkets(IntegerVector Status,
     int sa2i = shortSA2[i];
     int supermarketi = SupermarketTypical[i];
     int hri = i % hrs_open;
-    if (sa2i >= NSA2 || supermarketi >= maxSupermarketsBySA2 || hri >= hrs_open) {
-      continue;
-    }
     i_supermarkets[sa2i][supermarketi][hri] +=
       r_Rand(r_location, r_scale, r_d, do_dirac_every, dirac_num, dirac_per, yday);
   }
@@ -432,8 +456,7 @@ void infect_supermarkets(IntegerVector Status,
 
 #pragma omp parallel for num_threads(nThread)
   for (int hr = 0; hr < hrs_open; ++hr) {
-    int s_supermarkets[NSA2][maxSupermarketsBySA2];
-    memset(s_supermarkets, 0, sizeof s_supermarkets);
+    int s_supermarkets[NSA2][MAXSUPERMARKETSBYSA2] = {};
     for (int i = hr; i < N; i += hrs_open) {
       int sa2i = shortSA2[i];
       int supermarketi = SupermarketTypical[i];
@@ -445,6 +468,7 @@ void infect_supermarkets(IntegerVector Status,
       }
 
 
+      // technically by hour but loop guarantees independence
       s_supermarkets[sa2i][supermarketi] += 1;
       int s_supermarketi = s_supermarkets[sa2i][supermarketi];
 
@@ -452,7 +476,7 @@ void infect_supermarkets(IntegerVector Status,
         continue;
       }
 
-      if (i_supermarkets[sa2i][supermarketi][hr]) {
+      if (i_supermarkets[sa2i][supermarketi][hr] > 0) {
         i_supermarkets[sa2i][supermarketi][hr] -= 1;
         if (Resistance[i] < resistance1) {
           // i_supermarkets[sa2i][supermarketi][hr] -= 1;
@@ -480,13 +504,20 @@ void infect_place(int place_id,
                   int resistance1,
                   IntegerVector PlaceFreq,
                   IntegerVector TodaysHz,
-                  int hrs_open,
                   double r_location,
                   double r_scale,
                   int r_d,
                   bool do_dirac_every, int dirac_num, int dirac_per,
                   int max_persons_per_place,
                   IntegerVector TodaysK) {
+
+  if (place_id == PLACEID_ESTABLISHMENT ||
+      place_id == PLACEID_POINT_OF_INTEREST ||
+      place_id == PLACEID_STORE) {
+    // don't support these
+    // void function so just return early
+    return;
+  }
 
   List minPlaceID_nPlaces = minPlaceID_nPlacesByDestType[place_id];
 
@@ -505,12 +536,21 @@ void infect_place(int place_id,
       stop("Internal error(infect_place): SA2_firsts.length() != NSA2 || SA2_finals.length() != NSA2");
     }
 
-    // make sure there
+    // make sure there is an entry for every SA2, not just those with places
     if (nPlacesBySA2.length() != NSA2) {
       stop("Internal error(infect_place): nPlacesBySA2.length() != NSA2");
     }
     if (minPlaceIdBySA2.length() != NSA2) {
       stop("Internal error(infect_place): minPlaceIdBySA2.length() != NSA2");
+    }
+
+    int n_places = 0;
+    for (int sa2i = 0; sa2i < NSA2; ++sa2i) {
+      n_places += nPlacesBySA2[sa2i];
+    }
+
+    if (n_places > MAX_N_PLACES_TOTAL) {
+      stop("Internal error(infect_place): n_places > MAX_N_PLACES_TOTAL");
     }
 
     // check argument positions(!) what is even a struct? shutup
@@ -531,11 +571,6 @@ void infect_place(int place_id,
 
   }
 
-  int n_places = 0;
-  for (int sa2i = 0; sa2i < NSA2; ++sa2i) {
-    n_places += nPlacesBySA2[sa2i];
-  }
-
   std::mt19937 mt_rand(time(0));
   unsigned int urandd = mt_rand();
   int irandd = urandd % N;
@@ -548,15 +583,15 @@ void infect_place(int place_id,
   // place_id identifies the place and has the same order as sa2
   // if place_id_x < place_id_y  then  sa2(place_id_x) <= sa2(place_id_y)
   // sa2
-  int i_places[n_places][hrs_open];
-  // int n_visitors[n_places][hrs_open];
-  memset(i_places, 0, sizeof i_places);
-  // memset(n_visitors, 0, sizeof i_places);
 
+  // Since gnu annoyingly follows the standards (/s), we can't do
+  // int i_places[n_places][hrs_open]
+  // because 'C++ forbids variable size array'
+  int i_places[MAX_N_PLACES_TOTAL][PLACES_HRS_OPEN] = {};
   int n_infections_per_sa2[NSA2] = {};
 
 #if defined _OPENMP && _OPENMP >= 201511
-#pragma omp parallel for num_threads(nThread) reduction(+ : i_places[:n_places][:hrs_open])
+#pragma omp parallel for num_threads(nThread) reduction(+ : i_places[:MAX_N_PLACES_TOTAL][:PLACES_HRS_OPEN])
 #endif
   for (int sa2i = 0; sa2i < NSA2; ++sa2i) {
     int n_places_this_sa2 = nPlacesBySA2[sa2i];
@@ -590,11 +625,11 @@ void infect_place(int place_id,
 
       // both these should be deterministic
       int placei = min_place_id + (i % n_places_this_sa2);
-      int hri = i % hrs_open;
+      int hri = i % PLACES_HRS_OPEN;
       int randi = TodaysK[(i + irandd) % NTODAY];
       // occasionally (1/8 times) go at a different time
       if (randi < 128) {
-        hri = randi % hrs_open;
+        hri = randi % PLACES_HRS_OPEN;
       }
 
 
@@ -653,11 +688,11 @@ void infect_place(int place_id,
       }
       // both these should be deterministic
       int placei = min_place_id + (i % n_places_this_sa2);
-      int hri = i % hrs_open;
+      int hri = i % PLACES_HRS_OPEN;
       int randi = TodaysK[(i + irandd) % NTODAY];
       // occasionally (1/8 times) go at a different time
       if (randi < 128) {
-        hri = randi % hrs_open;
+        hri = randi % PLACES_HRS_OPEN;
       }
       if (i_places[placei][hri] > 0) {
         i_places[placei][hri] -= 1;
@@ -717,7 +752,6 @@ void infect_dzn(IntegerVector Status,
                 IntegerVector TodaysK,
                 IntegerVector Resistance,
                 int zero,
-                int &wid_supremum,
                 int optionz,
                 int nThread = 1) {
   if (zero != 0) {
@@ -728,7 +762,7 @@ void infect_dzn(IntegerVector Status,
     // check that DZN is short and ranges from 1 to (NDZN - 1)
     // check that wid_supremum0
     int max_dzn = 0;
-    int wid_supremeum0 = wid_supremum + 0;
+    int wid_supremeum0 = 0;
 #pragma omp parallel for num_threads(nThread) reduction(max:max_dzn) reduction(max:wid_supremeum0)
     for (int i = 0; i < N; ++i) {
       if (DZN[i] > max_dzn) {
@@ -738,21 +772,20 @@ void infect_dzn(IntegerVector Status,
         wid_supremeum0 = wid[i];
       }
     }
-    if (wid_supremeum0 > wid_supremum) {
-      wid_supremum = wid_supremeum0;
+
+    if (wid_supremeum0 >= WID_SUPREMUM) {
+      stop("Internal error(infect_dzn): wid_supremeum0 > WID_SUPREMUM");
     }
   }
 
-  const int wid_s = wid_supremum + 1;
 
+  int InfectionsByWorkplace[WID_SUPREMUM] = {};
 
-  int InfectionsByWorkplace[wid_s];
-  memset(InfectionsByWorkplace, 0, sizeof InfectionsByWorkplace);
-  int nWorkers[wid_s];
-  memset(nWorkers, 0, sizeof nWorkers);
+  int nWorkers[WID_SUPREMUM] = {};
+
 
 #if defined _OPENMP && _OPENMP >= 201511
-#pragma omp parallel for num_threads(nThread) reduction(+:InfectionsByWorkplace[:wid_s]) reduction(+:nWorkers[:wid_s])
+#pragma omp parallel for num_threads(nThread) reduction(+:InfectionsByWorkplace[:WID_SUPREMUM]) reduction(+:nWorkers[:WID_SUPREMUM])
 #endif
   for (int i = 0; i < N; ++i) {
     int widi = wid[i];
@@ -783,7 +816,7 @@ void infect_dzn(IntegerVector Status,
 
   for (int i = 0; i < N; ++i) {
     int widi = wid[i];
-    if (widi < 1 || widi > wid_s) {
+    if (widi < 1 || widi > WID_SUPREMUM) {
       continue;
     }
 
@@ -818,56 +851,6 @@ void infect_dzn(IntegerVector Status,
       --InfectionsByWorkplace[widi - 1];
     }
   }
-/*
-
-#pragma omp parallel for num_threads(nThread)
-  for (int widj = 1; widj <= wid_supremum; ++widj) {
-    int n_workers = 0;
-    int n_infections = InfectionsByWorkplace[widj - 1]; // 1-indexed
-    if (n_infections == 0) {
-      continue;
-    }
-    if (TodaysK[(yday + widj) % NTODAY] < workplaces_open) {
-      continue;
-    }
-    for (int i = 0; i < N; ++i) {
-      int widi = wid[i];
-      if (widi != widj) {
-        continue;
-      }
-
-
-      if (Status[i]) {
-        if (Status[i] != STATUS_HEALED) {
-          // comes to work but won't get sick
-          ++n_workers;
-          continue;
-        }
-        if (Status[i] != STATUS_NOSYMP) {
-          ++n_workers;
-        } else {
-          // won't come to work,
-          continue;
-        }
-      }
-      if (++n_workers > workplace_size_max) {
-        continue;
-      }
-
-      if (Resistance[i] < resistance1 &&
-          TodaysK[(yday + 2 * widj) % NTODAY] < a_workplace_rate) {
-        Status[i] = STATUS_NOSYMP;
-        InfectedOn[i] = yday;
-        --n_infections;
-        if (n_infections == 0) {
-          break;
-        }
-      }
-    }
-  }
-
-  */
-  // void infect_dzn
 }
 
 
@@ -899,10 +882,8 @@ void infect_school(IntegerVector Status,
   // Cube: number of visits by School x Age
   // First array index is the total, following indices are the age-based infections
   // Teachers are all aged '20'.
-  int s_visits[n_schools][21];
-  int i_visits[n_schools][21];
-  memset(s_visits, 0, sizeof s_visits);
-  memset(i_visits, 0, sizeof i_visits);
+  int s_visits[NSCHOOLS][21];
+  int i_visits[NSCHOOLS][21];
 
   if (day == 0) {
     if (!school_days_per_wk.containsElementNamed("week15combns")) {
@@ -1231,13 +1212,6 @@ List do_au_simulate(IntegerVector Status,
   }
 #endif
 
-  int maxSupermarketsBySA2 = 8;
-
-
-
-  // for (int i = 1; i < NSA2; ++i) {
-  //   maxSupermarketsBySA2 = maxii(maxSupermarketsBySA2, nSupermarketsBySA2[i]);
-  // }
 
 
   // attach policy changes
@@ -1610,9 +1584,9 @@ List do_au_simulate(IntegerVector Status,
                           Age,
                           LabourForceStatus,
                           nSupermarketsBySA2,
-                          maxSupermarketsBySA2,
                           nSupermarketsAvbl,
                           Resistance,
+                          day,
                           wday,
                           yday,
                           N,
@@ -1645,7 +1619,6 @@ List do_au_simulate(IntegerVector Status,
                    resistance_threshold,
                    nCafes,
                    TodayHz,
-                   8,
                    r_location,
                    r_scale,
                    r_d,
@@ -1682,7 +1655,7 @@ List do_au_simulate(IntegerVector Status,
                  a_workplace_rate,
                  r_work_location, r_scale, r_d,
                  do_dirac_every, dirac_num, dirac_per,
-                 TodaysK, Resistance, 0, wid_supremum, optionz, nThread);
+                 TodaysK, Resistance, 0, optionz, nThread);
     }
 
 

@@ -5,7 +5,6 @@
 #include <dqrng.h>
 using namespace Rcpp;
 
-
 double m2mu(double m, double s) {
   return log(m) - s/2;
 }

@@ -113,49 +113,6 @@ IntegerVector do_pminCppp(IntegerVector x, int a = 0, int nThread = 1) {
   return out;
 }
 
-// [[Rcpp::export]]
-IntegerVector test_threadsafe_mod(IntegerVector x, IntegerVector y, int nThread = 1) {
-  int nx = x.length();
-  int ny = y.length();
-
-  if (ny != nx) {
-    stop("ny != nx");
-  }
-
-  int ymin = y[0];
-  int ymax = y[0];
-
-#pragma omp parallel for num_threads(nThread) reduction(min:ymin) reduction(max:ymax)
-  for (int i = 0; i < ny; ++i) {
-    int yi = y[i];
-    ymin = (yi < ymin) ? yi : ymin;
-    ymax = (yi > ymax) ? yi : ymax;
-  }
-
-  if (ymin != 0) {
-    stop("ymin != 0");
-  }
-  const int ymax1 = ymax + 1;
-
-  IntegerVector out(ymax1);
-  int out2[ymax][ymax1];
-  memset(out2, 0, sizeof out2);
-#if defined _OPENMP && _OPENMP >= 201511
-#pragma omp parallel for num_threads(nThread) reduction(+:out2[:ymax][:ymax1])
-#endif
-  for (int i = 0; i < nx; ++i) {
-    int yi = y[i];
-    int xj = (x[i] == 2) ? 1 : 0;
-    if (y[i] > 0 && x[i] > 0) {
-      out2[xj][yi] += x[i] % y[i];
-    }
-  }
-  for (int o = 0; o < ymax1; ++o) {
-    out[o] = out2[0][o] + out2[1][o];
-  }
-  return out;
-}
-
 
 
 // [[Rcpp::export]]
