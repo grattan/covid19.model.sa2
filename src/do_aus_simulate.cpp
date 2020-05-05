@@ -758,98 +758,118 @@ void infect_dzn(IntegerVector Status,
     stop("zero != 0");
   }
 
+  if (optionz) {
+    Rcout << Status.length() << " ";
+    Rcout << InfectedOn.length() << " ";
+    Rcout << DZN.length() << " ";
+    Rcout << wid.length() << " ";
+    Rcout << LabourForceStatus.length() << " ";
+    Rcout << nColleagues.length() << " ";
+    Rcout << TodaysK.length() << " ";
+    Rcout << Resistance.length() << " ";
+
+    Rcout << N << " ";
+    Rcout << resistance1 << " ";
+    Rcout << workplaces_open << " ";
+    Rcout << workplace_size_max << " ";
+    Rcout << a_workplace_rate << " ";
+    Rcout << r_location << " ";
+    Rcout << r_scale << " ";
+    Rcout << r_d << " ";
+    Rcout << "\n";
+  }
+
   if (day == 0) {
     // check that DZN is short and ranges from 1 to (NDZN - 1)
     // check that wid_supremum0
     int max_dzn = 0;
-    int wid_supremeum0 = 0;
-#pragma omp parallel for num_threads(nThread) reduction(max:max_dzn) reduction(max:wid_supremeum0)
+    int max_wid = 0;
+#pragma omp parallel for num_threads(nThread) reduction(max:max_dzn) reduction(max:max_wid)
     for (int i = 0; i < N; ++i) {
       if (DZN[i] > max_dzn) {
         max_dzn = DZN[i];
       }
-      if (wid[i] > wid_supremeum0) {
-        wid_supremeum0 = wid[i];
+      if (wid[i] > max_wid) {
+        max_wid = wid[i];
       }
     }
+    if (max_dzn >= NDZN) {
+      stop("Internal error(infect_dzn): wmax_dzn >= NDZN");
+    }
 
-    if (wid_supremeum0 >= WID_SUPREMUM) {
+    if (max_wid >= WID_SUPREMUM) {
       stop("Internal error(infect_dzn): wid_supremeum0 > WID_SUPREMUM");
     }
+    if (TodaysK.length() != NTODAY) {
+      stop("TodaysK.length() != NTODAY");
+    }
+
+
   }
 
 
   int InfectionsByWorkplace[WID_SUPREMUM] = {};
 
-  int nWorkers[WID_SUPREMUM] = {};
+  // for (int w = 0; w < WID_SUPREMUM; ++w) {
+  //   InfectionsByWorkplace[w] = 0;
+  // }
 
-
-#if defined _OPENMP && _OPENMP >= 201511
-#pragma omp parallel for num_threads(nThread) reduction(+:InfectionsByWorkplace[:WID_SUPREMUM]) reduction(+:nWorkers[:WID_SUPREMUM])
-#endif
+#pragma omp parallel for num_threads(nThread) reduction(+:InfectionsByWorkplace[:WID_SUPREMUM])
   for (int i = 0; i < N; ++i) {
-    int widi = wid[i];
-    if (widi <= 0) {
-      continue;
-    }
-    int dzni = DZN[i];
-    // if zero or NA
-    if (dzni <= 0) {
-      continue;
-    }
-
-    // unlikely at this point so don't worry about branches
-    if (LabourForceStatus[i] != LFS_FULLTIME &&
-        LabourForceStatus[i] != LFS_PARTTIME) {
-      continue;
-    }
-
-    if (!Status[i] || Status[i] == STATUS_HEALED || Status[i] == STATUS_NOSYMP) {
-      nWorkers[widi - 1] += 1;
-    }
     if (Status[i] != STATUS_INSYMP) {
       continue;
     }
+    int widi0 = wid[i] - 1;
+    if (widi0 < 0) {
+      continue;
+    }
 
-    InfectionsByWorkplace[widi - 1] += 1;// r_Rand(r_location, r_scale, r_d);
+    if ((widi0 % 1000) > workplaces_open) {
+      continue;
+    }
+
+    InfectionsByWorkplace[widi0] += 1;// r_Rand(r_location, r_scale, r_d);
   }
 
+  // reinfection
+#pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
-    int widi = wid[i];
-    if (widi < 1 || widi > WID_SUPREMUM) {
+    int widi0 = wid[i] - 1;
+    if (widi0 < 0) {
+      continue;
+    }
+    if (nColleagues[i] <= 1) {
+      continue;
+    }
+    if (InfectionsByWorkplace[widi0] <= 0) {
       continue;
     }
 
-    if (InfectionsByWorkplace[widi - 1] <= 0) {
-      continue;
-    }
-
-    if (nWorkers[widi - 1] <= 1) {
-      continue;
-    }
-
-    int excess_workers = nWorkers[widi - 1] - workplace_size_max;
+    int excess_workers = nColleagues[i] - workplace_size_max;
+    bool no_further_infections = false; // due to the infectious not being allowed in (back of the queue)
     if (excess_workers > 0) {
-      nWorkers[widi - 1] = workplace_size_max;
-      if (excess_workers > InfectionsByWorkplace[widi - 1]) {
+#pragma omp critical
+      if (excess_workers > InfectionsByWorkplace[widi0]) {
         // assume infections are strictly less likely to attend work
-        InfectionsByWorkplace[widi - 1] = 0;
-        continue;
+        InfectionsByWorkplace[widi0] = 0;
+        no_further_infections = true;
       } else {
-        InfectionsByWorkplace[widi - 1] -= excess_workers;
+        InfectionsByWorkplace[widi0] -= excess_workers;
       }
     }
 
-    if (Status[i]) {
+    if (Status[i] || no_further_infections) {
       continue;
     }
 
     if (Resistance[i] < resistance1 &&
-        TodaysK[(yday + 2 * widi + 7 * i) % NTODAY] < a_workplace_rate) {
+        TodaysK[(yday + 2 * widi0 + 7 * i) % NTODAY] < a_workplace_rate) {
       Status[i] = STATUS_NOSYMP;
       InfectedOn[i] = yday;
-      --InfectionsByWorkplace[widi - 1];
+#pragma omp critical
+      InfectionsByWorkplace[widi0] -= 1;
     }
+
   }
 }
 
@@ -870,36 +890,62 @@ void infect_school(IntegerVector Status,
                    double r_scale,
                    int r_d,
                    bool do_dirac_every, int dirac_num, int dirac_per,
-                   IntegerVector TodaysK,
                    bool only_Year12,
                    List school_days_per_wk,
-                   int n_schools,
-                   int n_pupils,
-                   int nThread = 1) {
+                   int nThread = 1,
+                   int zero = 0) {
+  if (zero != -99) {
+    stop("zero expected.");
+  }
 
   // infect people within a school
 
   // Cube: number of visits by School x Age
   // First array index is the total, following indices are the age-based infections
   // Teachers are all aged '20'.
-  int s_visits[NSCHOOLS][21];
-  int i_visits[NSCHOOLS][21];
+
 
   if (day == 0) {
+    if (nThread <= 0) {
+      stop("nThread <= 0");
+    }
     if (!school_days_per_wk.containsElementNamed("week15combns")) {
       stop("Internal error: school_days_per_wk did not contain 'week15combns'.");
     }
-    if (school_days_per_wk.length() < 9) {
+    if (school_days_per_wk.length() != NSTATES1) {
       stop("school_days_per_wk had wrong length");
     }
     if (AttendsWday.length() != (NPUPILS * 5)) {
       stop("Internal error: AttendsWday.length() != (NPUPILS * 5)");
     }
+    bool max_too_large = false;
+    bool min_too_small = false;
+#pragma omp parallel for num_threads(nThread) reduction(|| : max_too_large, min_too_small)
+    for (int i = 0; i < N; ++i) {
+      int schooli = School[i] - 1;
+      max_too_large = max_too_large || (schooli >= NSCHOOLS);
+      min_too_small = min_too_small || (schooli < 0);
+    }
+
+    if (min_too_small) {
+      stop("Internal error(infect_schools): min_too_small.");
+    }
+    if (max_too_large) {
+      stop("Internal error(infect_schools): max_too_large");
+    }
+
   }
 
-  List week15combns = school_days_per_wk["week15combns"];
+  int s_visits[NSCHOOLS][21];
+  int i_visits[NSCHOOLS][21];
+  for (int school = 0; school < NSCHOOLS; ++school) {
+    for (int a = 0; a < 21; ++a) {
+      s_visits[school][a] = 0;
+      i_visits[school][a] = 0;
+    }
+  }
 
-  bool all_full_time =
+  int all_full_time =
     school_days_per_wk.containsElementNamed("all_full_time") &&
     school_days_per_wk["all_full_time"];
 
@@ -932,6 +978,9 @@ void infect_school(IntegerVector Status,
   int DaysPerWk[NSTATES1][21] = {};
   for (int s = 0; s < NSTATES1; ++s) {
     IntegerVector sDaysPerWk = school_days_per_wk[s];
+    if (sDaysPerWk.length() != 21) {
+      stop("Internal error: sDaysPerWk.length() != 21.");
+    }
     for (int a = 0; a < 21; ++a) {
       int da = sDaysPerWk[a];
       DaysPerWk[s][a] = da;
@@ -945,15 +994,14 @@ void infect_school(IntegerVector Status,
 
 
 
-
   // This should be parallelizable!!
   // But accessing a list is not thread safe so can't be done directly.
   if (day < 7 && wday < 6) {
 #pragma omp parallel for num_threads(nThread)
-    for (int k = 0; k < n_pupils; ++k) {
+    for (int k = 0; k < NPUPILS; ++k) {
       int k5 = wday0 + (5 * k);
       int i = schoolIndices[k];
-      int schooli = School[i] - 1;
+
       int Agei = (Age[i] > 20) ? 20 : Age[i];
       if (only_Year12 && Agei < 17) {
         AttendsWday[k5] = 0;
@@ -981,6 +1029,7 @@ void infect_school(IntegerVector Status,
       bool attends_today = daysPerWk_Agei == 5;
 
       if (!attends_today) {
+        int schooli = School[i] - 1;
         if (daysPerWk_Agei == 1) {
           // this state-age combination is only set to go to school
           // once per week
@@ -1013,22 +1062,22 @@ void infect_school(IntegerVector Status,
           }
         }
       }
-      AttendsWday[k5] = attends_today;
+      AttendsWday[k5] = attends_today ? 1 : 0;
     }
   }
 
 
 
 
-  for (int k = 0; k < n_pupils; ++k) {
+  for (int k = 0; k < NPUPILS; ++k) {
     int k5 = wday0 + (5 * k);
     if (!AttendsWday[k5]) {
       continue;
     }
     int i = schoolIndices[k];
-    int schooli = School[i] - 1;
-    int Agei = (Age[i] > 20) ? 20 : Age[i];
 
+    int Agei = (Age[i] > 20) ? 20 : Age[i];
+    int schooli = School[i] - 1;
     s_visits[schooli][0] += 1;
     s_visits[schooli][Agei] += 1;
     // rcauchy relates to the single day
@@ -1039,7 +1088,7 @@ void infect_school(IntegerVector Status,
     }
   }
 
-  for (int k = 0; k < n_pupils; ++k) {
+  for (int k = 0; k < NPUPILS; ++k) {
     int k5 = wday0 + (5 * k);
     if (!AttendsWday[k5]) {
       continue;
@@ -1081,6 +1130,10 @@ void infect_household(IntegerVector Status,
   // that makes infection more likely. Higher penalties
   // make infection more likely among otherwise resistant
   // individuals
+  if (nThread <= 0 || nThread > 16) {
+    stop("nThread out of range.");
+  }
+
 
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
@@ -1177,6 +1230,7 @@ List do_au_simulate(IntegerVector Status,
                     int days_to_sim,
                     int N = 25e6,
                     bool display_progress = true,
+                    bool on_terminal = false,
                     bool by_state = true,
                     int console_width = 80,
                     int optionz = 0,
@@ -1266,10 +1320,18 @@ List do_au_simulate(IntegerVector Status,
   int ct_days_before_test = Policy["contact_tracing_days_before_test"];
   int ct_days_until_result = Policy["contact_tracing_days_until_result"];
 
-  int workplaces_open = Policy["workplaces_open"];
-  int workplace_size_max = Policy["workplace_size_max"];
-  int a_workplace_rate = Epi["a_workplace_rate"];
-
+  int workplaces_open = 0;
+  int workplace_size_max = 10;
+  int a_workplace_rate = 1000;
+  if (Policy.containsElementNamed("workplaces_open")) {
+    workplaces_open = Policy["workplaces_open"];
+    if (Policy.containsElementNamed("workplace_size_max")) {
+      workplace_size_max = Policy["workplace_size_max"];
+    }
+    if (Epi.containsElementNamed("a_workplace_rate")) {
+      a_workplace_rate = Epi["a_workplace_rate"];
+    }
+  }
   IntegerVector TestedOn = no_init(N);
 
   // TODO: make user-avbl
@@ -1381,9 +1443,6 @@ List do_au_simulate(IntegerVector Status,
   IntegerVector TodayHz = dqsample_int2(365, NTODAY);
 
 
-
-  int wid_supremum = WID_SUPREMUM;
-
   if (minPlaceID_nPlacesByDestType.length() != 106) {
     stop("minPlaceID_nPlacesByDestType.length() != 106.");
   }
@@ -1431,6 +1490,7 @@ List do_au_simulate(IntegerVector Status,
 
         Rcout << "| ";
         int w = 2;
+        int max_reds = (on_terminal) ? 0 : 2;
         // w < 1024 in case of very large console width
         while (w < pbar_w && w < 1024) {
           Rcpp::checkUserInterrupt();
@@ -1438,7 +1498,6 @@ List do_au_simulate(IntegerVector Status,
           int w_wday = wday_2020[((w_yday - 1) % 7)];
           w_d += di;
           r_d += di;
-          int max_reds = 2;
           while (r_d > 1 && w < 1024) {
             ++w;
             r_d -= 1;
@@ -1458,7 +1517,7 @@ List do_au_simulate(IntegerVector Status,
 
         // int last_yday = (days_to_sim + yday_start);
 
-        Rcout << "day = " << day << "/" << days_to_sim << " ";
+        Rcout << "day = " << day + 1 << "/" << days_to_sim << " ";
 
         // asking for log(0) = -Inf number of console outputs will do exactly
         // what is asked
@@ -1638,12 +1697,10 @@ List do_au_simulate(IntegerVector Status,
                     schoolsIndex,
                     r_schools_location, r_scale, r_d,
                     do_dirac_every, dirac_num, dirac_per,
-                    TodaysK,
                     only_Year12,
                     school_days_per_wk,
-                    NSCHOOLS,
-                    n_pupils,
-                    nThread);
+                    nThread,
+                    -99);
     }
     if (workplaces_open) {
       infect_dzn(Status, InfectedOn,
@@ -1656,6 +1713,9 @@ List do_au_simulate(IntegerVector Status,
                  r_work_location, r_scale, r_d,
                  do_dirac_every, dirac_num, dirac_per,
                  TodaysK, Resistance, 0, optionz, nThread);
+      if (day < 2 && optionz) {
+        Rcout << "infected_dzn = " << day << "\n";
+      }
     }
 
 
@@ -1666,6 +1726,9 @@ List do_au_simulate(IntegerVector Status,
                      yday, N, HouseholdInfectedToday,
                      resistance_threshold,
                      nThread);
+    if (day < 2 && optionz) {
+    Rcout << "infected_household " << "\n";
+  }
 
     if (do_contact_tracing) {
       contact_tracing(Status,

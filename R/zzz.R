@@ -31,4 +31,7 @@
   invisible(NULL)
 }
 
+.onUnload <- function(libpath) {
+  library.dynam.unload("covid19.model.sa2", libpath)
+}
 
