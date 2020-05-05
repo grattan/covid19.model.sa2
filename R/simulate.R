@@ -306,7 +306,23 @@ simulate_sa2 <- function(days_to_simulate = 5,
     # Add colleagues and wid (work id)
     wid <- nColleagues <- i.nColleagues <- i.wid <- NULL
     AusByDZN <- aus[!is.na(short_dzn), .(NDz = .N, pid, LabourForceStatus), keyby = .(dzn = short_dzn)]
-    AusByDZN[, c("wid", "nColleagues") := do_workplaces(.SD, nThread = 12)]
+    AusByDZN[, c("wid", "nColleagues") := do_workplaces(.SD, nThread = nThread)]
+
+    # check against compile-time constant wid_supremum to allow
+    # static allocation of array.
+    wid_supremum_repeat_limit <- 5L
+    while (wid_supremum_repeat_limit >= 0L &&
+           max(.subset2(AusByDZN, "wid"), na.rm = TRUE) >= wid_supremum()) {
+      AusByDZN[, c("wid", "nColleagues") := do_workplaces(.SD, nThread = nThread)]
+      wid_supremum_repeat_limit <- wid_supremum_repeat_limit - 1L
+    }
+    if (max(.subset2(AusByDZN, "wid"), na.rm = TRUE) >= wid_supremum()) {
+      stop("`wid_supremum_repeat_limit` exceeded\n\t",
+           'max(.subset2(AusByDZN, "wid"), na.rm = TRUE) = ',
+           max(.subset2(AusByDZN, "wid"), na.rm = TRUE))
+    }
+
+
     setkeyv(AusByDZN, "pid")
     aus[AusByDZN, wid := i.wid, on = "pid"]
     aus[AusByDZN, nColleagues := i.nColleagues, on = "pid"]
@@ -324,10 +340,13 @@ simulate_sa2 <- function(days_to_simulate = 5,
     }
   }
 
+
+
   copied_Status <- copy(.subset2(aus, "Status"))
   copied_InfectedOn <- copy(.subset2(aus, "InfectedOn"))
   hh_ss("pre-C++")
 
+  on_terminal <- identical(.Platform$GUI, "RTerm")
 
 
   out <-
@@ -359,6 +378,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
                         N = nrow(aus),
                         by_state = by_state,
                         display_progress = .showProgress,
+                        on_terminal = on_terminal,
                         console_width = getOption("width", 80L),
                         optionz = getOption("optionz", 0L),  # for debugging may be changed without notice
                         nThread = nThread))

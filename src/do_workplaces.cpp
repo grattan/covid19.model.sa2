@@ -94,6 +94,11 @@ IntegerVector get_nColleagues(int nr, int N,
   return out;
 }
 
+// [[Rcpp::export(rng = false)]]
+int wid_supremum() {
+  return WID_SUPREMUM;
+}
+
 // [[Rcpp::export]]
 List do_workplaces(List AusByDZN,
                    int nThread = 1,

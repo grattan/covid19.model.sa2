@@ -10,10 +10,10 @@
 #include <progress.hpp>
 #include <progress_bar.hpp>
 #include <Rcpp.h>
-using namespace Rcpp;
 #ifdef _OPENMP
 #include <omp.h>
 #endif
+using namespace Rcpp;
 
 const int NSTATES = 9;
 const int NSTATES1 = 10;
@@ -39,7 +39,7 @@ const int PLACES_HRS_OPEN = 8;
 const int NTODAY = 261167; // prime just below a good cache length (262144)
 const int MWORKPLACES = 5e6; // number of workpalces approximately
 
-const int WID_SUPREMUM = 701146; // approximate number of WIDs
+const int WID_SUPREMUM = 1048576; // (sufficiently high approximate number of WIDs)
 
 const int STATUS_KILLED = -2;
 const int STATUS_HEALED = -1;

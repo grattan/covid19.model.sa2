@@ -38,12 +38,13 @@ test_that("simulation works", {
                                                      school_days_per_wk = 3L,
                                                      max_persons_per_supermarket = 45),
                          EpiPars = set_epipars(r_supermarket_location = 1/10))[["nInfected"]]
+      expect_true(is.atomic(S4))
 
       if (!identical(thr, 1L)) {
         skip_on_cran()
         skip_on_travis()
       }
-
+      invisible(gc())
       S5 <- simulate_sa2(DAYS,
                          PolicyPars = set_policypars(supermarkets_open = TRUE,
                                                      workplaces_open = 0.1,
@@ -89,4 +90,22 @@ test_that("simulation works", {
     }
   }
 
+})
+
+test_that("prev segfaulting", {
+  skip_on_cran()
+  skip_if_not(identical(.Platform$r_arch, "x64"))
+  skip_if_not_installed("data.table")
+  skip_if_not_installed("parallel")
+
+  S <- simulate_sa2(50,
+                    nThread = pmax(1L, parallel::detectCores() - 2L),
+                    PolicyPars = set_policypars(workplaces_open = 1,
+                                                workplace_size_max = 1000))
+  expect_true(hasName(S[[2]], "V45")) # i.e. 'have we got here?'
+  S <- simulate_sa2(40,
+                    nThread = pmax(1L, parallel::detectCores() - 4L),
+                    PolicyPars = set_policypars(workplaces_open = 0.5,
+                                                workplace_size_max = 50))
+  expect_true(hasName(S[[2]], "V35"))
 })
