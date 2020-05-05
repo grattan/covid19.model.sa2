@@ -24,6 +24,15 @@ const int NDZN = 9077; // includes NA
 
 const int NCAFES = 9730;
 const int NRESTAURANTS = 20026;
+const int MAXSUPERMARKETSBYSA2 = 8;
+
+const int MAX_N_PLACES_TOTAL = 42689; // "TypeInt = 38, Type = food"
+const int MAX_N_PLACES_PER_SA2 = 242; // "TypeInt = 47, Type = health, shortSA2 = 2026"
+const int PLACEID_ESTABLISHMENT = 33;
+const int PLACEID_POINT_OF_INTEREST = 78;
+const int PLACEID_STORE = 94;
+const int PLACES_HRS_OPEN = 8;
+
 
 
 
