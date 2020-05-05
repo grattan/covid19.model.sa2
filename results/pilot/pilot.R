@@ -61,9 +61,9 @@ for (pr in 1:nrow(PolicyGrid)) {
   Policys <- PolicyGrid[pr]
   for (er in 1:nrow(EpiGrid)) {
     if (verbosity > 0) {
-      message("pr = ", pr, "\t", "er = ", er)
+      message("pr = ", pr, "\t", "er = ", er, "\t", as.character(Sys.time()))
     }
-    cat(pr, "\t", er, "\t", as.character(Sys.time()),  file = file.path(ResultsDir, "pilot.log"))
+    cat(pr, "\t", er, "\t", as.character(Sys.time()),  file = file.path(ResultsDir, "pilot.log"), append = TRUE)
 
     thisResultsDir <- provide.dir(file.path(ResultsDir,  paste0("P-", pr, "/", "E-", er)))
 
