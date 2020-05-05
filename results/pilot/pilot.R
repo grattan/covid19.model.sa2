@@ -5,10 +5,17 @@ library(magrittr)
 library(hutils)
 library(hutilscpp)
 
+
+
 library(covid19.model.sa2)
 attachme()
 
+ResultsDir <- "."
 stopifnot(file.exists("pilot.R"))
+if (dir.exists("/dev/shm")) {
+  ResultsDir <- provide.dir("/dev/shm/covid19-pilot/")
+  message("Using ResultsDir = ", ResultsDir)
+}
 
 options(covid19.model.sa2_nThread = parallel::detectCores() - 2L)
 options(covid19.model.sa2_useDataEnv = TRUE)
@@ -27,10 +34,12 @@ PolicyGrid[(school_days_per_wk > 1L) %implies% schools_open]
 EpiGrid <- CJ(r_distribution = c("cauchy", "lnorm", "pois"),
               r_location = c(2/5, 1/5))
 
-
 for (pr in 1:nrow(PolicyGrid)) {
   Policys <- PolicyGrid[pr]
   for (er in 1:nrow(EpiGrid)) {
+
+    thisResultsDir <- provide.dir(file.path(ResultsDir,  paste0("P-", pr, "/", "E-", er)))
+
     Epis <- EpiGrid[er]
 
     ThisPolicy <-
@@ -43,7 +52,12 @@ for (pr in 1:nrow(PolicyGrid)) {
                           cafes_open = cafes_open,
                           workplaces_open = workplaces_open,
                           workplace_size_max = workplace_size_max))
-    provide.file(policy.yaml <- paste0("P-", pr, "/", "E-", er, "Policy.yaml"))
+    if (file.exists(policy.yaml <- file.path(thisResultsDir, "Policy.yaml"))) {
+      next  # likely other program has written
+    }
+
+
+
     cat(as.yaml(unpack_multipolicy(list(ThisPolicy))),
         file = policy.yaml,
         sep = "\n")
@@ -56,6 +70,15 @@ for (pr in 1:nrow(PolicyGrid)) {
                                      set_epipars(r_distribution = r_distribution,
                                                  r_location = r_location)))
 
-    write_fst(S$Statuses, paste0("P-", pr, "/", "E-", er, "SStatuses.fst"))
+
+    # these are constant for each, drop for disk space
+    cols_to_drop <- c("state", "pid", "Age",
+                      "short_school_id", "short_dzn",
+                      "seqN", "HouseholdSize")
+    S$Statuses[, (cols_to_drop) := NULL]
+
+    writeLines(as.character(S$nInfected), file.path(thisResultsDir, "nInfected.txt"))
+    write_fst(S$Statuses, file.path(thisResultsDir, "SStatuses.fst"))
+    S <- NULL
   }
 }
