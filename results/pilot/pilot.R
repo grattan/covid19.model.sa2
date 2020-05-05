@@ -1,3 +1,25 @@
+
+args <- commandArgs(trailingOnly = TRUE)
+if (any(startsWith(args, "--cores="))) {
+  cores_arg <- args[which.max(startsWith(args, "--cores="))]
+  cores <- as.integer(sub("--cores=", "", cores_arg))
+
+  # must be before fst
+  options(fst_threads = cores)
+
+} else {
+  cores <- getOption("covid19.model.sa2_nThread", parallel::detectCores() - 2L)
+}
+
+verbosity <- 0L
+if (any(startsWith(args, "--verbose="))) {
+  verbose_arg <- args[which.max(startsWith(args, "--verbose="))]
+  verbosity <- as.integer(sub("--verbose=", "", verbose_arg))
+}
+
+
+
+
 library(yaml)
 library(fst)
 library(data.table)
@@ -5,13 +27,6 @@ library(magrittr)
 library(hutils)
 library(hutilscpp)
 
-
-if (any(startsWith(args <- commandArgs(trailingOnly = TRUE), "--cores="))) {
-  cores_arg <- args[which.max(startsWith(args, "--cores="))]
-  cores <- as.integer(sub("--cores=", "", cores_arg))
-} else {
-  cores <- getOption("covid19.model.sa2_nThread", parallel::detectCores() - 2L)
-}
 library(covid19.model.sa2)
 attachme()
 
@@ -45,8 +60,13 @@ EpiGrid <- CJ(r_distribution = c("cauchy", "lnorm", "pois"),
 for (pr in 1:nrow(PolicyGrid)) {
   Policys <- PolicyGrid[pr]
   for (er in 1:nrow(EpiGrid)) {
+    if (verbosity > 0) {
+      message("pr = ", pr, "\t", "er = ", er)
+    }
+    cat(pr, "\t", er, "\t", as.character(Sys.time()),  file = file.path(ResultsDir, "pilot.log"))
 
     thisResultsDir <- provide.dir(file.path(ResultsDir,  paste0("P-", pr, "/", "E-", er)))
+
 
     Epis <- EpiGrid[er]
 
@@ -60,7 +80,8 @@ for (pr in 1:nrow(PolicyGrid)) {
                           cafes_open = cafes_open,
                           workplaces_open = workplaces_open,
                           workplace_size_max = workplace_size_max))
-    if (file.exists(policy.yaml <- file.path(thisResultsDir, "Policy.yaml"))) {
+    if (file.exists(policy.yaml <- file.path(thisResultsDir, "Policy.yaml")) &&
+        file.exists(nInfected.txt <- file.path(thisResultsDir, "nInfected.txt"))) {
       next  # likely other program has written
     }
 
@@ -76,7 +97,8 @@ for (pr in 1:nrow(PolicyGrid)) {
                       PolicyPars = ThisPolicy,
                       EpiPars = with(Epis,
                                      set_epipars(r_distribution = r_distribution,
-                                                 r_location = r_location)))
+                                                 r_location = r_location)),
+                      showProgress = verbosity)
 
 
     # these are constant for each, drop for disk space
@@ -85,7 +107,7 @@ for (pr in 1:nrow(PolicyGrid)) {
                       "seqN", "HouseholdSize")
     invisible(S$Statuses[, (cols_to_drop) := NULL])
 
-    writeLines(as.character(S$nInfected), file.path(thisResultsDir, "nInfected.txt"))
+    writeLines(as.character(S$nInfected), nInfected.txt)
     write_fst(S$Statuses, file.path(thisResultsDir, "SStatuses.fst"))
     S <- NULL
   }
