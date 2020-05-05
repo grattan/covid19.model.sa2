@@ -68,8 +68,8 @@ do_rep <- function(r, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_rep`, r, nThread)
 }
 
-do_au_simulate <- function(Status, InfectedOn, State, SA2, hid, seqN, HouseholdSize, Age, School, DZN, wid, nColleagues, PlaceTypeBySA2, LabourForceStatus, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, minPlaceID_nPlacesByDestType, yday_start, days_to_sim, N = 25e6L, display_progress = TRUE, by_state = TRUE, console_width = 80L, optionz = 0L, nThread = 1L) {
-    .Call(`_covid19_model_sa2_do_au_simulate`, Status, InfectedOn, State, SA2, hid, seqN, HouseholdSize, Age, School, DZN, wid, nColleagues, PlaceTypeBySA2, LabourForceStatus, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, minPlaceID_nPlacesByDestType, yday_start, days_to_sim, N, display_progress, by_state, console_width, optionz, nThread)
+do_au_simulate <- function(Status, InfectedOn, State, SA2, hid, seqN, HouseholdSize, Age, School, DZN, wid, nColleagues, PlaceTypeBySA2, LabourForceStatus, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, minPlaceID_nPlacesByDestType, yday_start, days_to_sim, N = 25e6L, display_progress = TRUE, on_terminal = FALSE, by_state = TRUE, console_width = 80L, optionz = 0L, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_au_simulate`, Status, InfectedOn, State, SA2, hid, seqN, HouseholdSize, Age, School, DZN, wid, nColleagues, PlaceTypeBySA2, LabourForceStatus, Resistance, Policy, nPlacesByDestType, FreqsByDestType, Epi, nSupermarketsAvbl, SupermarketTypical, minPlaceID_nPlacesByDestType, yday_start, days_to_sim, N, display_progress, on_terminal, by_state, console_width, optionz, nThread)
 }
 
 do_exp_dbl2int <- function(x, nThread = 1L) {
@@ -86,6 +86,10 @@ do_seqN_N <- function(hid, pid, check_hid_sorted = TRUE) {
 
 get_nColleagues <- function(nr, N, LabourForceStatus, nThread = 1L, c_d = 0L, beta = 27, mu = 2.2, sigma = 0.62) {
     .Call(`_covid19_model_sa2_get_nColleagues`, nr, N, LabourForceStatus, nThread, c_d, beta, mu, sigma)
+}
+
+wid_supremum <- function() {
+    .Call(`_covid19_model_sa2_wid_supremum`)
 }
 
 do_workplaces <- function(AusByDZN, nThread = 1L, c_d = 0L, beta = 15, mu = 2.2, sigma = 0.62) {
