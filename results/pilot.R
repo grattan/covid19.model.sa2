@@ -57,9 +57,9 @@ PolicyGrid <-
 EpiGrid <- CJ(r_distribution = c("cauchy", "lnorm", "pois"),
               r_location = c(2/5, 1/5))
 
-for (pr in 1:nrow(PolicyGrid)) {
+for (pr in nrow(PolicyGrid):1) {
   Policys <- PolicyGrid[pr]
-  for (er in 1:nrow(EpiGrid)) {
+  for (er in nrow(EpiGrid):1) {
     if (verbosity > 0) {
       message("pr = ", pr, "\t", "er = ", er, "\t", as.character(Sys.time()))
     }
@@ -80,8 +80,10 @@ for (pr in 1:nrow(PolicyGrid)) {
                           cafes_open = cafes_open,
                           workplaces_open = workplaces_open,
                           workplace_size_max = workplace_size_max))
-    if (file.exists(policy.yaml <- file.path(thisResultsDir, "Policy.yaml")) &&
-        file.exists(nInfected.txt <- file.path(thisResultsDir, "nInfected.txt"))) {
+    policy.yaml <- file.path(thisResultsDir, "Policy.yaml")
+    nInfected.txt <- file.path(thisResultsDir, "nInfected.txt")
+    if (file.exists(policy.yaml) &&
+        file.exists(nInfected.txt)) {
       next  # likely other program has written
     }
 
@@ -98,17 +100,19 @@ for (pr in 1:nrow(PolicyGrid)) {
                       EpiPars = with(Epis,
                                      set_epipars(r_distribution = r_distribution,
                                                  r_location = r_location)),
+                      returner = 1L,
                       showProgress = verbosity)
+    write_fst(S, file.path(thisResultsDir, "N_by_Status.fst"), compress = 0L)
 
 
-    # these are constant for each, drop for disk space
-    cols_to_drop <- c("state", "pid", "Age",
-                      "short_school_id", "short_dzn",
-                      "seqN", "HouseholdSize")
-    invisible(S$Statuses[, (cols_to_drop) := NULL])
-
-    writeLines(as.character(S$nInfected), nInfected.txt)
-    write_fst(S$Statuses, file.path(thisResultsDir, "SStatuses.fst"))
-    S <- NULL
+    # # these are constant for each, drop for disk space
+    # cols_to_drop <- c("state", "pid", "Age",
+    #                   "short_school_id", "short_dzn",
+    #                   "seqN", "HouseholdSize")
+    # invisible(S$Statuses[, (cols_to_drop) := NULL])
+    #
+    # writeLines(as.character(S$nInfected), nInfected.txt)
+    # write_fst(S$Statuses, file.path(thisResultsDir, "SStatuses.fst"))
+    # S <- NULL
   }
 }

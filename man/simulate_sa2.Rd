@@ -15,7 +15,8 @@ simulate_sa2(
   dataEnv = getOption("covid19.model.sa2_dataEnv", new.env()),
   use_dataEnv = getOption("covid19.model.sa2_useDataEnv", FALSE),
   nThread = getOption("covid19.model.sa2_nThread", 1L),
-  myaus = NULL
+  myaus = NULL,
+  returner = 0L
 )
 }
 \arguments{
@@ -67,6 +68,12 @@ subsequent uses).}
 \item{myaus}{A prepared \code{data.table} with a column \code{status}
 that has the desired distribution (including perhaps over SA2). This
 formal is experimental and may be removed without notice.}
+
+\item{returner}{What values to return.
+\describe{
+\item{\code{0}}{The default, return the full data: status of each person, each day.}
+\item{\code{1}}{\code{days} x \code{state} x \code{age} x \code{status}.}
+}}
 }
 \value{
 A list of \code{days_to_simulate + 1} components. The first

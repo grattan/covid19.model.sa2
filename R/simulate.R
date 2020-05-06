@@ -49,6 +49,12 @@
 #' that has the desired distribution (including perhaps over SA2). This
 #' formal is experimental and may be removed without notice.
 #'
+#' @param returner What values to return.
+#' \describe{
+#' \item{\code{0}}{The default, return the full data: status of each person, each day.}
+#' \item{\code{1}}{\code{days} x \code{state} x \code{age} x \code{status}.}
+#' }
+#'
 #' @return
 #' A list of \code{days_to_simulate + 1} components. The first
 #' component is the inital status of each individual and
@@ -87,7 +93,8 @@ simulate_sa2 <- function(days_to_simulate = 5,
                          dataEnv = getOption("covid19.model.sa2_dataEnv", new.env()),
                          use_dataEnv = getOption("covid19.model.sa2_useDataEnv", FALSE),
                          nThread = getOption("covid19.model.sa2_nThread", 1L),
-                         myaus = NULL) {
+                         myaus = NULL,
+                         returner = 0L) {
   nThread <- checkmate::assert_int(nThread, lower = 1L, coerce = TRUE)
 
   .showProgress <- showProgress > 0
@@ -377,12 +384,23 @@ simulate_sa2 <- function(days_to_simulate = 5,
                         days_to_sim = days_to_simulate,
                         N = nrow(aus),
                         by_state = by_state,
+                        returner = returner,
                         display_progress = .showProgress,
                         on_terminal = on_terminal,
                         console_width = getOption("width", 80L),
                         optionz = getOption("optionz", 0L),  # for debugging may be changed without notice
                         nThread = nThread))
+
   hh_ss("final")
+  if (returner) {
+    if (returner == 1L) {
+      DT <- data.table(N = out[[1]])
+      DT[, Status := rep_len(c("Killed", "Healed", "Suscep", "NoSymp", "InSymp", "Critic", "Isolated"), .N)]
+      DT[, Day := rep(seq_len(days_to_simulate), each = 7L)]
+      hutils::set_cols_first(DT, c("Day", "Status"))
+      return(DT)
+    }
+  }
 
   out <- copy(out)
 

@@ -18,7 +18,7 @@ int max0(double x) {
 }
 
 // [[Rcpp::export]]
-IntegerVector do_minmax_par(IntegerVector x, int nThread = 10) {
+IntegerVector do_minmax_par(IntegerVector x, int nThread = 1) {
   int N = x.length();
   int xmin = x[0];
   int xmax = x[0];
@@ -124,14 +124,13 @@ List sa2_firsts_finals(IntegerVector SA2, int nsa2 = 2310) {
   SA2_firsts[s] = 0;
   SA2_finals[nsa2 - 1] = N - 1;
 
-  for (int i = 1; i < SA2.length(); ++i) {
+  for (int i = 1; i < N; ++i) {
     int d = SA2[i] - SA2[i - 1];
     // if nonzero continue;
     // if d == 1 great! just a regular increment
     // if d == 2 then next SA2 doesn't appear so
     // it both starts and stops here
-    while (d) {
-      ++s;
+    while (d > 0 && ++s < nsa2) {
       --d;
       SA2_firsts[s] = i;
       SA2_finals[s - 1] = i;
@@ -143,6 +142,8 @@ List sa2_firsts_finals(IntegerVector SA2, int nsa2 = 2310) {
   }
   return List::create(SA2_firsts, SA2_finals);
 }
+
+
 
 
 
