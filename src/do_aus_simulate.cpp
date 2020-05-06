@@ -102,8 +102,42 @@ int r_Rand(double m, double s, int d, bool dper, int e, int per, int yday) {
 }
 
 int array3k(int x, int y, int z, int ny, int nz) {
-  return x * (ny + nz) + y * (nz) + z;
+  return x * (ny * nz) + y * (nz) + z;
 }
+
+int array4k(int w, int x, int y, int z, int nx, int ny, int nz) {
+  return w * (nx * ny * nz) + x * (ny * nz) + y * nz + z;
+}
+
+// [[Rcpp::export]]
+IntegerVector test_array4k(IntegerVector w, IntegerVector x, IntegerVector y, IntegerVector z,
+                           int nw, int nx, int ny, int nz) {
+  // purely to test array4k
+  R_xlen_t n = nw * nx * ny * nz;
+  if (n >= INT_MAX) {
+    stop("test_array4k only available for integer-length.");
+  }
+
+  if (n != w.length() ||
+      n != x.length() ||
+      n != y.length() ||
+      n != z.length()) {
+    stop("Internal error: lengths differ.");
+  }
+  IntegerVector out = no_init(nw * nx * ny * nz);
+  for (R_xlen_t i = 0; i < n; ++i) {
+    int wi = w[i];
+    int xi = x[i];
+    int yi = y[i];
+    int zi = z[i];
+    if (wi >= nw || xi >= nx || yi >= ny || zi >= nz) {
+      stop("Internal error: wi >= nw || xi >= nx || yi >= ny || zi >= nz");
+    }
+    out[i] = array4k(w[i], x[i], y[i], z[i], nx, ny, nz);
+  }
+  return out;
+}
+
 
 
 void contact_tracing(IntegerVector Status,
@@ -813,8 +847,9 @@ void infect_dzn(IntegerVector Status,
   // for (int w = 0; w < WID_SUPREMUM; ++w) {
   //   InfectionsByWorkplace[w] = 0;
   // }
-
+#if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread) reduction(+:InfectionsByWorkplace[:WID_SUPREMUM])
+#endif
   for (int i = 0; i < N; ++i) {
     if (Status[i] != STATUS_INSYMP) {
       continue;
@@ -1232,6 +1267,7 @@ List do_au_simulate(IntegerVector Status,
                     bool display_progress = true,
                     bool on_terminal = false,
                     bool by_state = true,
+                    int returner = 0,
                     int console_width = 80,
                     int optionz = 0,
                     int nThread = 1) {
@@ -1428,8 +1464,6 @@ List do_au_simulate(IntegerVector Status,
   }
   IntegerVector shortSA2 = shorten_sa2s_ordered(SA2);
 
-  DataFrame Statuses = DataFrame::create(Named("InitialStatus") = clone(Status));
-
   IntegerVector PlaceId = clone(SupermarketTarget);
 
   // For example, SupermarketFreq[i] = 365  => every day
@@ -1447,9 +1481,31 @@ List do_au_simulate(IntegerVector Status,
     stop("minPlaceID_nPlacesByDestType.length() != 106.");
   }
 
+  IntegerVector minmaxState = do_minmax_par(State, nThread);
+  if (minmaxState[0] != 1) {
+    stop("Internal error: minmaxState[0] != 1");
+  }
+  if (minmaxState[1] != NSTATES) {
+    stop("Internal error: minmaxState[0] != NSTATES");
+  }
+  List FirstFinalsState = sa2_firsts_finals(State, NSTATES);
+  IntegerVector State_firsts = FirstFinalsState[0];
+  IntegerVector State_finals = FirstFinalsState[1];
+
   List FirstFinalsSA2 = sa2_firsts_finals(shortSA2, NSA2);
   IntegerVector SA2_firsts = FirstFinalsSA2[0];
   IntegerVector SA2_finals = FirstFinalsSA2[1];
+
+  NumericVector notUsed = {1,2};
+  // returner 0: Data frame of statuses
+  DataFrame Statuses = DataFrame::create(Named("InitialStatus") = clone(Status));
+
+  // returner 1: days by state by age by status
+  //
+  // const int out1_len = (days_to_sim * out1d_len);
+  // IntegerVector out1 = no_init(out1_len);
+  // int out1i = 0;
+  IntegerVector out1 = no_init(days_to_sim * 7); // 7 statuses for each
 
 
 
@@ -1465,14 +1521,72 @@ List do_au_simulate(IntegerVector Status,
 
 
     int n_infected_today = 0;
-
+    if (returner == 0) {
 #pragma omp parallel for num_threads(nThread) reduction(+:n_infected_today)
-    for (int i = 0; i < N; ++i) {
-      int statusi = Status[i];
-      n_infected_today += (statusi > 0) && ((statusi - ISOLATED_PLUS) != 0);
+      for (int i = 0; i < N; ++i) {
+        int statusi = Status[i];
+        n_infected_today += (statusi > 0) && ((statusi - ISOLATED_PLUS) != 0);
+      }
+      nInfected[day] = n_infected_today;
+    }
+    // prepare returner 1
+    if (returner == 1) {
+      //       if (out1d_len != 2799720) {
+      //         stop("Internal error(): out1d_len != 2799720.");
+      //       }
+      //
+      //       int counts_r1a[2799720] = {};
+      // #pragma omp parallel for num_threads(nThread) reduction(+:counts_r1a[:2799720])
+      //       for (int g = 0; g < N; ++g) {
+      //         int statusg = Status[g];
+      //         int wstatus = ((statusg > STATUS_CRITIC) ? 6 : 0) + statusg % 6;
+      //         int ig = (shortSA2[g] * (101 * 12)) + Age[g] * 12 + wstatus;
+      //         counts_r1a[ig] += 1;
+      //       }
+      //
+      //       IntegerVector counts_r1 = no_init(2799720);
+      // #pragma omp parallel for num_threads(nThread)
+      //       for (int ig = 0; ig < 2799720; ++ig) {
+      //         counts_r1[ig] = counts_r1a[ig];
+      //       }
+      //       Statuses.push_back(clone(counts_r1));
+      //     }
+      int n_killed = 0;
+      int n_healed = 0;
+      int n_suscep = 0;
+      int n_nosymp = 0;
+      int n_insymp = 0;
+      int n_critic = 0;
+      int n_isolat = 0;
+#pragma omp parallel for num_threads(nThread) reduction(+ : n_killed,n_healed,n_suscep,n_nosymp,n_insymp,n_critic,n_isolat)
+      for (int i = 0; i < N; ++i) {
+        if (Status[i] == 0) {
+          n_suscep += 1;
+          continue;
+        }
+        int statusi = Status[i];
+        n_killed += statusi == STATUS_KILLED;
+        n_healed += statusi == STATUS_HEALED;
+        n_nosymp += statusi == STATUS_NOSYMP;
+        n_insymp += statusi == STATUS_INSYMP;
+        n_critic += statusi == STATUS_CRITIC;
+        n_isolat += statusi >= ISOLATED_PLUS;
+      }
+
+
+      out1[7 * day + 0] = n_killed;
+      out1[7 * day + 1] = n_healed;
+      out1[7 * day + 2] = n_suscep;
+      out1[7 * day + 3] = n_nosymp;
+      out1[7 * day + 4] = n_insymp;
+      out1[7 * day + 5] = n_critic;
+      out1[7 * day + 6] = n_isolat;
+
+      n_infected_today = n_nosymp + n_insymp + n_critic + n_isolat;
     }
 
-    nInfected[day] = n_infected_today;
+
+
 
     if (display_progress) {
       if (console_width <= 1) {
@@ -1542,7 +1656,7 @@ List do_au_simulate(IntegerVector Status,
     if (n_infected_today == 0) {
       continue;
     }
-    if (optionz != 2) {
+    if (optionz != 2 || returner == 0) {
       Statuses.push_back(clone(Status));
     }
     if (optionz == 3) {
@@ -1754,11 +1868,20 @@ List do_au_simulate(IntegerVector Status,
                       nThread,
                       TestedOn);
     }
+
+
   }
 
-  return Rcpp::List::create(Named("nInfected") = nInfected,
-                            Named("Statuses") = Statuses,
-                            Named("TestedOn") = TestedOn);
+  if (returner == 0) {
+    return Rcpp::List::create(Named("nInfected") = nInfected,
+                              Named("Statuses") = Statuses,
+                              Named("TestedOn") = TestedOn);
+  }
+  if (returner == 1) {
+    return List::create(Named("Status7") = out1);
+  }
+
+  return Statuses;
 }
 
 

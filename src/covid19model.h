@@ -10,6 +10,7 @@
 #include <progress.hpp>
 #include <progress_bar.hpp>
 #include <Rcpp.h>
+// [[Rcpp::plugins(openmp)]]
 #ifdef _OPENMP
 #include <omp.h>
 #endif
@@ -49,6 +50,8 @@ const int STATUS_INSYMP =  2;
 const int STATUS_CRITIC =  3;
 
 const int ISOLATED_PLUS = 32;
+
+const int NSTATUSES = 12;
 
 // We want to avoid branching and prefer + or - to if statements
 // e.g.
@@ -136,6 +139,11 @@ int minii(int &a, int &b);
 int max0(int x);
 int max0(double x);
 
+// const int out1d_len = NSA2 * 101 * NSTATUSES;
+const int out1d_len = 2799720;
+const int NAGES_X_NSTATUSES = 1212;
+
+IntegerVector do_minmax_par(IntegerVector x, int nThread);
 IntegerVector do_lag_int(IntegerVector s, int nThread);
 IntegerVector modulo(IntegerVector x, int m, int d, int nThread);
 IntegerVector prlnorm_int(int n, double a, double b, int nThread);
