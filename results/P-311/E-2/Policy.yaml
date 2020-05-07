@@ -1,0 +1,48 @@
+start_date: '2020-01-01'
+schools:
+  aus:
+    open: yes
+    only_Year12: no
+    all_full_time: no
+  aus:
+    days_per_wk: 4
+  nsw:
+    days_per_wk: 4
+  vic:
+    days_per_wk: 4
+  qld:
+    days_per_wk: 4
+  wa:
+    days_per_wk: 4
+  sa:
+    days_per_wk: 4
+  tas:
+    days_per_wk: 4
+  act:
+    days_per_wk: 4
+  nt:
+    days_per_wk: 4
+  oth:
+    days_per_wk: 4
+places:
+  default:
+    max_visitors: 5
+  supermarkets:
+    max_visitors: 200
+work:
+  prop_open: 250
+  workplace_size:
+    max: 50
+    beta: 13.0
+    lmu: -1.0
+    lsi: -1.0
+age_lockdown:
+  in_force: no
+contact_tracing:
+  tests_by_state: auto
+  aus:
+    in_force: yes
+    days_before_test: 0
+    days_until_result: 5
+    p_asympto_cases: 0.5
+

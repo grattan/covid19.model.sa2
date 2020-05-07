@@ -11,12 +11,18 @@ if (any(startsWith(args, "--cores="))) {
   cores <- getOption("covid19.model.sa2_nThread", parallel::detectCores() - 2L)
 }
 
+options(covid19.model.sa2_useDataEnv = TRUE)
+options(covid19.model.sa2.fst2_progress = FALSE)
+
 verbosity <- 0L
 if (any(startsWith(args, "--verbose="))) {
   verbose_arg <- args[which.max(startsWith(args, "--verbose="))]
   verbosity <- as.integer(sub("--verbose=", "", verbose_arg))
 }
 
+if (any(startsWith(args, "--epis="))) {
+
+}
 
 
 
@@ -27,8 +33,8 @@ library(magrittr)
 library(hutils)
 library(hutilscpp)
 
+
 library(covid19.model.sa2)
-attachme()
 
 ResultsDir <- "."
 stopifnot(file.exists("pilot.R"))
@@ -57,13 +63,18 @@ PolicyGrid <-
 EpiGrid <- CJ(r_distribution = c("cauchy", "lnorm", "pois"),
               r_location = c(2/5, 1/5))
 
-for (pr in nrow(PolicyGrid):1) {
+for (pr in 1:nrow(PolicyGrid)) {
   Policys <- PolicyGrid[pr]
-  for (er in nrow(EpiGrid):1) {
-    if (verbosity > 0) {
+  if (verbosity > 0 && (pr %% 50) == 0) {
+    message("pr = ", pr)
+  }
+  for (er in 1:nrow(EpiGrid)) {
+    if (verbosity > 1) {
       message("pr = ", pr, "\t", "er = ", er, "\t", as.character(Sys.time()))
     }
-    cat(pr, "\t", er, "\t", as.character(Sys.time()),  file = file.path(ResultsDir, "pilot.log"), append = TRUE)
+    cat(pr, "\t", er, "\t", as.character(Sys.time()), "\n",
+        if (er == 1L) "\n",
+        file = file.path(ResultsDir, "pilot.log"), append = TRUE)
 
     thisResultsDir <- provide.dir(file.path(ResultsDir,  paste0("P-", pr, "/", "E-", er)))
 
@@ -83,13 +94,14 @@ for (pr in nrow(PolicyGrid):1) {
     policy.yaml <- file.path(thisResultsDir, "Policy.yaml")
     nInfected.txt <- file.path(thisResultsDir, "nInfected.txt")
     if (file.exists(policy.yaml) &&
-        file.exists(nInfected.txt)) {
+        file.exists(nInfected.txt) &&
+        file.exists(file.path(thisResultsDir, "SStatuses.fst"))) {
       next  # likely other program has written
     }
 
 
 
-    cat(as.yaml(unpack_multipolicy(list(ThisPolicy))),
+    cat(as.yaml(covid19.model.sa2:::unpack_multipolicy(list(ThisPolicy))),
         file = policy.yaml,
         sep = "\n")
 
@@ -102,6 +114,7 @@ for (pr in nrow(PolicyGrid):1) {
                                                  r_location = r_location)),
                       returner = 1L,
                       showProgress = verbosity)
+    file.create(nInfected.txt)
     write_fst(S, file.path(thisResultsDir, "N_by_Status.fst"), compress = 0L)
 
 

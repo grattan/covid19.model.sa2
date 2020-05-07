@@ -1,0 +1,28 @@
+start_date: '2020-01-01'
+schools:
+  aus:
+    open: yes
+    only_Year12: no
+    all_full_time: yes
+places:
+  default:
+    max_visitors: 5
+  supermarkets:
+    max_visitors: 200
+work:
+  prop_open: 250
+  workplace_size:
+    max: 100
+    beta: 13.0
+    lmu: -1.0
+    lsi: -1.0
+age_lockdown:
+  in_force: no
+contact_tracing:
+  tests_by_state: auto
+  aus:
+    in_force: yes
+    days_before_test: 1
+    days_until_result: 3
+    p_asympto_cases: 0.5
+
