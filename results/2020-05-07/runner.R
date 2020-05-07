@@ -57,11 +57,25 @@ PolicyGrid <-
 
 fwrite(PolicyGrid, "PolicyGrid")
 
-i <- 1L
-while (i < nrow(PolicyGrid)) {
+if (identical(Sys.getenv("USERNAME"), "hughp")) {
+  i <- nrow(PolicyGrid)
+  conditioni <- function(i) i >= 1
+  j <- -1L
+} else {
+  i <- 1L
+  j <- +1L
+  conditioni <- function(i) i < nrow(PolicyGrid)
+}
+
+
+while (i %in% 1:nrow(PolicyGrid)) {
   Policyi.csv <- paste0("./by-state/P-", i, "/Policy.csv")
   if (file.exists(Policyi.csv)) {
-    i <- i + machine
+    if (identical(Sys.getenv("USERNAME"), "hughp")) {
+      i <- i - machine
+    } else {
+      i <- i + machine
+    }
     next
   }
 
@@ -73,7 +87,7 @@ while (i < nrow(PolicyGrid)) {
       age_based_lockdown <- integer(100)
     }
 
-    policy <- set_policypars(schools_open = schools_open,
+    policy <<- set_policypars(schools_open = schools_open,
                              only_Year12 = only_Year12,
                              school_days_per_wk = school_days_per_wk,
                              contact_tracing_days_before_test = contact_tracing_days_before_test,
@@ -83,14 +97,27 @@ while (i < nrow(PolicyGrid)) {
                              age_based_lockdown = age_based_lockdown,
                              workplace_size_max = workplace_size_max)
 
-    epis <- set_epipars(incubation_distribution = incubation_distribution,
+    epis <<- set_epipars(incubation_distribution = incubation_distribution,
                         incubation_mean = incubation_mean,
                         r_distribution = r_distribution,
                         r_location = r_location,
                         r_scale = r_scale,
                         resistance_threshold = resistance_threshold,
                         r_schools_location = r_schools_location)
+    # stop("abc")
 
+    # tryCatch({
+    # simulate_sa2(56,
+    #              PolicyPars = policy,
+    #              EpiPars = epis,
+    #              nThread = cores,
+    #              showProgress = verbose,
+    #              returner = 2L)},
+    #   error = function(e) {
+    #     message("i segfaulted.")
+    #     cat(i, file = "segfaults", append = TRUE)
+    #     data.table()
+    #   })
     simulate_sa2(56,
                  PolicyPars = policy,
                  EpiPars = epis,
@@ -100,7 +127,7 @@ while (i < nrow(PolicyGrid)) {
 
   })
   fwrite(outi, paste0("./by-state/P-", i, "/outi.csv"))
-  i <- i + 1L
+  i <- i + j
 }
 
 

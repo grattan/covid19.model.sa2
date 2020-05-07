@@ -1,0 +1,2 @@
+schools_open,only_Year12,school_days_per_wk,contact_tracing_days_before_test,contact_tracing_days_until_result,cafes_open,workplaces_open,workplace_size_max,do_age_based_lockdown,incubation_distribution,incubation_mean,r_distribution,r_location,r_scale,resistance_threshold,r_schools_location
+TRUE,TRUE,5,1,5,TRUE,1,100,TRUE,pois,6,lnorm,0.75,0.5,400,0.5
