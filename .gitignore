@@ -13,3 +13,4 @@ data-raw/EpiSims20200428-by-e.fst
 data-raw/Policy.fst
 data-raw/SP.rds
 *.txt
+.Rprofile
