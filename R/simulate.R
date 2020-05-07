@@ -400,7 +400,21 @@ simulate_sa2 <- function(days_to_simulate = 5,
       hutils::set_cols_first(DT, c("Day", "Status"))
       return(DT)
     }
+    if (returner == 2) {
+      NN <- out[[1]]
+      DT <- CJ(Day = seq_len(days_to_simulate),
+               State = states()[2:10],
+               Status = c("Killed", "Healed", "Suscep", "NoSymp", "InSymp", "Critic", "Isolated"),
+               sorted = FALSE)
+      if (nrow(DT) != length(NN)) {
+        warning("Internal error: returning components separately.")
+        return(invisible(list(DT = DT, NN = NN)))
+      }
+      DT[, N := NN]
+      return(DT)
+    }
   }
+
 
   out <- copy(out)
 

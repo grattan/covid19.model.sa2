@@ -1501,7 +1501,7 @@ List do_au_simulate(IntegerVector Status,
   // IntegerVector out1 = no_init(out1_len);
   // int out1i = 0;
   IntegerVector out1 = no_init(days_to_sim * 7); // 7 statuses for each
-
+  IntegerVector out2(days_to_sim * NSTATES * 7); // preallocate
 
 
   for (int day = 0; day < days_to_sim; ++day) {
@@ -1578,6 +1578,23 @@ List do_au_simulate(IntegerVector Status,
       out1[7 * day + 6] = n_isolat;
 
       n_infected_today = n_nosymp + n_insymp + n_critic + n_isolat;
+    }
+
+    if (returner == 2) {
+      // by state
+
+      for (int i = 0; i < N; ++i) {
+        if (Status[i] > 0) {
+          n_infected_today += 1;
+        }
+        int statusi = Status[i] + 2;
+
+        if (statusi > 5) {
+          statusi = 6;
+        }
+        int oi2 =  7 * day * NSTATES + (State[i] - 1) * (7) + statusi;
+        out2[oi2] += 1;
+      }
     }
 
 
@@ -1874,6 +1891,9 @@ List do_au_simulate(IntegerVector Status,
   }
   if (returner == 1) {
     return List::create(Named("Status7") = out1);
+  }
+  if (returner == 2) {
+    return List::create(Named("Status7") = out2);
   }
 
   return Statuses;

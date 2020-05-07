@@ -1,0 +1,2 @@
+schools_open,only_Year12,school_days_per_wk,contact_tracing_days_before_test,contact_tracing_days_until_result,cafes_open,workplaces_open,workplace_size_max,do_age_based_lockdown,incubation_distribution,incubation_mean,r_distribution,r_location,r_scale,resistance_threshold,r_schools_location
+FALSE,FALSE,1,0,3,FALSE,0,10,FALSE,dirac,4,cauchy,0.05,0.05,900,0.05

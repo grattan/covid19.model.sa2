@@ -3,6 +3,9 @@
 \name{count_by}
 \alias{count_by}
 \title{count by}
+\usage{
+count_by(Group1, Group2, Group3, nThread = 1)
+}
 \arguments{
 \item{Group1, Group2, nThread}{Input.}
 }
