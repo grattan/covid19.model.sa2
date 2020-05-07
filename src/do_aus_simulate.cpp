@@ -792,33 +792,32 @@ void infect_dzn(IntegerVector Status,
     stop("zero != 0");
   }
 
-  if (optionz) {
-    Rcout << Status.length() << " ";
-    Rcout << InfectedOn.length() << " ";
-    Rcout << DZN.length() << " ";
-    Rcout << wid.length() << " ";
-    Rcout << LabourForceStatus.length() << " ";
-    Rcout << nColleagues.length() << " ";
-    Rcout << TodaysK.length() << " ";
-    Rcout << Resistance.length() << " ";
-
-    Rcout << N << " ";
-    Rcout << resistance1 << " ";
-    Rcout << workplaces_open << " ";
-    Rcout << workplace_size_max << " ";
-    Rcout << a_workplace_rate << " ";
-    Rcout << r_location << " ";
-    Rcout << r_scale << " ";
-    Rcout << r_d << " ";
-    Rcout << "\n";
-  }
-
   if (day == 0) {
+    if (optionz) {
+      Rcout << Status.length() << " ";
+      Rcout << InfectedOn.length() << " ";
+      Rcout << DZN.length() << " ";
+      Rcout << wid.length() << " ";
+      Rcout << LabourForceStatus.length() << " ";
+      Rcout << nColleagues.length() << " ";
+      Rcout << TodaysK.length() << " ";
+      Rcout << Resistance.length() << " ";
+
+      Rcout << N << " ";
+      Rcout << resistance1 << " ";
+      Rcout << workplaces_open << " ";
+      Rcout << workplace_size_max << " ";
+      Rcout << a_workplace_rate << " ";
+      Rcout << r_location << " ";
+      Rcout << r_scale << " ";
+      Rcout << r_d << " ";
+      Rcout << "\n";
+    }
+
     // check that DZN is short and ranges from 1 to (NDZN - 1)
     // check that wid_supremum0
     int max_dzn = 0;
     int max_wid = 0;
-#pragma omp parallel for num_threads(nThread) reduction(max:max_dzn) reduction(max:max_wid)
     for (int i = 0; i < N; ++i) {
       if (DZN[i] > max_dzn) {
         max_dzn = DZN[i];
@@ -837,39 +836,46 @@ void infect_dzn(IntegerVector Status,
     if (TodaysK.length() != NTODAY) {
       stop("TodaysK.length() != NTODAY");
     }
+    if (nColleagues.length() != N) {
+      stop("Internal error(infect_dzn): nColleagues.length() != N");
+    }
   }
 
   // can't use array as overflow risk is real
   std::vector<int> InfectionsByWorkplace(WID_SUPREMUM, 0);
-  std::fill(InfectionsByWorkplace.begin(), InfectionsByWorkplace.end(), 0);
+  if (optionz && day == 0) {
+    Rcout << InfectionsByWorkplace[0] << "\n";
+    Rcout << InfectionsByWorkplace[1] << "\n";
+  }
 
   // for (int w = 0; w < WID_SUPREMUM; ++w) {
   //   InfectionsByWorkplace[w] = 0;
   // }
-#pragma omp parallel for num_threads(nThread)
+
   for (int i = 0; i < N; ++i) {
     if (Status[i] != STATUS_INSYMP) {
       continue;
     }
-    int widi0 = wid[i] - 1;
-    if (widi0 < 0) {
-      continue;
-    }
 
-    if ((widi0 % 1000) > workplaces_open) {
+    int widi = wid[i]; // if wid[i] is NA widi[i] - 1 is UBD
+    if (widi <= 0) {
       continue;
     }
-#pragma omp critical
+    int widi0 = widi - 1;
+
+    if (workplaces_open < 1000 && ((widi0 % 1000) > workplaces_open)) {
+      continue;
+    }
     InfectionsByWorkplace[widi0] += 1;// r_Rand(r_location, r_scale, r_d);
   }
 
   // reinfection
-#pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
-    int widi0 = wid[i] - 1;
-    if (widi0 < 0) {
+    int widi = wid[i];
+    if (widi < 0) {
       continue;
     }
+    int widi0 = widi - 1;
     if (nColleagues[i] <= 1) {
       continue;
     }
@@ -880,7 +886,6 @@ void infect_dzn(IntegerVector Status,
     int excess_workers = nColleagues[i] - workplace_size_max;
     bool no_further_infections = false; // due to the infectious not being allowed in (back of the queue)
     if (excess_workers > 0) {
-#pragma omp critical
       if (excess_workers > InfectionsByWorkplace[widi0]) {
         // assume infections are strictly less likely to attend work
         InfectionsByWorkplace[widi0] = 0;
@@ -895,10 +900,9 @@ void infect_dzn(IntegerVector Status,
     }
 
     if (Resistance[i] < resistance1 &&
-        TodaysK[(yday + 2 * widi0 + 7 * i) % NTODAY] < a_workplace_rate) {
+        TodaysK[(wday + 2 * widi0 + 3 * i) % NTODAY] < a_workplace_rate) {
       Status[i] = STATUS_NOSYMP;
       InfectedOn[i] = yday;
-#pragma omp critical
       InfectionsByWorkplace[widi0] -= 1;
     }
 
