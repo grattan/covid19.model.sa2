@@ -837,19 +837,16 @@ void infect_dzn(IntegerVector Status,
     if (TodaysK.length() != NTODAY) {
       stop("TodaysK.length() != NTODAY");
     }
-
-
   }
 
-
-  int InfectionsByWorkplace[WID_SUPREMUM] = {};
+  // can't use array as overflow risk is real
+  std::vector<int> InfectionsByWorkplace(WID_SUPREMUM, 0);
+  std::fill(InfectionsByWorkplace.begin(), InfectionsByWorkplace.end(), 0);
 
   // for (int w = 0; w < WID_SUPREMUM; ++w) {
   //   InfectionsByWorkplace[w] = 0;
   // }
-#if defined _OPENMP && _OPENMP >= 201511
-#pragma omp parallel for num_threads(nThread) reduction(+:InfectionsByWorkplace[:WID_SUPREMUM])
-#endif
+#pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
     if (Status[i] != STATUS_INSYMP) {
       continue;
@@ -862,7 +859,7 @@ void infect_dzn(IntegerVector Status,
     if ((widi0 % 1000) > workplaces_open) {
       continue;
     }
-
+#pragma omp critical
     InfectionsByWorkplace[widi0] += 1;// r_Rand(r_location, r_scale, r_d);
   }
 
@@ -971,14 +968,13 @@ void infect_school(IntegerVector Status,
 
   }
 
-  int s_visits[NSCHOOLS][21];
-  int i_visits[NSCHOOLS][21];
-  for (int school = 0; school < NSCHOOLS; ++school) {
-    for (int a = 0; a < 21; ++a) {
-      s_visits[school][a] = 0;
-      i_visits[school][a] = 0;
-    }
-  }
+  // int i_visits[NSCHOOLS][21];
+  // for (int school = 0; school < NSCHOOLS; ++school) {
+  //   for (int a = 0; a < 21; ++a) {
+  //     i_visits[school][a] = 0;
+  //   }
+  // }
+  int i_visits[NSCHOOLS] = {};
 
   int all_full_time =
     school_days_per_wk.containsElementNamed("all_full_time") &&
@@ -1102,8 +1098,7 @@ void infect_school(IntegerVector Status,
   }
 
 
-
-
+#pragma omp parallel for num_threads(nThread) reduction(+:i_visits[:NSCHOOLS])
   for (int k = 0; k < NPUPILS; ++k) {
     int k5 = wday0 + (5 * k);
     if (!AttendsWday[k5]) {
@@ -1113,16 +1108,15 @@ void infect_school(IntegerVector Status,
 
     int Agei = (Age[i] > 20) ? 20 : Age[i];
     int schooli = School[i] - 1;
-    s_visits[schooli][0] += 1;
-    s_visits[schooli][Agei] += 1;
     // rcauchy relates to the single day
     if (Status[i] == STATUS_NOSYMP) {
       int infectedi = r_Rand(r_location, r_scale, r_d, do_dirac_every, dirac_num, dirac_per, i);
-      i_visits[schooli][0] += infectedi;
-      i_visits[schooli][Agei] += infectedi;
+      i_visits[schooli] += infectedi;
+      // i_visits[schooli][Agei] += infectedi;
     }
   }
 
+#pragma omp parallel for num_threads(nThread) reduction(+:i_visits[:NSCHOOLS])
   for (int k = 0; k < NPUPILS; ++k) {
     int k5 = wday0 + (5 * k);
     if (!AttendsWday[k5]) {
@@ -1138,10 +1132,10 @@ void infect_school(IntegerVector Status,
     // first.  We could randomize this, but I don't think it matters.
 
     // TODO: make students of the same age more likely/first to be infected
-    if (i_visits[schooli][0]) {
+    if (i_visits[schooli]) {
       Status[i] = STATUS_NOSYMP;
       InfectedOn[i] = yday;
-      i_visits[schooli][0] -= 1;
+      i_visits[schooli] -= 1;
     }
   }
   // void
@@ -1383,6 +1377,7 @@ List do_au_simulate(IntegerVector Status,
       for (int i = 0; i < 100; ++i) {
         if (AgesLockdown[i] != 0) {
           age_based_lockdown = true;
+          break;
         }
       }
     }
@@ -1663,7 +1658,7 @@ List do_au_simulate(IntegerVector Status,
       continue;
     }
 
-    if (age_based_lockdown && day == 0) {
+    if (age_based_lockdown) {
 #pragma omp parallel for num_threads(nThread)
       for (int i = 0; i < N; ++i) {
         int agei = Age[i];
