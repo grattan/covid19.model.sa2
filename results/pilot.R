@@ -63,6 +63,9 @@ PolicyGrid <-
 EpiGrid <- CJ(r_distribution = c("cauchy", "lnorm", "pois"),
               r_location = c(2/5, 1/5))
 
+write_fst(PolicyGrid, "results/PolicyGrid.fst")
+write_fst(EpiGrid, "results/EpiGrid.fst")
+
 for (pr in 1:nrow(PolicyGrid)) {
   Policys <- PolicyGrid[pr]
   if (verbosity > 0 && (pr %% 50) == 0) {
