@@ -42,9 +42,9 @@ NumericVector testOpenmp(NumericVector x, int nThread = 1) {
 
 // [[Rcpp::export]]
 IntegerVector count_by_sa2_age_status(IntegerVector Group1,
-                       IntegerVector Group2,
-                       IntegerVector Group3,
-                       int nThread = 1) {
+                                      IntegerVector Group2,
+                                      IntegerVector Group3,
+                                      int nThread = 1) {
   int gn = Group1.length();
   if (gn != Group2.length() ||
       gn != Group3.length()) {
@@ -59,9 +59,9 @@ IntegerVector count_by_sa2_age_status(IntegerVector Group1,
     stop("Min must be zero, max must be 2310, 100, 11.");
   }
 
-  int out[2799720] = {};
+  std::vector<int> out(2799720, 0);
+  std::fill(out.begin(), out.end(), 0);
 
-#pragma omp parallel for num_threads(nThread) reduction(+:out[:2799720])
   for (int g = 0; g < gn; ++g) {
     int i = (Group1[g] * (101 * 12)) + Group2[g] * 12 + Group3[g];
     out[i] += 1;
