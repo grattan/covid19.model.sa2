@@ -19,8 +19,8 @@ See `?simulate_sa2` for further arguments.
 
 ## Mac
 
-Install `R 4.0.0`: https://cran.r-project.org/bin/macosx/
-Enable OpenMP by installing `rtools`: https://github.com/rmacoslib/r-macos-rtools/releases/tag/v3.2.2
+- Install `R 4.0.0`: https://cran.r-project.org/bin/macosx/
+- Enable OpenMP by installing `rtools`: https://github.com/rmacoslib/r-macos-rtools/releases/tag/v3.2.2
 
 
 # Model notes
