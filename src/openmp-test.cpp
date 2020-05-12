@@ -32,14 +32,6 @@ NumericVector testOpenmp(NumericVector x, int nThread = 1) {
   return x;
 }
 
-//' @title count by
-//' @name count_by
-//' @description count by test
-//' @param Group1,Group2,nThread  Input.
-//'
-//'
-//' @export count_by_sa2_age_status
-
 // [[Rcpp::export]]
 IntegerVector count_by_sa2_age_status(IntegerVector Group1,
                                       IntegerVector Group2,
