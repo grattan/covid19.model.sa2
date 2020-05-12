@@ -3,6 +3,7 @@
 
 #include "covid19model.h"
 #include <vector>
+#include <array>
 #include <random>
 #include <numeric>      // std::iota
 #include <algorithm>
