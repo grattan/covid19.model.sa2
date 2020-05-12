@@ -100,16 +100,6 @@ do_workplaces <- function(AusByDZN, nThread = 1L, c_d = 0L, beta = 15, mu = 2.2,
     .Call(`_covid19_model_sa2_do_workplaces`, AusByDZN, nThread, c_d, beta, mu, sigma)
 }
 
-#' @title count by
-#' @name count_by
-#' @usage count_by(Group1, Group2, Group3, nThread = 1)
-#' @description count by test
-#' @param Group1,Group2,nThread  Input.
-#'
-#'
-#' @export count_by_sa2_age_status
-NULL
-
 testOpenmp <- function(x, nThread = 1L) {
     .Call(`_covid19_model_sa2_testOpenmp`, x, nThread)
 }
