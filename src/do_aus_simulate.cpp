@@ -1101,8 +1101,9 @@ void infect_school(IntegerVector Status,
     }
   }
 
-
+#if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread) reduction(+:i_visits[:NSCHOOLS])
+#endif
   for (int k = 0; k < NPUPILS; ++k) {
     int k5 = wday0 + (5 * k);
     if (!AttendsWday[k5]) {
@@ -1119,8 +1120,9 @@ void infect_school(IntegerVector Status,
       // i_visits[schooli][Agei] += infectedi;
     }
   }
-
+#if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread) reduction(+:i_visits[:NSCHOOLS])
+#endif
   for (int k = 0; k < NPUPILS; ++k) {
     int k5 = wday0 + (5 * k);
     if (!AttendsWday[k5]) {
