@@ -926,6 +926,8 @@ void infect_school(IntegerVector Status,
                    double r_scale,
                    int r_d,
                    bool do_dirac_every, int dirac_num, int dirac_per,
+                   IntegerVector Srand,
+                   int q_school,
                    bool only_Year12,
                    List school_days_per_wk,
                    int nThread = 1,
@@ -1138,7 +1140,7 @@ void infect_school(IntegerVector Status,
     // first.  We could randomize this, but I don't think it matters.
 
     // TODO: make students of the same age more likely/first to be infected
-    if (i_visits[schooli]) {
+    if (i_visits[schooli] && Srand[i] < q_school) {
       Status[i] = STATUS_NOSYMP;
       InfectedOn[i] = yday;
       i_visits[schooli] -= 1;
@@ -1151,35 +1153,37 @@ void infect_school(IntegerVector Status,
 void infect_household(IntegerVector Status,
                       IntegerVector InfectedOn,
                       IntegerVector hid,
-                      IntegerVector seqN,
                       IntegerVector HouseholdSize,
+                      const std::vector<int> &seqN1,
                       IntegerVector Resistance,
                       IntegerVector Age,
+                      IntegerVector Srand,
                       int yday,
                       int N,
                       IntegerVector HouseholdInfectedToday,
                       int resistance1,
+                      int q_household,
                       int nThread = 1,
                       int resistance_penalty = 400) {
   // resistance_penalty = penalty against Resistance[i]
   // that makes infection more likely. Higher penalties
   // make infection more likely among otherwise resistant
   // individuals
-  if (nThread <= 0 || nThread > 16) {
-    stop("nThread out of range.");
-  }
+
+  const int n_households = hid[N - 1];
 
 
 #pragma omp parallel for num_threads(nThread)
-  for (int i = 0; i < N; ++i) {
-    // separate household ids into the same thread
-    if (seqN[i] != 1) {
-      continue;
-    }
+  for (int k = 0; k < n_households; ++k) {
+    int i = seqN1[k];
+
     if (HouseholdSize[i] == 1) {
       // no transmission in single-person household
       continue;
     }
+
+
+
 
     if (HouseholdSize[i] == 2) {
       // in this case, we only need to check adjacent
@@ -1188,7 +1192,7 @@ void infect_household(IntegerVector Status,
       // we have skipped anyone who has Status[i] != 0 so the only way
       // the following assignment can occur is if the other thread is
       // skipping
-      if (household_infected) {
+      if (household_infected && Srand[i] < q_household) {
         int r = resistance1 + unifRand(-1, resistance_penalty);
         if (Status[i] == 0 && Resistance[i] < r) {
           Status[i] = STATUS_NOSYMP;
@@ -1205,9 +1209,6 @@ void infect_household(IntegerVector Status,
     // For households larger than 2, we do the entire household
     // when we first see the house. On subsequent i in the same
     // household, skip -- we've already calculated it
-    if (seqN[i] != 1) {
-      continue;
-    }
 
     int nh = HouseholdSize[i];
     bool household_infected = Status[i] > 0;
@@ -1223,6 +1224,9 @@ void infect_household(IntegerVector Status,
       // return to first person and infect as appropriate
       // (don't infect already infected)
       for (int j = 0; j < nh; ++j) {
+        if (Srand[i] >= q_household) {
+          continue;
+        }
         int r = resistance1 + unifRand(-1, resistance_penalty);
         int ij = i + j;
         if (Status[ij] == 0 && Resistance[ij] < r) {
@@ -1254,6 +1258,7 @@ List do_au_simulate(IntegerVector Status,
                     IntegerVector PlaceTypeBySA2,
                     IntegerVector LabourForceStatus,
                     IntegerVector Resistance,
+                    IntegerVector Seed,
                     List Policy,
                     List nPlacesByDestType,
                     List FreqsByDestType,
@@ -1368,6 +1373,9 @@ List do_au_simulate(IntegerVector Status,
       a_workplace_rate = Epi["a_workplace_rate"];
     }
   }
+
+
+
   IntegerVector TestedOn = no_init(N);
 
   // TODO: make user-avbl
@@ -1417,6 +1425,15 @@ List do_au_simulate(IntegerVector Status,
   int dirac_num = do_dirac_every ? Epi["dirac_num"] : 0;
   int dirac_per = do_dirac_every ? Epi["dirac_per"] : 0;
 
+  int a_household_rate = 150;
+  int a_schools_rate = 70;
+
+  int q_household = Epi["q_household"];
+  int q_school = Epi["q_school"];
+
+  IntegerVector Srand = do_lemire_rand_par(N, Seed, nThread);
+
+
 
 
   int n_pupils = 0;
@@ -1438,6 +1455,17 @@ List do_au_simulate(IntegerVector Status,
   IntegerVector AttendsWday = no_init(NPUPILS * 5);
   // memset(AttendsWday, 0, sizeof AttendsWday);
 
+  std::vector<int> seqN1;
+  seqN1.reserve(hid[N - 1]);
+  {
+    int i = 0;
+    // seqN[0] == 1 guaranteed
+    // thereafter we know the location of the next
+    do {
+      seqN1.push_back(i);
+      i += HouseholdSize[i];
+    } while (i < N);
+  }
 
 
   // variables which will be updated on day = 0
@@ -1829,6 +1857,8 @@ List do_au_simulate(IntegerVector Status,
                     schoolsIndex,
                     r_schools_location, r_scale, r_d,
                     do_dirac_every, dirac_num, dirac_per,
+                    Srand,
+                    q_school,
                     only_Year12,
                     school_days_per_wk,
                     nThread,
@@ -1854,9 +1884,11 @@ List do_au_simulate(IntegerVector Status,
 
     // finally
 
-    infect_household(Status, InfectedOn, hid, seqN, HouseholdSize, Resistance, Age,
+    infect_household(Status, InfectedOn, hid, HouseholdSize, seqN1, Resistance, Age,
+                     Srand,
                      yday, N, HouseholdInfectedToday,
                      resistance_threshold,
+                     q_household,
                      nThread);
     if (day < 2 && optionz) {
     Rcout << "infected_household " << "\n";

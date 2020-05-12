@@ -305,13 +305,13 @@ IntegerVector do_lemire_rand_par(int n, IntegerVector S, int nThread = 1) {
 
 #else
 
-// [[Rcpp::export]]
+
 IntegerVector do_lemire_rand(int n, IntegerVector S) {
   warning("Unable.");
   return S;
 }
 
-// [[Rcpp::export]]
+
 IntegerVector do_lemire_rand_par(int n, IntegerVector S, int nThread = 1) {
   warning("Unable.");
   return S;
@@ -319,5 +319,29 @@ IntegerVector do_lemire_rand_par(int n, IntegerVector S, int nThread = 1) {
 
 
 #endif
+
+
+// [[Rcpp::export]]
+IntegerVector cf_sample(int n, int m, IntegerVector x, IntegerVector S) {
+  int slen = S.length();
+  int N = x.length();
+  if (N != slen) {
+    stop("N != slen");
+  }
+  IntegerVector out = no_init(N);
+  if (m) {
+    for (int i = 0; i < N; ++i) {
+      out[i] = S[i] > 455;
+    }
+  } else {
+    for (int i = 0; i < N; ++i) {
+      out[i] = S[((i * 13) + 17) % slen] > 455;
+    }
+  }
+  return out;
+}
+
+
+
 
 
