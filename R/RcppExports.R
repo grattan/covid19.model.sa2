@@ -132,8 +132,12 @@ prcauchy <- function(n, a, b, nThread = 1L) {
     .Call(`_covid19_model_sa2_prcauchy`, n, a, b, nThread)
 }
 
-lemire_rand <- function(n, d, s32, nThread = 1L, q2 = 0L) {
-    .Call(`_covid19_model_sa2_lemire_rand`, n, d, s32, nThread, q2)
+do_lemire_rand <- function(n, S) {
+    .Call(`_covid19_model_sa2_do_lemire_rand`, n, S)
+}
+
+do_lemire_rand_par <- function(n, S, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_lemire_rand_par`, n, S, nThread)
 }
 
 short_sa2 <- function(sa2) {

@@ -111,10 +111,13 @@ DoubleVector prcauchy(int n, double a, double b, int nThread = 1) {
  * Society 68.225 (1999): 249-260.
  */
 
+
 #include <stdint.h>
 #include <cstdint>
 
 #if INTPTR_MAX == INT64_MAX
+
+bool is64bit = true;
 
 __uint128_t g_lehmer64_state = 353;
 
@@ -124,14 +127,9 @@ uint64_t lehmer64() {
 }
 
 #else
-
-int g_lehmer64_state = 3353;
-
-int lehmer64() {
-  return unifRand(0, INT32_MAX - 1);
-}
-
+bool is64bit = false;
 #endif
+
 
 
 // original documentation by Vigna:
@@ -144,6 +142,7 @@ int lehmer64() {
  computations) or xorshift1024* (for massively parallel computations)
  generator. */
 
+#if INTPTR_MAX == INT64_MAX
 // state for splitmix64
 uint64_t splitmix64_x; /* The state can be seeded with any value. */
 
@@ -175,7 +174,9 @@ static inline uint64_t splitmix64_stateless(uint64_t index) {
 }
 
 
+
 static __uint128_t g_lehmer64_states[20];
+
 
 uint64_t lehmer64_states(int s = 0) {
   g_lehmer64_states[s] *= 0xda942042e4dd58b5;
@@ -301,3 +302,22 @@ IntegerVector do_lemire_rand_par(int n, IntegerVector S, int nThread = 1) {
 
   return out;
 }
+
+#else
+
+// [[Rcpp::export]]
+IntegerVector do_lemire_rand(int n, IntegerVector S) {
+  warning("Unable.");
+  return S;
+}
+
+// [[Rcpp::export]]
+IntegerVector do_lemire_rand_par(int n, IntegerVector S, int nThread = 1) {
+  warning("Unable.");
+  return S;
+}
+
+
+#endif
+
+
