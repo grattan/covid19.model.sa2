@@ -11,6 +11,21 @@
 #'
 #' @param illness_distribution,illness_mean,illness_sigma As for \code{incubation} above.
 #'
+#' @param a_household_rate \code{double(1)} in \code{[0, 1]}, the (average)
+#' proportion of an infected person's household that may be infected
+#' over the course of the person's illness.
+#' @param a_workplace_rate \code{double(1)} in \code{[0, 1]}, the (average)
+#' proportion of an infected person's colleagues that may be infected
+#' over the course of a person's illness.
+#' @param a_schools_rate \code{double(1)} in \code{[0, 1]}, the (average)
+#' proportion of an infected child's classmates that may be infected
+#' over the course of a child's illness.
+#'
+#' @param q_household Daily transmission probability among household members.
+#' @param q_school Daily transmission probability among students of the same school.
+#' @param q_school_grade Daily transmission probability among students of the same
+#' school and age.
+#'
 #' @param r_distribution The distribution of the number of infections from each
 #' infected person, one of `"cauchy"`, `"lnorm"`, `"pois"`, or `"dirac"`.
 #'
@@ -35,8 +50,6 @@
 #' means no-one will be infected; a value of 1000 means everyone will.
 #'
 #' @param r_work_location Parameters for work infection distribution.
-#' @param a_workplace_rate \code{double(1)} in \code{[0, 1]}, the (average)
-#' proportion of colleagues that will be infected in any day.
 #'
 #' @param p_asympto A number in \code{[0, 1]}, the proportion of cases that
 #' are asymptomatic.
@@ -47,6 +60,18 @@
 #'
 #' @return A list of the components, plus an entry \code{CHECKED} having the
 #' value \code{TRUE}.
+#'
+#' @source \url{https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(20)30287-5/fulltext}
+#' for the attack rates.
+#'
+#' See also AceMOD
+#'
+#' \describe{
+#' \item{a_household_rate}{12.1 to 18.2 or (9.1 to 13.8 assuming missing tests were uninfected).}
+#' }
+#'
+#'
+#'
 #' @export
 
 
@@ -56,6 +81,12 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
                         illness_distribution = c("pois", "lnorm", "dirac"),
                         illness_mean = 15,
                         illness_sigma = 1,
+                        a_workplace_rate = 0.07,
+                        a_household_rate = 0.15,
+                        a_schools_rate = 0.07,
+                        q_household = 0.05,
+                        q_school = 1/3000,
+                        q_school_grade = 1/500,
                         r_distribution = c("cauchy", "lnorm", "pois", "dirac"),
                         r_location = 2/5,
                         r_scale = 1/5,
@@ -65,7 +96,6 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
                         r_supermarket_location = r_location,
                         r_supermarket_scale = r_scale,
                         r_work_location = r_location,
-                        a_workplace_rate = 0.07,
                         resistance_threshold = 400L,
                         p_asympto = 0.48,
                         p_critical = 0.02,
@@ -96,6 +126,21 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
          "dirac" = {
            checkmate::check_int(illness_mean, finite = TRUE, lower = 1)
          })
+
+  checkmate::assert_number(a_workplace_rate, lower = 0, upper = 1)
+  checkmate::assert_number(a_household_rate, lower = 0, upper = 1)
+  checkmate::assert_number(a_schools_rate, lower = 0, upper = 1)
+  a_workplace_rate <- as.integer(1000 * a_workplace_rate)
+  a_household_rate <- as.integer(1000 * a_household_rate)
+  a_schools_rate <- as.integer(1000 * a_schools_rate)
+
+  checkmate::assert_number(q_household, lower = 0, upper = 1)
+  checkmate::assert_number(q_school, lower = 0, upper = 1)
+  checkmate::assert_number(q_school_grade, lower = 0, upper = 1)
+  q_household <- percentage_to_int32(q_household)
+  q_school <- percentage_to_int32(q_school)
+  q_school_grade <- percentage_to_int32(q_school_grade)
+
 
   r_distribution <- match.arg(r_distribution)
   if (r_distribution == "dirac") {
@@ -129,7 +174,6 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
   p_asympto <- as.integer(1000 * p_asympto)
   p_critical <- as.integer(1000 * p_critical)
   p_death <- as.integer(1000 * p_death)
-  a_workplace_rate <- as.integer(1000 * a_workplace_rate)
 
   # Convert to int for convenience
   incubation_distribution <- match_distr(incubation_distribution)
@@ -166,3 +210,12 @@ decode_distr <- function(d) {
   stop("Internal error: decode_distr() encountered bad encoding.\n\t",
        "d[1] = ", d[1])
 }
+
+percentage_to_int32 <- function(p) {
+  as.integer(-2^31 + (2^32) * p)
+}
+
+
+
+
+

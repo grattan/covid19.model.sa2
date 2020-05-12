@@ -3,6 +3,16 @@
 \name{set_epipars}
 \alias{set_epipars}
 \title{Set epidemiological parameters}
+\source{
+\url{https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(20)30287-5/fulltext}
+for the attack rates.
+
+See also AceMOD
+
+\describe{
+\item{a_household_rate}{12.1 to 18.2 or (9.1 to 13.8 assuming missing tests were uninfected).}
+}
+}
 \usage{
 set_epipars(
   incubation_distribution = c("pois", "lnorm", "dirac"),
@@ -11,6 +21,12 @@ set_epipars(
   illness_distribution = c("pois", "lnorm", "dirac"),
   illness_mean = 15,
   illness_sigma = 1,
+  a_workplace_rate = 0.07,
+  a_household_rate = 0.15,
+  a_schools_rate = 0.07,
+  q_household = 0.05,
+  q_school = 1/3000,
+  q_school_grade = 1/500,
   r_distribution = c("cauchy", "lnorm", "pois", "dirac"),
   r_location = 2/5,
   r_scale = 1/5,
@@ -20,7 +36,6 @@ set_epipars(
   r_supermarket_location = r_location,
   r_supermarket_scale = r_scale,
   r_work_location = r_location,
-  a_workplace_rate = 0.07,
   resistance_threshold = 400L,
   p_asympto = 0.48,
   p_critical = 0.02,
@@ -37,6 +52,25 @@ positive, and a whole number for `"pois"` and `"diract"`.}
 \item{incubation_sigma}{A measure of the spread of the distribution.}
 
 \item{illness_distribution, illness_mean, illness_sigma}{As for \code{incubation} above.}
+
+\item{a_workplace_rate}{\code{double(1)} in \code{[0, 1]}, the (average)
+proportion of an infected person's colleagues that may be infected
+over the course of a person's illness.}
+
+\item{a_household_rate}{\code{double(1)} in \code{[0, 1]}, the (average)
+proportion of an infected person's household that may be infected
+over the course of the person's illness.}
+
+\item{a_schools_rate}{\code{double(1)} in \code{[0, 1]}, the (average)
+proportion of an infected child's classmates that may be infected
+over the course of a child's illness.}
+
+\item{q_household}{Daily transmission probability among household members.}
+
+\item{q_school}{Daily transmission probability among students of the same school.}
+
+\item{q_school_grade}{Daily transmission probability among students of the same
+school and age.}
 
 \item{r_distribution}{The distribution of the number of infections from each
 infected person, one of `"cauchy"`, `"lnorm"`, `"pois"`, or `"dirac"`.}
@@ -58,9 +92,6 @@ particular for schools.}
 for supermarket.}
 
 \item{r_work_location}{Parameters for work infection distribution.}
-
-\item{a_workplace_rate}{\code{double(1)} in \code{[0, 1]}, the (average)
-proportion of colleagues that will be infected in any day.}
 
 \item{resistance_threshold}{An integer in \code{[0, 1000]}, the resistance
 required to not be infected. A value of 0
