@@ -6,6 +6,15 @@ if (!("testthat" %in% .packages())) {
 
 test_that("openmp reduces with count_by", {
   skip_if_not(.Platform$GUI == "RTerm")
+
+  # Determine 32 bit or 64 bit
+  x <- tryCatch(is.logical(seq_len(2^31 - 1)),
+                error = function(e) {
+                  TRUE
+                })
+  if (isTRUE(x)) {
+    skip("Unable to allocate memory.")
+  }
   library(data.table)
 
   DT <- data.table(x = rep_len(sample(0:2309, size = 50e6, replace = TRUE), 333e6),
