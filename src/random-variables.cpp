@@ -111,6 +111,7 @@ DoubleVector prcauchy(int n, double a, double b, int nThread = 1) {
  * Society 68.225 (1999): 249-260.
  */
 
+#include <stdint.h>
 #include <cstdint>
 
 #if INTPTR_MAX == INT64_MAX
@@ -132,31 +133,171 @@ int lehmer64() {
 
 #endif
 
+
+// original documentation by Vigna:
+/* This is a fixed-increment version of Java 8's SplittableRandom generator
+ See http://dx.doi.org/10.1145/2714064.2660195 and
+ http://docs.oracle.com/javase/8/docs/api/java/util/SplittableRandom.html
+ It is a very fast generator passing BigCrush, and it can be useful if
+ for some reason you absolutely want 64 bits of state; otherwise, we
+ rather suggest to use a xoroshiro128+ (for moderately parallel
+ computations) or xorshift1024* (for massively parallel computations)
+ generator. */
+
+// state for splitmix64
+uint64_t splitmix64_x; /* The state can be seeded with any value. */
+
+// call this one before calling splitmix64
+static inline void splitmix64_seed(uint64_t seed) { splitmix64_x = seed; }
+
+// returns random number, modifies splitmix64_x
+// compared with D. Lemire against
+// http://grepcode.com/file/repository.grepcode.com/java/root/jdk/openjdk/8-b132/java/util/SplittableRandom.java#SplittableRandom.0gamma
+static inline uint64_t splitmix64(void) {
+  uint64_t z = (splitmix64_x += UINT64_C(0x9E3779B97F4A7C15));
+  z = (z ^ (z >> 30)) * UINT64_C(0xBF58476D1CE4E5B9);
+  z = (z ^ (z >> 27)) * UINT64_C(0x94D049BB133111EB);
+  return z ^ (z >> 31);
+}
+
+// returns the 32 least significant bits of a call to splitmix64
+// this is a simple function call followed by a cast
+static inline uint32_t splitmix64_cast32(void) {
+  return (uint32_t)splitmix64();
+}
+
+// same as splitmix64, but does not change the state, designed by D. Lemire
+static inline uint64_t splitmix64_stateless(uint64_t index) {
+  uint64_t z = (index + UINT64_C(0x9E3779B97F4A7C15));
+  z = (z ^ (z >> 30)) * UINT64_C(0xBF58476D1CE4E5B9);
+  z = (z ^ (z >> 27)) * UINT64_C(0x94D049BB133111EB);
+  return z ^ (z >> 31);
+}
+
+
+static __uint128_t g_lehmer64_states[20];
+
+uint64_t lehmer64_states(int s = 0) {
+  g_lehmer64_states[s] *= 0xda942042e4dd58b5;
+  return g_lehmer64_states[s] >> 64;
+}
+
+// https://github.com/lemire/testingRNG/blob/master/source/lehmer64.h
+static inline void lehmer64_seed(uint64_t seed) {
+  g_lehmer64_state = (((__uint128_t)splitmix64_stateless(seed)) << 64) +
+    splitmix64_stateless(seed + 1);
+}
+
+int ensign(unsigned int x) {
+  unsigned int INT_MIN64 = (unsigned)(-2147483647);
+  if (x <= 2147483647) {
+    return static_cast<int>(x);
+  }
+  if (x >= INT_MIN64) {
+    return static_cast<int>(x - INT_MIN) + INT_MIN;
+  }
+  return INT_MIN64;
+}
+
 // [[Rcpp::export]]
-IntegerVector lemire_rand(int n, int d, int s32, int nThread = 1, unsigned int q2 = 0) {
-  uint64_t s = s32 + d;
-  for (unsigned int i = 0; i < q2; ++i) {
-    s = lehmer64();
+IntegerVector do_lemire_rand(int n, IntegerVector S) {
+  if (n <= 0 || (n % 2)) {
+    stop("n must be positive and even.");
+  }
+  if (S.length() < 5) {
+    stop("S must be longer than 5.");
   }
 
-  if (s == q2) {
-    s = 359;
+  if (S[0] > 0 &&
+      S[1] > 0 &&
+      S[2] > 0 &&
+      S[3] > 0 &&
+      S[4] > 0) {
+    union {
+        struct {
+          uint32_t v1;
+          uint32_t v2;
+          uint32_t v3;
+          uint32_t v4;
+        } __attribute__((packed));
+        __uint128_t i128;
+      } t128;
+    t128.v1 = S[1];
+    t128.v2 = S[2];
+    t128.v3 = S[3];
+    t128.v4 = S[4];
+
+    g_lehmer64_state = t128.i128;
+  }
+  if (S[0]) {
+    union {
+    struct {
+      int v1;
+      int v2;
+    } __attribute__((packed));
+    uint64_t ui64;
+  } t64;
+
+    t64.v1 = S[5];
+    t64.v2 = S[6];
+    lehmer64_seed(t64.ui64);
   }
   IntegerVector out = no_init(n);
-#pragma omp parallel for num_threads(nThread) private(s)
-  for (int i = 0; i < n; ++i) {
-    //   0xFFFFFFFF0xFFFFFFFF
-    out[i] = static_cast<int>(lehmer64());
-  }
-  if (d) {
-#pragma omp parallel for num_threads(nThread)
-    for (int i = 0; i < n; ++i) {
-      int m = out[i] % d;
-      out[i] = (m < 0) ? -m : m;
-    }
+  for (int i = 0; i < n; i += 2) {
+    uint64_t L = lehmer64();
+    unsigned int ux0 = L & 0xFFFFFFFF;
+    unsigned int ux1 = static_cast<int32_t>((L & 0xFFFFFFFF00000000LL) >> 32);
+    out[i] = ensign(ux0);
+    out[i + 1] = ensign(ux1);
   }
   return out;
 }
 
+// [[Rcpp::export]]
+IntegerVector do_lemire_rand_par(int n, IntegerVector S, int nThread = 1) {
 
+  if (nThread > 20) {
+    nThread = 20;
+  }
+  if (S.length() < 105) {
+    stop("S must have length > 105.");
+  }
 
+  if (S[0] > 0 &&
+      S[1] > 0 &&
+      S[2] > 0 &&
+      S[3] > 0 &&
+      S[4] > 0) {
+    for (int t = 0; t < 20; ++t) {
+      union {
+      struct {
+        uint32_t v1;
+        uint32_t v2;
+        uint32_t v3;
+        uint32_t v4;
+      } __attribute__((packed));
+      __uint128_t i128;
+    } t128;
+
+      t128.v1 = S[t * 5 + 1];
+      t128.v2 = S[t * 5 + 2];
+      t128.v3 = S[t * 5 + 3];
+      t128.v4 = S[t * 5 + 4];
+
+      g_lehmer64_states[t] = t128.i128;
+    }
+  }
+  IntegerVector out = no_init(n);
+
+#pragma omp parallel for num_threads(nThread)
+  for (int i = 0; i < n; i += 2) {
+    int s = omp_get_thread_num();
+    uint64_t L = lehmer64_states(s);
+    unsigned int ux0 = L & 0xFFFFFFFF;
+    unsigned int ux1 = static_cast<int32_t>((L & 0xFFFFFFFF00000000LL) >> 32);
+    out[i] = ensign(ux0);
+    out[i + 1] = ensign(ux1);
+  }
+
+  return out;
+}
