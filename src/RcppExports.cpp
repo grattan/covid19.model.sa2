@@ -361,18 +361,28 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// lemire_rand
-IntegerVector lemire_rand(int n, int d, int s32, int nThread, unsigned int q2);
-RcppExport SEXP _covid19_model_sa2_lemire_rand(SEXP nSEXP, SEXP dSEXP, SEXP s32SEXP, SEXP nThreadSEXP, SEXP q2SEXP) {
+// do_lemire_rand
+IntegerVector do_lemire_rand(int n, IntegerVector S);
+RcppExport SEXP _covid19_model_sa2_do_lemire_rand(SEXP nSEXP, SEXP SSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type n(nSEXP);
-    Rcpp::traits::input_parameter< int >::type d(dSEXP);
-    Rcpp::traits::input_parameter< int >::type s32(s32SEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type S(SSEXP);
+    rcpp_result_gen = Rcpp::wrap(do_lemire_rand(n, S));
+    return rcpp_result_gen;
+END_RCPP
+}
+// do_lemire_rand_par
+IntegerVector do_lemire_rand_par(int n, IntegerVector S, int nThread);
+RcppExport SEXP _covid19_model_sa2_do_lemire_rand_par(SEXP nSEXP, SEXP SSEXP, SEXP nThreadSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type S(SSEXP);
     Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
-    Rcpp::traits::input_parameter< unsigned int >::type q2(q2SEXP);
-    rcpp_result_gen = Rcpp::wrap(lemire_rand(n, d, s32, nThread, q2));
+    rcpp_result_gen = Rcpp::wrap(do_lemire_rand_par(n, S, nThread));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -524,7 +534,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_prlnorm_dbl", (DL_FUNC) &_covid19_model_sa2_prlnorm_dbl, 4},
     {"_covid19_model_sa2_prlnorm_int", (DL_FUNC) &_covid19_model_sa2_prlnorm_int, 4},
     {"_covid19_model_sa2_prcauchy", (DL_FUNC) &_covid19_model_sa2_prcauchy, 4},
-    {"_covid19_model_sa2_lemire_rand", (DL_FUNC) &_covid19_model_sa2_lemire_rand, 5},
+    {"_covid19_model_sa2_do_lemire_rand", (DL_FUNC) &_covid19_model_sa2_do_lemire_rand, 2},
+    {"_covid19_model_sa2_do_lemire_rand_par", (DL_FUNC) &_covid19_model_sa2_do_lemire_rand_par, 3},
     {"_covid19_model_sa2_short_sa2", (DL_FUNC) &_covid19_model_sa2_short_sa2, 1},
     {"_covid19_model_sa2_shorten_sa2s_ordered", (DL_FUNC) &_covid19_model_sa2_shorten_sa2s_ordered, 1},
     {"_covid19_model_sa2_do_minmax_par", (DL_FUNC) &_covid19_model_sa2_do_minmax_par, 2},
