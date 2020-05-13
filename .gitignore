@@ -14,3 +14,4 @@ data-raw/Policy.fst
 data-raw/SP.rds
 *.txt
 .Rprofile
+*.so

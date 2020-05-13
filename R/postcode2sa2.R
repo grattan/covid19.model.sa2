@@ -4,14 +4,13 @@ postcode2sa2 <- function(postcode,
                          the_mult = c("first", "all", "last"),
                          n = length(postcode),
                          SA2_BY_POSTCODE = getOption("covid19.model.sa2.SA2_BY_POSTCODE")) {
-  SA2_MAINCODE <- NULL
+  SA2_MAINCODE <- N_SA2s_IN_POSTCODE <- NULL
   if (is.null(SA2_BY_POSTCODE)) {
     SA2_BY_POSTCODE <- read_sys("SA2_BY_POSTCODE.fst", fst2_progress = FALSE)
     setkeyv(SA2_BY_POSTCODE, c("POSTCODE", "SA2_MAINCODE"))
     SA2_BY_POSTCODE[, N_SA2s_IN_POSTCODE := .N, keyby = "POSTCODE"]
   }
   the_mult <- match.arg(the_mult)
-
 
   if (length(postcode) > 1) {
     DT <- setDT(list(x = postcode))
