@@ -354,12 +354,7 @@ unpack_multipolicy <- function(MultiPolicy) {
     ki2dbl <- function(x) if (is.integer(x)) x / 1000 else x
 
     Policy <- MultiPolicy[[1L]]
-    utils::globalVariables(c("school_days_per_wk", "all_full_time",
-                             "schools_open", "only_Year12",
-                             "age_based_lockdown", "tests_by_state",
-                             "max_persons_per_event",
-                             "max_persons_per_supermarket",
-                             "workplaces_open"))
+
 
     .start_date <- Policy[["start_date"]] %||% "2020-01-01"
 
