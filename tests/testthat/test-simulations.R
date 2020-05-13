@@ -123,7 +123,7 @@ test_that("simulation works", {
 
 test_that("prev segfaulting", {
   skip_on_cran()
-  skip_if_not(identical(.Platform$r_arch, "x64"))
+  skip_if(is32bit())
   skip_if_not_installed("data.table")
   skip_if_not_installed("parallel")
 
@@ -142,6 +142,7 @@ test_that("prev segfaulting", {
 test_that("a_household_infections", {
   skip_on_cran()
   skip_if_not_installed("data.table")
+  skip_if_not(identical(.Platform$r_arch, "x64"))
   library(data.table)
   SH000 <- simulate_sa2(40, EpiPars = set_epipars(a_household_rate = 0.00), returner = 1)
   SH005 <- simulate_sa2(40, EpiPars = set_epipars(a_household_rate = 0.05), returner = 1)
