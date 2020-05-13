@@ -141,6 +141,10 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
   q_school <- percentage_to_int32(q_school)
   q_school_grade <- percentage_to_int32(q_school_grade)
 
+  q_household <- checkmate::assert_int(q_household, coerce = TRUE)
+  q_school <- checkmate::assert_int(q_school, coerce = TRUE)
+  q_school_grade <- checkmate::assert_int(q_school_grade, coerce = TRUE)
+
 
   r_distribution <- match.arg(r_distribution)
   if (r_distribution == "dirac") {
@@ -212,7 +216,9 @@ decode_distr <- function(d) {
 }
 
 percentage_to_int32 <- function(p) {
-  as.integer(-2^31 + (2^32) * p)
+  out <- as.integer(-2^31 + 1 + (2^32 - 2) * p)
+  stopifnot(anyNA(out), !is.integer(out))
+  out
 }
 
 
