@@ -1160,7 +1160,7 @@ void infect_household(IntegerVector Status,
                       IntegerVector shortSA2,
                       IntegerVector hid,
                       IntegerVector HouseholdSize,
-                      const std::vector<int> &seqN1,
+                      IntegerVector seqN,
                       IntegerVector Resistance,
                       IntegerVector Age,
                       IntegerVector Srand,
@@ -1176,12 +1176,12 @@ void infect_household(IntegerVector Status,
   // make infection more likely among otherwise resistant
   // individuals
 
-  const int n_households = hid[N - 1];
-
 
 #pragma omp parallel for num_threads(nThread)
-  for (int k = 0; k < n_households; ++k) {
-    int i = seqN1[k];
+  for (int i = 0; i < N; ++i) {
+    if (seqN[i] != 1L) {
+      continue;
+    }
     int sa2i = shortSA2[i];
 
     if (HouseholdSize[i] == 1) {
@@ -1194,7 +1194,7 @@ void infect_household(IntegerVector Status,
 
     if (HouseholdSize[i] == 2) {
       // in this case, we only need to check adjacent
-      bool household_infected = Status[i] > 0 || i < (N - 1) || Status[i + 1] > 0;
+      bool household_infected = Status[i] > 0 || Status[i + 1] > 0;
       // Prima facie we have a race condition on Status, but in fact
       // we have skipped anyone who has Status[i] != 0 so the only way
       // the following assignment can occur is if the other thread is
@@ -1205,6 +1205,7 @@ void infect_household(IntegerVector Status,
           Status[i] = STATUS_NOSYMP;
           InfectedOn[i] = yday + 1;
         }
+
         if (Status[i + 1] == 0 && Resistance[i + 1] < r) {
           Status[i + 1] = STATUS_NOSYMP;
           InfectedOn[i + 1] = yday + 1;
@@ -1469,18 +1470,6 @@ List do_au_simulate(IntegerVector Status,
   // 5 days (at most) in a school week
   IntegerVector AttendsWday = no_init(NPUPILS * 5);
   // memset(AttendsWday, 0, sizeof AttendsWday);
-
-  std::vector<int> seqN1;
-  seqN1.reserve(hid[N - 1]);
-  {
-    int i = 0;
-    // seqN[0] == 1 guaranteed
-    // thereafter we know the location of the next
-    do {
-      seqN1.push_back(i);
-      i += HouseholdSize[i];
-    } while (i < N);
-  }
 
 
   std::vector<int> widIndex;
@@ -1930,7 +1919,7 @@ List do_au_simulate(IntegerVector Status,
 
     infect_household(Status, InfectedOn,
                      shortSA2,
-                     hid, HouseholdSize, seqN1, Resistance, Age,
+                     hid, HouseholdSize, seqN, Resistance, Age,
                      Srand,
                      yday, N, HouseholdInfectedToday,
                      resistance_threshold,
