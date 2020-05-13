@@ -216,8 +216,11 @@ decode_distr <- function(d) {
 }
 
 percentage_to_int32 <- function(p) {
-  out <- as.integer(-2^31 + 1 + (2^32 - 2) * p)
-  stopifnot(anyNA(out), !is.integer(out))
+  out <-
+    p * 2 * .Machine$integer.max +
+    (-.Machine$integer.max)
+  out <- as.integer(out)
+  stopifnot(!anyNA(out), is.integer(out))
   out
 }
 
