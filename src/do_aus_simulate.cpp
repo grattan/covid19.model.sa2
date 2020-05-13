@@ -916,17 +916,17 @@ void infect_school(IntegerVector Status,
                    int N,
                    IntegerVector State,
                    IntegerVector shortSA2,
-                                            const std::vector<int>& schoolIndices,
-                                            double r_location,
-                                            double r_scale,
-                                            int r_d,
-                                            bool do_dirac_every, int dirac_num, int dirac_per,
-                                            IntegerVector Srand,
-                                            int q_school,
-                                            bool only_Year12,
-                                            List school_days_per_wk,
-                                            int nThread = 1,
-                                            int zero = 0) {
+                   const std::vector<int>& schoolIndices,
+                   double r_location,
+                   double r_scale,
+                   int r_d,
+                   bool do_dirac_every, int dirac_num, int dirac_per,
+                   IntegerVector Srand,
+                   int q_school,
+                   bool only_Year12,
+                   List school_days_per_wk,
+                   int nThread = 1,
+                   int zero = 0) {
   if (zero != -99) {
     stop("zero expected.");
   }
@@ -962,7 +962,7 @@ void infect_school(IntegerVector Status,
       if (schooli == NA_INTEGER) {
         continue;
       }
-      max_too_large = max_too_large || (schooli >= NSCHOOLS);
+      max_too_large = max_too_large || (schooli > NSCHOOLS);
       min_too_small = min_too_small || (schooli < 0);
     }
 

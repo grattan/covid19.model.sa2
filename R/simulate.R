@@ -96,6 +96,8 @@ simulate_sa2 <- function(days_to_simulate = 5,
                          myaus = NULL,
                          returner = 0L) {
   nThread <- checkmate::assert_int(nThread, lower = 1L, coerce = TRUE)
+  fst::threads_fst(nThread)
+  data.table::setDTthreads(nThread)
 
   .showProgress <- showProgress > 0
   if (showProgress == 1L) {
