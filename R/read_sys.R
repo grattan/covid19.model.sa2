@@ -69,6 +69,17 @@ read_sys <- function(file.fst,
 
 
 file_fst <- function(file.fst) {
+  extdata_empty <- !nzchar(system.file("extdata", "australia.fst", package = packageName()))
+  if (extdata_empty && !grepl("/", file.fst, fixed = TRUE)) {
+    ExDest <- hutils::provide.dir(file.path(tempdir(), "extdata"))
+    File <- file.path(ExDest, file.fst)
+    if (!file.exists(File)) {
+      url <- paste0('https://github.com/HughParsonage/c19-ubsan-data/raw/master/', file.fst)
+      utils::download.file(url, destfile = File, mode = "wb", quiet = TRUE)
+    }
+    return(File)
+  }
+
   if (nzchar(out <- system.file("extdata", file.fst, package = packageName()))) {
     return(out)
   }

@@ -407,29 +407,28 @@ void contact_tracing(IntegerVector Status,
 void infect_supermarkets(IntegerVector Status,
                          IntegerVector InfectedOn,
                          IntegerVector shortSA2,
-                         const int infectionsBySA2[NSA2],
-                                                  int nThread,
-                                                  IntegerVector Age,
-                                                  IntegerVector Employment,
-                                                  IntegerVector nSupermarketsBySA2,
-                                                  IntegerVector nSupermarketsAvbl,
-                                                  IntegerVector Resistance,
-                                                  int day,
-                                                  int wday,
-                                                  int yday,
-                                                  int N,
-                                                  IntegerVector SupermarketTypical,
-                                                  double r_location,
-                                                  double r_scale,
-                                                  int r_d,
-                                                  bool do_dirac_every, int dirac_num, int dirac_per,
-                                                  IntegerVector SupermarketFreq,
-                                                  IntegerVector TodaysHz,
-                                                  int resistance1,
-                                                  int max_persons_per_supermarket,
-                                                  int resistance2 = 3,
-                                                  double r_div = 36, // divide r_ by this // TODO: model is highly sensitive to this par!
-                                                  bool verbose = false) {
+                         int nThread,
+                         IntegerVector Age,
+                         IntegerVector Employment,
+                         IntegerVector nSupermarketsBySA2,
+                         IntegerVector nSupermarketsAvbl,
+                         IntegerVector Resistance,
+                         int day,
+                         int wday,
+                         int yday,
+                         int N,
+                         IntegerVector SupermarketTypical,
+                         double r_location,
+                         double r_scale,
+                         int r_d,
+                         bool do_dirac_every, int dirac_num, int dirac_per,
+                         IntegerVector SupermarketFreq,
+                         IntegerVector TodaysHz,
+                         int resistance1,
+                         int max_persons_per_supermarket,
+                         int resistance2 = 3,
+                         double r_div = 36, // divide r_ by this // TODO: model is highly sensitive to this par!
+                         bool verbose = false) {
   if (day < 0) {
     stop("Internal error(infect_supermarkets): day < 0");
   }
@@ -481,9 +480,6 @@ void infect_supermarkets(IntegerVector Status,
       continue;
     }
     int sa2i = shortSA2[i];
-    if (!infectionsBySA2[sa2i]) {
-      continue;
-    }
     int supermarketi = SupermarketTypical[i];
     int hri = i % hrs_open;
     i_supermarkets[sa2i][supermarketi][hri] +=
@@ -497,9 +493,6 @@ void infect_supermarkets(IntegerVector Status,
     int s_supermarkets[NSA2][MAXSUPERMARKETSBYSA2] = {};
     for (int i = hr; i < N; i += hrs_open) {
       int sa2i = shortSA2[i];
-      if (!infectionsBySA2[sa2i]) {
-        continue;
-      }
       int supermarketi = SupermarketTypical[i];
       if (i_supermarkets[sa2i][supermarketi][hr] <= 0) {
         continue;
@@ -533,25 +526,24 @@ void infect_place(int place_id,
                   IntegerVector Status,
                   IntegerVector InfectedOn,
                   IntegerVector shortSA2,
-                  const int infectionsBySA2[NSA2],
-                                           IntegerVector SA2_firsts,
-                                           IntegerVector SA2_finals,
-                                           int nThread,
-                                           List minPlaceID_nPlacesByDestType,
-                                           int day,
-                                           int wday,
-                                           int yday,
-                                           int N,
-                                           IntegerVector Resistance,
-                                           int resistance1,
-                                           IntegerVector PlaceFreq,
-                                           IntegerVector TodaysHz,
-                                           double r_location,
-                                           double r_scale,
-                                           int r_d,
-                                           bool do_dirac_every, int dirac_num, int dirac_per,
-                                           int max_persons_per_place,
-                                           IntegerVector TodaysK) {
+                  IntegerVector SA2_firsts,
+                  IntegerVector SA2_finals,
+                  int nThread,
+                  List minPlaceID_nPlacesByDestType,
+                  int day,
+                  int wday,
+                  int yday,
+                  int N,
+                  IntegerVector Resistance,
+                  int resistance1,
+                  IntegerVector PlaceFreq,
+                  IntegerVector TodaysHz,
+                  double r_location,
+                  double r_scale,
+                  int r_d,
+                  bool do_dirac_every, int dirac_num, int dirac_per,
+                  int max_persons_per_place,
+                  IntegerVector TodaysK) {
 
   if (place_id == PLACEID_ESTABLISHMENT ||
       place_id == PLACEID_POINT_OF_INTEREST ||
@@ -636,9 +628,6 @@ void infect_place(int place_id,
 #pragma omp parallel for num_threads(nThread) reduction(+ : i_places[:MAX_N_PLACES_TOTAL][:PLACES_HRS_OPEN])
 #endif
   for (int sa2i = 0; sa2i < NSA2; ++sa2i) {
-    if (!infectionsBySA2[sa2i]) {
-      continue;
-    }
     int n_places_this_sa2 = nPlacesBySA2[sa2i];
     if (n_places_this_sa2 <= 0) {
       continue;
@@ -927,7 +916,6 @@ void infect_school(IntegerVector Status,
                    int N,
                    IntegerVector State,
                    IntegerVector shortSA2,
-                   const int infectionsBySA2[NSA2],
                                             const std::vector<int>& schoolIndices,
                                             double r_location,
                                             double r_scale,
@@ -950,14 +938,17 @@ void infect_school(IntegerVector Status,
   // Teachers are all aged '20'.
 
 
-  if (day == 0) {
+
+  // first school day may not be day 0
+  if (day == 0 || (day < 3 && wday == 1)) {
     if (nThread <= 0) {
       stop("nThread <= 0");
     }
     if (!school_days_per_wk.containsElementNamed("week15combns")) {
       stop("Internal error: school_days_per_wk did not contain 'week15combns'.");
     }
-    if (school_days_per_wk.length() != NSTATES1) {
+    if (school_days_per_wk.length() < NSTATES1) {
+      Rcout << "school_days_per_wk.length() = " << school_days_per_wk.length();
       stop("school_days_per_wk had wrong length");
     }
     if (AttendsWday.length() != (NPUPILS * 5)) {
@@ -967,7 +958,10 @@ void infect_school(IntegerVector Status,
     bool min_too_small = false;
 #pragma omp parallel for num_threads(nThread) reduction(|| : max_too_large, min_too_small)
     for (int i = 0; i < N; ++i) {
-      int schooli = School[i] - 1;
+      int schooli = School[i]; // School[i] may be INT_MIN since we are cycling over everyone
+      if (schooli == NA_INTEGER) {
+        continue;
+      }
       max_too_large = max_too_large || (schooli >= NSCHOOLS);
       min_too_small = min_too_small || (schooli < 0);
     }
@@ -1073,7 +1067,7 @@ void infect_school(IntegerVector Status,
       bool attends_today = daysPerWk_Agei == 5;
 
       if (!attends_today) {
-        int schooli = School[i] - 1;
+        int schooli = School[i] - 1; // this is ok because school[i] is only in indices of pupils
         if (daysPerWk_Agei == 1) {
           // this state-age combination is only set to go to school
           // once per week
@@ -1121,9 +1115,6 @@ void infect_school(IntegerVector Status,
     }
     int i = schoolIndices[k];
     int sa2i = shortSA2[i];
-    if (!infectionsBySA2[sa2i]) {
-      continue;
-    }
 
     int Agei = (Age[i] > 20) ? 20 : Age[i];
     int schooli = School[i] - 1;
@@ -1144,9 +1135,7 @@ void infect_school(IntegerVector Status,
     }
     int i = schoolIndices[k];
     int sa2i = shortSA2[i];
-    if (!infectionsBySA2[sa2i]) {
-      continue;
-    }
+
     if (Status[i]) {
       continue;
     }
@@ -1169,20 +1158,19 @@ void infect_school(IntegerVector Status,
 void infect_household(IntegerVector Status,
                       IntegerVector InfectedOn,
                       IntegerVector shortSA2,
-                      const int infectionsBySA2[NSA2],
-                                               IntegerVector hid,
-                                               IntegerVector HouseholdSize,
-                                               const std::vector<int> &seqN1,
-                                               IntegerVector Resistance,
-                                               IntegerVector Age,
-                                               IntegerVector Srand,
-                                               int yday,
-                                               int N,
-                                               IntegerVector HouseholdInfectedToday,
-                                               int resistance1,
-                                               int q_household,
-                                               int nThread = 1,
-                                               int resistance_penalty = 400) {
+                      IntegerVector hid,
+                      IntegerVector HouseholdSize,
+                      const std::vector<int> &seqN1,
+                      IntegerVector Resistance,
+                      IntegerVector Age,
+                      IntegerVector Srand,
+                      int yday,
+                      int N,
+                      IntegerVector HouseholdInfectedToday,
+                      int resistance1,
+                      int q_household,
+                      int nThread = 1,
+                      int resistance_penalty = 400) {
   // resistance_penalty = penalty against Resistance[i]
   // that makes infection more likely. Higher penalties
   // make infection more likely among otherwise resistant
@@ -1195,9 +1183,6 @@ void infect_household(IntegerVector Status,
   for (int k = 0; k < n_households; ++k) {
     int i = seqN1[k];
     int sa2i = shortSA2[i];
-    if (!infectionsBySA2[sa2i]) {
-      continue;
-    }
 
     if (HouseholdSize[i] == 1) {
       // no transmission in single-person household
@@ -1454,8 +1439,15 @@ List do_au_simulate(IntegerVector Status,
   int q_school = Epi["q_school"];
 
   int nThread20 = (nThread > 20) ? 20 : nThread;
-  IntegerVector Srand = do_lemire_rand_par(N, Seed, nThread20);
-
+  //IntegerVector Srand = do_lemire_rand_par(N, Seed, nThread20);
+  IntegerVector Srand = no_init(N);
+   {
+    IntegerVector SP = dqsample_int2(INT_MAX, N);
+    IntegerVector SN = dqsample_int2(INT_MAX, N);
+    for (int i = 0; i < N; ++i) {
+      Srand[i] = (INT_MIN + SP[i]) + SN[i];
+    }
+  }
 
 
 
@@ -1582,16 +1574,14 @@ List do_au_simulate(IntegerVector Status,
     bool is_weekday = wday < 6;
 
 
-    int infectionsBySA2[NSA2] = {};
     int n_infected_today = 0;
     if (returner == 0) {
 #if defined _OPENMP && _OPENMP >= 201511
-#pragma omp parallel for num_threads(nThread) reduction(+:n_infected_today) reduction(+:infectionsBySA2[:NSA2])
+#pragma omp parallel for num_threads(nThread) reduction(+:n_infected_today)
 #endif
       for (int i = 0; i < N; ++i) {
         int statusi = Status[i];
         if (statusi > 0) {
-          infectionsBySA2[shortSA2[i]] += 1;
           n_infected_today += ((statusi - ISOLATED_PLUS) != 0);
         }
       }
@@ -1627,14 +1617,13 @@ List do_au_simulate(IntegerVector Status,
       int n_critic = 0;
       int n_isolat = 0;
 #if defined _OPENMP && _OPENMP >= 201511
-#pragma omp parallel for num_threads(nThread) reduction(+ : n_killed,n_healed,n_suscep,n_nosymp,n_insymp,n_critic,n_isolat) reduction(+:infectionsBySA2[:NSA2])
+#pragma omp parallel for num_threads(nThread) reduction(+ : n_killed,n_healed,n_suscep,n_nosymp,n_insymp,n_critic,n_isolat)
 #endif
       for (int i = 0; i < N; ++i) {
         if (Status[i] == 0) {
           n_suscep += 1;
           continue;
         }
-        infectionsBySA2[shortSA2[i]] += 1;
         int statusi = Status[i];
         n_killed += statusi == STATUS_KILLED;
         n_healed += statusi == STATUS_HEALED;
@@ -1668,7 +1657,6 @@ List do_au_simulate(IntegerVector Status,
         int final = State_finals[state];
         for (int i = first; i < final; ++i) {
           if (Status[i] > 0) {
-            infectionsBySA2[shortSA2[i]] += 1;
             n_infected_today += 1;
           }
           int statusi = Status[i] + 2;
@@ -1773,7 +1761,7 @@ List do_au_simulate(IntegerVector Status,
 
 
 #if defined _OPENMP && _OPENMP >= 201511
-#pragma omp parallel for num_threads(nThread) reduction(- : infectionsBySA2[:NSA2])
+#pragma omp parallel for num_threads(nThread)
 #endif
     for (int i = 0; i < N; ++i) {
 
@@ -1838,7 +1826,6 @@ List do_au_simulate(IntegerVector Status,
             // Today is after the illness has run its course
             Status[i] = STATUS_HEALED - dies * HEALED_MINUS_KILLED;
             int sa2i = shortSA2[i];
-            infectionsBySA2[sa2i] -= 1;
             // interactions no longer relevant
             continue;
           }
@@ -1853,7 +1840,6 @@ List do_au_simulate(IntegerVector Status,
       infect_supermarkets(Status,
                           InfectedOn,
                           shortSA2,
-                          infectionsBySA2,
                           nThread,
                           Age,
                           LabourForceStatus,
@@ -1881,7 +1867,6 @@ List do_au_simulate(IntegerVector Status,
                    Status,
                    InfectedOn,
                    shortSA2,
-                   infectionsBySA2,
                    SA2_firsts,
                    SA2_finals,
                    nThread,
@@ -1911,7 +1896,6 @@ List do_au_simulate(IntegerVector Status,
                     N,
                     State,
                     shortSA2,
-                    infectionsBySA2,
                     schoolsIndex,
                     r_schools_location, r_scale, r_d,
                     do_dirac_every, dirac_num, dirac_per,
@@ -1946,7 +1930,6 @@ List do_au_simulate(IntegerVector Status,
 
     infect_household(Status, InfectedOn,
                      shortSA2,
-                     infectionsBySA2,
                      hid, HouseholdSize, seqN1, Resistance, Age,
                      Srand,
                      yday, N, HouseholdInfectedToday,
