@@ -138,3 +138,25 @@ test_that("prev segfaulting", {
                                                 workplace_size_max = 50))
   expect_true(hasName(S[[2]], "V35"))
 })
+
+test_that("a_household_infections", {
+  skip_on_cran()
+  skip_if_not_installed("data.table")
+  library(data.table)
+  SH000 <- simulate_sa2(40, EpiPars = set_epipars(a_household_rate = 0.00), returner = 1)
+  SH005 <- simulate_sa2(40, EpiPars = set_epipars(a_household_rate = 0.05), returner = 1)
+  SH025 <- simulate_sa2(40, EpiPars = set_epipars(a_household_rate = 0.25), returner = 1)
+  s000 <- SH000[Status == "Suscep"][["N"]]
+  s005 <- SH005[Status == "Suscep"][["N"]]
+  s025 <- SH025[Status == "Suscep"][["N"]]
+
+  expect_lt(mean(tail(s000, 10) <  tail(s005, 10)), 0.5)
+
+
+
+})
+
+
+
+
+
