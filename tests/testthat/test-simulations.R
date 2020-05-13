@@ -127,13 +127,21 @@ test_that("prev segfaulting", {
   skip_if_not_installed("data.table")
   skip_if_not_installed("parallel")
 
+  n_threads <- function(m = 2L) {
+    if (identical(Sys.getenv("TRAVIS"), "true")) {
+      return(1L)
+    }
+    pmax.int(1L, parallel::detectCores() - m)
+  }
+
   S <- simulate_sa2(50,
-                    nThread = pmax(1L, parallel::detectCores() - 2L),
+                    nThread = n_threads),
                     PolicyPars = set_policypars(workplaces_open = 1,
                                                 workplace_size_max = 1000))
   expect_true(hasName(S[[2]], "V45")) # i.e. 'have we got here?'
+  S <- NULL  # memory is limited
   S <- simulate_sa2(40,
-                    nThread = pmax(1L, parallel::detectCores() - 4L),
+                    nThread = n_threads(4L),
                     PolicyPars = set_policypars(workplaces_open = 0.5,
                                                 workplace_size_max = 50))
   expect_true(hasName(S[[2]], "V35"))
@@ -142,6 +150,7 @@ test_that("prev segfaulting", {
 test_that("a_household_infections", {
   skip_on_cran()
   skip_if_not_installed("data.table")
+  skip_if(is32bit())
   skip_if_not(identical(.Platform$r_arch, "x64"))
   library(data.table)
   SH000 <- simulate_sa2(40, EpiPars = set_epipars(a_household_rate = 0.00), returner = 1)
