@@ -135,7 +135,7 @@ test_that("prev segfaulting", {
   }
 
   S <- simulate_sa2(50,
-                    nThread = n_threads),
+                    nThread = n_threads,
                     PolicyPars = set_policypars(workplaces_open = 1,
                                                 workplace_size_max = 1000))
   expect_true(hasName(S[[2]], "V45")) # i.e. 'have we got here?'
