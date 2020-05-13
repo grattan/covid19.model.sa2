@@ -281,7 +281,10 @@ IntegerVector do_lemire_rand_par(int n,
 
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < n; i += 2) {
-    int s = omp_get_thread_num();
+    int s = 0;
+#ifdef _OPENMP
+    s = omp_get_thread_num();
+#endif
     uint64_t L = lehmer64_states(s);
     unsigned int ux0 = L & 0xFFFFFFFF;
     unsigned int ux1 = static_cast<int32_t>((L & 0xFFFFFFFF00000000LL) >> 32);
