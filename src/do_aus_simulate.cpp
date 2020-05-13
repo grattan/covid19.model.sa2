@@ -1772,8 +1772,9 @@ List do_au_simulate(IntegerVector Status,
 
 
 
-
+#if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread) reduction(- : infectionsBySA2[:NSA2])
+#endif
     for (int i = 0; i < N; ++i) {
 
       // First, examine all individuals infected last night
