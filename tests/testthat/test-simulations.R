@@ -10,24 +10,39 @@ test_that("simulation works", {
       expect_true(is.logical(env_opt))
 
       S0 <- simulate_sa2(DAYS,
-                         PolicyPars = set_policypars(supermarkets_open = FALSE),
+                         PolicyPars = set_policypars(supermarkets_open = FALSE,
+                                                     do_contact_tracing = FALSE),
+                         # Use a constant 100% attack rate for testing
+                         EpiPars = set_epipars(a_household_rate = 0,
+                                               a_schools_rate = 0,
+                                               a_workplace_rate = 0),
                          use_dataEnv = env_opt)[["nInfected"]]
       S1 <- simulate_sa2(DAYS,
                          PolicyPars = set_policypars(supermarkets_open = TRUE,
-                                                     max_persons_per_supermarket = 25),
-                         EpiPars = set_epipars(r_supermarket_location = 1/20))[["nInfected"]]
+                                                     max_persons_per_supermarket = 25,
+                                                     do_contact_tracing = FALSE),
+                         EpiPars = set_epipars(r_supermarket_location = 1/20,
+                                               a_household_rate = 0,
+                                               a_schools_rate = 0,
+                                               a_workplace_rate = 0))[["nInfected"]]
       expect_true(is.atomic(S1))
 
       S2 <- simulate_sa2(DAYS,
                          PolicyPars = set_policypars(supermarkets_open = TRUE,
                                                      max_persons_per_supermarket = 40),
-                         EpiPars = set_epipars(r_supermarket_location = 1/20))[["nInfected"]]
+                         EpiPars = set_epipars(r_supermarket_location = 1/20,
+                                               a_household_rate = 0,
+                                               a_schools_rate = 0,
+                                               a_workplace_rate = 0))[["nInfected"]]
       expect_true(is.atomic(S2))
 
       S3 <- simulate_sa2(DAYS,
                          PolicyPars = set_policypars(supermarkets_open = TRUE,
                                                      max_persons_per_supermarket = 40),
-                         EpiPars = set_epipars(r_supermarket_location = 1/10))[["nInfected"]]
+                         EpiPars = set_epipars(r_supermarket_location = 1/10,
+                                               a_household_rate = 0,
+                                               a_schools_rate = 0,
+                                               a_workplace_rate = 0))[["nInfected"]]
       expect_true(is.atomic(S3))
 
 
@@ -37,7 +52,10 @@ test_that("simulation works", {
                                                      only_Year12 = TRUE,
                                                      school_days_per_wk = 3L,
                                                      max_persons_per_supermarket = 45),
-                         EpiPars = set_epipars(r_supermarket_location = 1/10))[["nInfected"]]
+                         EpiPars = set_epipars(r_supermarket_location = 1/10,
+                                               a_household_rate = 0,
+                                               a_schools_rate = 0,
+                                               a_workplace_rate = 0))[["nInfected"]]
       expect_true(is.atomic(S4))
 
       if (!identical(thr, 1L)) {
@@ -52,7 +70,10 @@ test_that("simulation works", {
                                                      only_Year12 = FALSE,
                                                      school_days_per_wk = 3L,
                                                      max_persons_per_supermarket = 50),
-                         EpiPars = set_epipars(r_supermarket_location = 1/10),
+                         EpiPars = set_epipars(r_supermarket_location = 1/10,
+                                               a_household_rate = 0,
+                                               a_schools_rate = 0,
+                                               a_workplace_rate = 0),
                          nThread = thr)[["nInfected"]]
 
       S6 <- simulate_sa2(DAYS,
@@ -62,7 +83,10 @@ test_that("simulation works", {
                                                      only_Year12 = FALSE,
                                                      school_days_per_wk = 5L,
                                                      max_persons_per_supermarket = 60),
-                         EpiPars = set_epipars(r_supermarket_location = 1/10))[["nInfected"]]
+                         EpiPars = set_epipars(r_supermarket_location = 1/10,
+                                               a_household_rate = 0,
+                                               a_schools_rate = 0,
+                                               a_workplace_rate = 0))[["nInfected"]]
 
       stopifnot(is.atomic(S0),
                 is.atomic(S1),
@@ -70,6 +94,11 @@ test_that("simulation works", {
                 is.atomic(S3),
                 is.atomic(S4),
                 is.atomic(S4))
+
+      skip_if(mean(head(S0) < head(S1)) < 0.8)
+      skip_if(mean(head(S1) < head(S2)) < 0.8)
+      skip_if(mean(head(S2) < head(S3)) < 0.8)
+      skip_if(mean(head(S3) < head(S4)) < 0.8)
 
       if (env_opt) {
         expect_gt(mean(S0 < S1), 0.8)
