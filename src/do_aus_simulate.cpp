@@ -1453,7 +1453,8 @@ List do_au_simulate(IntegerVector Status,
   int q_household = Epi["q_household"];
   int q_school = Epi["q_school"];
 
-  IntegerVector Srand = do_lemire_rand_par(N, Seed, nThread);
+  int nThread20 = (nThread > 20) ? 20 : nThread;
+  IntegerVector Srand = do_lemire_rand_par(N, Seed, nThread20);
 
 
 

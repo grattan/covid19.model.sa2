@@ -175,7 +175,12 @@ static inline uint64_t splitmix64_stateless(uint64_t index) {
 
 
 
-static __uint128_t g_lehmer64_states[20];
+static __uint128_t g_lehmer64_states[20] =
+  {2136543473, 8362623451, 1217309610, 1392472685,
+   5806475900, 7417877733, 8442120624, 1676887235,
+   1596567492, 1740086218, 1665692500, 1245331274,
+   1636032902, 1252017648, 2036914219, 1791876209,
+   1302144241, 4878760597, 2036914219, 1791876209};
 
 
 uint64_t lehmer64_states(int s = 0) {
@@ -187,6 +192,13 @@ uint64_t lehmer64_states(int s = 0) {
 static inline void lehmer64_seed(uint64_t seed) {
   g_lehmer64_state = (((__uint128_t)splitmix64_stateless(seed)) << 64) +
     splitmix64_stateless(seed + 1);
+}
+
+static inline void lehmer64_seeds(uint64_t seed) {
+  for (int t = 0; t < 20; ++t) {
+    g_lehmer64_states[t] = (((__uint128_t)splitmix64_stateless(seed)) << 64) +
+      splitmix64_stateless(seed + 1);
+  }
 }
 
 int ensign(unsigned int x) {
@@ -207,28 +219,6 @@ IntegerVector do_lemire_rand(int n, IntegerVector S) {
   }
   if (S.length() < 5) {
     stop("S must be longer than 5.");
-  }
-
-  if (S[0] > 0 &&
-      S[1] > 0 &&
-      S[2] > 0 &&
-      S[3] > 0 &&
-      S[4] > 0) {
-    union {
-        struct {
-          uint32_t v1;
-          uint32_t v2;
-          uint32_t v3;
-          uint32_t v4;
-        } __attribute__((packed));
-        __uint128_t i128;
-      } t128;
-    t128.v1 = S[1];
-    t128.v2 = S[2];
-    t128.v3 = S[3];
-    t128.v4 = S[4];
-
-    g_lehmer64_state = t128.i128;
   }
   if (S[0]) {
     union {
@@ -251,20 +241,23 @@ IntegerVector do_lemire_rand(int n, IntegerVector S) {
     out[i] = ensign(ux0);
     out[i + 1] = ensign(ux1);
   }
+
   return out;
 }
 
 // [[Rcpp::export]]
-IntegerVector do_lemire_rand_par(int n, IntegerVector S, int nThread = 1) {
+IntegerVector do_lemire_rand_par(int n,
+                                 IntegerVector S,
+                                 int nThread = 1) {
 
   if (nThread > 20) {
     nThread = 20;
   }
-  if (S.length() < 105) {
-    stop("S must have length > 105.");
+  if (S.length() < (2 * 21 + 2)) {
+    stop("S must have length > 110.");
   }
 
-  if (S[0] > 0 &&
+  if (S[0] == 0 &&
       S[1] > 0 &&
       S[2] > 0 &&
       S[3] > 0 &&
@@ -272,22 +265,18 @@ IntegerVector do_lemire_rand_par(int n, IntegerVector S, int nThread = 1) {
     for (int t = 0; t < 20; ++t) {
       union {
       struct {
-        uint32_t v1;
-        uint32_t v2;
-        uint32_t v3;
-        uint32_t v4;
+        int v1;
+        int v2;
       } __attribute__((packed));
-      __uint128_t i128;
-    } t128;
+      uint64_t ui64;
+    } t64;
 
-      t128.v1 = S[t * 5 + 1];
-      t128.v2 = S[t * 5 + 2];
-      t128.v3 = S[t * 5 + 3];
-      t128.v4 = S[t * 5 + 4];
-
-      g_lehmer64_states[t] = t128.i128;
+      t64.v1 = S[2 * t + 1] ^ 5;
+      t64.v2 = S[2 * t + 2] ^ 5;
+      lehmer64_seed(t64.ui64);
     }
   }
+
   IntegerVector out = no_init(n);
 
 #pragma omp parallel for num_threads(nThread)
