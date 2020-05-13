@@ -47,4 +47,13 @@ is32bit <- function() {
            })
 }
 
+which_last <- function(x) {
+  for (i in length(x):1) {
+    if (x[i]) {
+      return(i)
+    }
+  }
+  return(0L)
+}
+
 
