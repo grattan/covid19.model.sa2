@@ -124,6 +124,7 @@ test_that("simulation works", {
 test_that("prev segfaulting", {
   skip_on_cran()
   skip_if(is32bit())
+  skip_on_travis()
   skip_if_not_installed("data.table")
   skip_if_not_installed("parallel")
 
@@ -134,13 +135,15 @@ test_that("prev segfaulting", {
     pmax.int(1L, parallel::detectCores() - m)
   }
 
-  S <- simulate_sa2(50,
+  DAYS <- 45L
+
+  S <- simulate_sa2(DAYS,
                     nThread = n_threads(),
                     PolicyPars = set_policypars(workplaces_open = 1,
                                                 workplace_size_max = 1000))
   expect_true(hasName(S[[2]], "V45")) # i.e. 'have we got here?'
   S <- NULL  # memory is limited
-  S <- simulate_sa2(40,
+  S <- simulate_sa2(DAYS - 10L,
                     nThread = n_threads(4L),
                     PolicyPars = set_policypars(workplaces_open = 0.5,
                                                 workplace_size_max = 50))
