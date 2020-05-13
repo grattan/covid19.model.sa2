@@ -15,7 +15,6 @@
 #' @importFrom hutils weight2rows
 #' @importFrom hutilscpp is_constant
 #' @importFrom hutilscpp which_first
-#' @importFrom hutilscpp which_last
 #' @importFrom fastmatch fmatch
 #' @importFrom magrittr %>%
 #' @importFrom stats rbeta
