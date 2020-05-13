@@ -1194,7 +1194,7 @@ void infect_household(IntegerVector Status,
 
     if (HouseholdSize[i] == 2) {
       // in this case, we only need to check adjacent
-      bool household_infected = Status[i] > 0 || Status[i + 1] > 0;
+      bool household_infected = Status[i] > 0 || i < (N - 1) || Status[i + 1] > 0;
       // Prima facie we have a race condition on Status, but in fact
       // we have skipped anyone who has Status[i] != 0 so the only way
       // the following assignment can occur is if the other thread is
