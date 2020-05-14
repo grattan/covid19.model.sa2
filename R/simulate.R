@@ -124,6 +124,8 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
   Policy  <- PolicyPars
   if (!isTRUE(use_dataEnv) ||
+      !identical(by_state, get0("_by_state_", envir = dataEnv)) ||
+      !identical(InitialStatus, get0("_InitialStatus_", envir = dataEnv)) ||
       is.null(aus <- get0("aus_", envir = dataEnv)) ||
       is.null(nPlacesByDestType <- get0("nPlacesByDestType_", envir = dataEnv)) ||
       is.null(FreqsByDestType <- get0("FreqsByDestType_", envir = dataEnv)) ||
@@ -342,6 +344,8 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
     aus[, c("seqN", "HouseholdSize") := do_seqN_N(hid, pid)]
     if (isTRUE(use_dataEnv)) {
+      assign("_by_state_", value = copy(by_state), envir = dataEnv)
+      assign("_InitialStatus_", value = copy(InitialStatus), envir = dataEnv)
       assign("aus_", value = copy(aus), envir = dataEnv)
       assign("nPlacesByDestType_", value = nPlacesByDestType, envir = dataEnv)
       assign("FreqsByDestType_", value = FreqsByDestType, envir = dataEnv)
