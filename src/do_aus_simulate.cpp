@@ -1444,9 +1444,11 @@ List do_au_simulate(IntegerVector Status,
   IntegerVector Srand = no_init(N);
    {
     IntegerVector SP = dqsample_int2(INT_MAX, N);
-    IntegerVector SN = dqsample_int2(INT_MAX, N);
     for (int i = 0; i < N; ++i) {
-      Srand[i] = (INT_MIN + SP[i]) + SN[i];
+      int spi = SP[i];
+      Srand[i] = INT_MIN;
+      Srand[i] += spi; // don't 2 * spi as this might be > INT_MAX
+      Srand[i] += spi;
     }
   }
 
