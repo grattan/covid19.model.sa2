@@ -180,10 +180,6 @@ sa2_firsts_finals <- function(SA2, nsa2 = 2310L) {
     .Call(`_covid19_model_sa2_sa2_firsts_finals`, SA2, nsa2)
 }
 
-test_CharVsInt <- function(StatusO, SA2, m = 0L, ndays = 24L) {
-    .Call(`_covid19_model_sa2_test_CharVsInt`, StatusO, SA2, m, ndays)
-}
-
 do_is_unsorted_pint <- function(x, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_is_unsorted_pint`, x, nThread)
 }

@@ -903,6 +903,50 @@ void infect_dzn(IntegerVector Status,
   }
 }
 
+bool during_school_term(const int & state, const int & yday) {
+  bool o = true;
+  if (state == 1) {
+    o =
+      (yday <= NSW_TERM2_FINAL_YDAY && yday >= NSW_TERM2_START_YDAY) ||
+      (yday <= NSW_TERM3_FINAL_YDAY && yday >= NSW_TERM3_START_YDAY);
+  }
+  if (state == 2) {
+    o =
+      (yday <= VIC_TERM2_FINAL_YDAY && yday >= VIC_TERM2_START_YDAY) ||
+      (yday <= VIC_TERM3_FINAL_YDAY && yday >= VIC_TERM3_START_YDAY);
+  }
+  if (state == 3) {
+    o =
+      (yday <= QLD_TERM2_FINAL_YDAY && yday >= QLD_TERM2_START_YDAY) ||
+      (yday <= QLD_TERM3_FINAL_YDAY && yday >= QLD_TERM3_START_YDAY);
+  }
+  if (state == 4) {
+    o =
+      (yday <=  SA_TERM2_FINAL_YDAY && yday >=  SA_TERM2_START_YDAY) ||
+      (yday <=  SA_TERM3_FINAL_YDAY && yday >=  SA_TERM3_START_YDAY);
+  }
+  if (state == 5) {
+    o =
+      (yday <=  WA_TERM2_FINAL_YDAY && yday >=  WA_TERM2_START_YDAY) ||
+      (yday <=  WA_TERM3_FINAL_YDAY && yday >=  WA_TERM3_START_YDAY);
+  }
+  if (state == 6) {
+    o =
+      (yday <= TAS_TERM2_FINAL_YDAY && yday >= TAS_TERM2_START_YDAY) ||
+      (yday <= TAS_TERM3_FINAL_YDAY && yday >= TAS_TERM3_START_YDAY);
+  }
+  if (state == 7) {
+    o =
+      (yday <=  NT_TERM2_FINAL_YDAY && yday >=  NT_TERM2_START_YDAY) ||
+      (yday <=  NT_TERM3_FINAL_YDAY && yday >=  NT_TERM3_START_YDAY);
+  }
+  if (state >= 8) {
+    o =
+      (yday <= ACT_TERM2_FINAL_YDAY && yday >= ACT_TERM2_START_YDAY) ||
+      (yday <= ACT_TERM3_FINAL_YDAY && yday >= ACT_TERM3_START_YDAY);
+  }
+  return o;
+}
 
 
 void infect_school(IntegerVector Status,
@@ -910,22 +954,22 @@ void infect_school(IntegerVector Status,
                    IntegerVector School,
                    IntegerVector Age,
                    IntegerVector AttendsWday,
-                   int day,
-                   int wday,
-                   int yday,
-                   int N,
+                   const int &day,
+                   const int &wday,
+                   const int &yday,
+                   const int &N,
                    IntegerVector State,
                    IntegerVector shortSA2,
                    const std::vector<int>& schoolIndices,
                    double r_location,
                    double r_scale,
-                   int r_d,
+                   const int &r_d,
                    bool do_dirac_every, int dirac_num, int dirac_per,
                    IntegerVector Srand,
                    int q_school,
                    bool only_Year12,
                    List school_days_per_wk,
-                   int nThread = 1,
+                   const int &nThread = 1,
                    int zero = 0) {
   if (zero != -99) {
     stop("zero expected.");
@@ -974,6 +1018,20 @@ void infect_school(IntegerVector Status,
     }
 
   }
+
+  bool all_states_in_school = true;
+  bool any_states_in_school = false;
+  for (int state = 1; state <= 8; ++state) {
+    all_states_in_school = all_states_in_school && during_school_term(state, yday);
+    any_states_in_school = any_states_in_school || during_school_term(state, yday);
+  }
+
+  if (!any_states_in_school) {
+    return;
+  }
+
+
+
 
   // int i_visits[NSCHOOLS][21];
   // for (int school = 0; school < NSCHOOLS; ++school) {
@@ -1111,6 +1169,11 @@ void infect_school(IntegerVector Status,
       continue;
     }
     int i = schoolIndices[k];
+    int statei = State[i];
+    if (!all_states_in_school && !during_school_term(statei, yday)) {
+      continue;
+    }
+
     int sa2i = shortSA2[i];
 
     int Agei = (Age[i] > 20) ? 20 : Age[i];
@@ -1131,6 +1194,10 @@ void infect_school(IntegerVector Status,
       continue;
     }
     int i = schoolIndices[k];
+    int statei = State[i];
+    if (!all_states_in_school && !during_school_term(statei, yday)) {
+      continue;
+    }
     int sa2i = shortSA2[i];
 
     if (Status[i]) {
@@ -1437,17 +1504,17 @@ List do_au_simulate(IntegerVector Status,
   int q_school = Epi["q_school"];
 
   int nThread20 = (nThread > 20) ? 20 : nThread;
-  //IntegerVector Srand = do_lemire_rand_par(N, Seed, nThread20);
-  IntegerVector Srand = no_init(N);
-   {
-    IntegerVector SP = dqsample_int2(INT_MAX, N);
-    for (int i = 0; i < N; ++i) {
-      int spi = SP[i];
-      Srand[i] = INT_MIN;
-      Srand[i] += spi; // don't 2 * spi as this might be > INT_MAX
-      Srand[i] += spi;
-    }
-  }
+  IntegerVector Srand = do_lemire_rand_par(N, Seed, nThread20);
+  // IntegerVector Srand = no_init(N);
+  //  {
+  //   IntegerVector SP = dqsample_int2(INT_MAX, N);
+  //   for (int i = 0; i < N; ++i) {
+  //     int spi = SP[i];
+  //     Srand[i] = INT_MIN;
+  //     Srand[i] += spi; // don't 2 * spi as this might be > INT_MAX
+  //     Srand[i] += spi;
+  //   }
+  // }
 
 
 
@@ -1677,7 +1744,7 @@ List do_au_simulate(IntegerVector Status,
 
         Rcout << "| ";
         int w = 2;
-        int max_reds = (on_terminal) ? 0 : 2;
+
         // w < 1024 in case of very large console width
         while (w < pbar_w && w < 1024) {
           Rcpp::checkUserInterrupt();
@@ -1685,17 +1752,23 @@ List do_au_simulate(IntegerVector Status,
           int w_wday = wday_2020[((w_yday - 1) % 7)];
           w_d += di;
           r_d += di;
+          int max_reds = (on_terminal) ? 0 : 2;
           while (r_d > 1 && w < 1024) {
             ++w;
             r_d -= 1;
             if ((w_d + 0.5) < b_d) {
               if (w_wday < 6 || max_reds <= 0) {
-                Rcout << "=";
+                if (max_reds && !during_school_term(1, w_yday)) {
+                  Rcout << "\033[34m" << "=" << "\033[39m";
+                } else {
+                  Rcout << "=";
+                }
               } else {
                 --max_reds;
                 Rcout << "\033[31m" << "=" << "\033[39m";
               }
             } else {
+              // Rcout << w_yday << " ";
               Rcout << "_";
             }
           }

@@ -12,5 +12,6 @@
 #' @export
 
 states <- function() {
-  c("AUS", "NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT", "OTH")
+  # ABS Catalogue numbers
+  c("AUS", "NSW", "VIC", "QLD", "SA", "WA", "TAS", "NT", "ACT", "OTH")
 }
