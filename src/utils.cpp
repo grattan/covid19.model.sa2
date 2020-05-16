@@ -144,6 +144,103 @@ List sa2_firsts_finals(IntegerVector SA2, int nsa2 = 2310) {
 }
 
 
+// [[Rcpp::export]]
+IntegerVector test_CharVsInt(IntegerVector StatusO, IntegerVector SA2, int m = 0, int ndays = 24) {
+  int N = StatusO.length();
+  IntegerVector shortSA2 = shorten_sa2s_ordered(SA2);
+  List SA2_firsts_finals = sa2_firsts_finals(SA2);
+  IntegerVector SA2_firsts = SA2_firsts_finals[1];
+  IntegerVector SA2_finals = SA2_firsts_finals[2];
+  IntegerVector out = no_init(N);
+
+
+  if (m) {
+    std::vector<char> Status;
+    Status.reserve(N);
+    for (int i = 0; i < N; ++i) {
+      Status.push_back(StatusO[i]);
+    }
+
+    for (int day = 0; day < ndays; ++day) {
+      for (int sa2i = 0; sa2i < NSA2; ++sa2i) {
+        int first = SA2_firsts[sa2i];
+        int final = SA2_finals[sa2i];
+        if (final <= first || (first + 1) >= N || (final - 1) < 0) {
+          continue;
+        }
+        for (int i = first + 1; i < final - 1; ++i) {
+          if (i <= day || (i - day) % 16 == 1) {
+            continue;
+          }
+
+          if (Status[i] > 0) {
+            if (i <= day || (i - day) % 8 == 0) {
+              Status[i] = 0;
+            } else {
+              Status[i - 1] = 1;
+            }
+            continue;
+          }
+          if (Status[i - 1] == 0 && Status[i + 1] == 0) {
+            Status[i] = 0;
+          } else {
+            if (Status[i - 1] > 0 && Status[i - 1] > 0) {
+              Status[i] = 2;
+            }
+          }
+        }
+      }
+    }
+    for (int i = 0; i < N; ++i) {
+      out[i] = Status[i];
+    }
+
+  } else {
+
+    std::vector<int> Status;
+    Status.reserve(N);
+    for (int i = 0; i < N; ++i) {
+      Status.push_back(StatusO[i]);
+    }
+
+    for (int day = 0; day < ndays; ++day) {
+      for (int sa2i = 0; sa2i < NSA2; ++sa2i) {
+        int first = SA2_firsts[sa2i];
+        int final = SA2_finals[sa2i];
+        if (final <= first || (first + 1) >= N || (final - 1) < 0) {
+          continue;
+        }
+        for (int i = first + 1; i < final - 1; ++i) {
+          if (i <= day || (i - day) % 16 == 1) {
+            continue;
+          }
+
+          if (Status[i] > 0) {
+            if (i <= day || (i - day) % 8 == 0) {
+              Status[i] = 0;
+            } else {
+              Status[i - 1] = 1;
+            }
+            continue;
+          }
+          if (Status[i - 1] == 0 && Status[i + 1] == 0) {
+            Status[i] = 0;
+          } else {
+            if (Status[i - 1] > 0 && Status[i - 1] > 0) {
+              Status[i] = 2;
+            }
+          }
+        }
+      }
+    }
+
+
+    for (int i = 0; i < N; ++i) {
+      out[i] = Status[i];
+    }
+  }
+  return out;
+}
 
 
 
