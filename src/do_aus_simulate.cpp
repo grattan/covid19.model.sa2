@@ -1031,9 +1031,6 @@ void infect_school(IntegerVector Status,
   }
 
 
-
-  // This should be parallelizable!!
-  // But accessing a list is not thread safe so can't be done directly.
   if (day < 7 && wday < 6) {
 #pragma omp parallel for num_threads(nThread)
     for (int k = 0; k < NPUPILS; ++k) {
