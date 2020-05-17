@@ -25,4 +25,17 @@ test_that("lemire works", {
 })
 
 
+test_that("lemire_char", {
+  skip_on_cran()
+  p25 <- lemire_char(8000, 0.25, .Random.seed)
+  expect_true(mean(p25) >= 0.2 && mean(p25) <= 0.3)
+  withr::with_seed(37, {
+    p74 <- lemire_char(1024, 0.037, 1:2048)
+    expect_true(mean(p74) >= 0.7 && mean(p74) <= 0.8)
+    expect_equal(sum(p74), 37L)
+  })
+
+})
+
+
 

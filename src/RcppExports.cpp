@@ -387,6 +387,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// lemire_char
+LogicalVector lemire_char(int N, double p, IntegerVector S, int return_early, int nThread);
+RcppExport SEXP _covid19_model_sa2_lemire_char(SEXP NSEXP, SEXP pSEXP, SEXP SSEXP, SEXP return_earlySEXP, SEXP nThreadSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< double >::type p(pSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type S(SSEXP);
+    Rcpp::traits::input_parameter< int >::type return_early(return_earlySEXP);
+    Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
+    rcpp_result_gen = Rcpp::wrap(lemire_char(N, p, S, return_early, nThread));
+    return rcpp_result_gen;
+END_RCPP
+}
 // cf_sample
 IntegerVector cf_sample(int n, int m, IntegerVector x, IntegerVector S);
 RcppExport SEXP _covid19_model_sa2_cf_sample(SEXP nSEXP, SEXP mSEXP, SEXP xSEXP, SEXP SSEXP) {
@@ -551,6 +566,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_prcauchy", (DL_FUNC) &_covid19_model_sa2_prcauchy, 4},
     {"_covid19_model_sa2_do_lemire_rand", (DL_FUNC) &_covid19_model_sa2_do_lemire_rand, 2},
     {"_covid19_model_sa2_do_lemire_rand_par", (DL_FUNC) &_covid19_model_sa2_do_lemire_rand_par, 3},
+    {"_covid19_model_sa2_lemire_char", (DL_FUNC) &_covid19_model_sa2_lemire_char, 5},
     {"_covid19_model_sa2_cf_sample", (DL_FUNC) &_covid19_model_sa2_cf_sample, 4},
     {"_covid19_model_sa2_short_sa2", (DL_FUNC) &_covid19_model_sa2_short_sa2, 1},
     {"_covid19_model_sa2_shorten_sa2s_ordered", (DL_FUNC) &_covid19_model_sa2_shorten_sa2s_ordered, 1},
