@@ -21,9 +21,11 @@ set_epipars(
   illness_distribution = c("pois", "lnorm", "dirac"),
   illness_mean = 15,
   illness_sigma = 1,
+  a_rate = 0.07,
   a_workplace_rate = 0.07,
   a_household_rate = 0.15,
   a_schools_rate = 0.07,
+  q_workplace = 0.01,
   q_household = 0.05,
   q_school = 1/3000,
   q_school_grade = 1/500,
@@ -53,17 +55,14 @@ positive, and a whole number for `"pois"` and `"diract"`.}
 
 \item{illness_distribution, illness_mean, illness_sigma}{As for \code{incubation} above.}
 
-\item{a_workplace_rate}{\code{double(1)} in \code{[0, 1]}, the (average)
-proportion of an infected person's colleagues that may be infected
-over the course of a person's illness.}
+\item{a_workplace_rate}{\code{double(1)} in \code{[0, 1]}, the proportion
+of workplaces in which transmission between colleagues is possible.}
 
-\item{a_household_rate}{\code{double(1)} in \code{[0, 1]}, the (average)
-proportion of an infected person's household that may be infected
-over the course of the person's illness.}
+\item{a_household_rate}{\code{double(1)} in \code{[0, 1]}, the
+proportion of households in which household transmission is possible.}
 
-\item{a_schools_rate}{\code{double(1)} in \code{[0, 1]}, the (average)
-proportion of an infected child's classmates that may be infected
-over the course of a child's illness.}
+\item{a_schools_rate}{\code{double(1)} in \code{[0, 1]}, the proportion of
+schools in which tranmission between students is possible.}
 
 \item{q_household}{Daily transmission probability among household members.}
 
@@ -113,4 +112,8 @@ value \code{TRUE}.
 \description{
 Used to supply epidemiological parameters to the main
 simulate function, with defaults.
+
+Note that all parameters are taken together. In particular, attack probabilities,
+transmission probabilities, and reproduction parameters affect the overall
+transmission multiplicatively .
 }
