@@ -1,6 +1,7 @@
 #include "covid19model.h"
 #include <random>
 #include <Rcpp.h>
+#include <Rcpp/Benchmark/Timer.h>
 #include <stdint.h>
 #include <dqrng.h>
 using namespace Rcpp;
@@ -111,9 +112,21 @@ DoubleVector prcauchy(int n, double a, double b, int nThread = 1) {
  * Society 68.225 (1999): 249-260.
  */
 
-
 #include <stdint.h>
 #include <cstdint>
+
+int ensign(unsigned int x) {
+  unsigned int INT_MIN64 = (unsigned)(-2147483647);
+  if (x <= 2147483647) {
+    return static_cast<int>(x);
+  }
+  if (x >= INT_MIN64) {
+    return static_cast<int>(x - INT_MIN) + INT_MIN;
+  }
+  return INT_MIN64;
+}
+
+
 
 #if INTPTR_MAX == INT64_MAX
 
@@ -126,8 +139,18 @@ uint64_t lehmer64() {
   return g_lehmer64_state >> 64;
 }
 
+int lehmer32() {
+  uint64_t L = lehmer64();
+  return ensign(L & 0xFFFFFFFF);
+}
+
 #else
 bool is64bit = false;
+
+int lehmer32() {
+  return std::rand();
+}
+
 #endif
 
 
@@ -179,8 +202,8 @@ static __uint128_t g_lehmer64_states[20] =
   {2136543473, 8362623451, 1217309610, 1392472685,
    5806475900, 7417877733, 8442120624, 1676887235,
    1596567492, 1740086218, 1665692500, 1245331274,
-   1636032902, 1252017648, 2036914219, 1791876209,
-   1302144241, 4878760597, 2036914219, 1791876209};
+   1636032902, 1252017648, 1040518150, 1791876209,
+   1302144241, 4878760597, 996898307, 1791876253};
 
 
 uint64_t lehmer64_states(int s = 0) {
@@ -199,17 +222,6 @@ static inline void lehmer64_seeds(uint64_t seed) {
     g_lehmer64_states[t] = (((__uint128_t)splitmix64_stateless(seed)) << 64) +
       splitmix64_stateless(seed + 1);
   }
-}
-
-int ensign(unsigned int x) {
-  unsigned int INT_MIN64 = (unsigned)(-2147483647);
-  if (x <= 2147483647) {
-    return static_cast<int>(x);
-  }
-  if (x >= INT_MIN64) {
-    return static_cast<int>(x - INT_MIN) + INT_MIN;
-  }
-  return INT_MIN64;
 }
 
 // [[Rcpp::export]]
@@ -248,11 +260,9 @@ IntegerVector do_lemire_rand(int n, IntegerVector S) {
 // [[Rcpp::export]]
 IntegerVector do_lemire_rand_par(int n,
                                  IntegerVector S,
-                                 int nThread = 1) {
+                                 int maxThread = 1) {
 
-  if (nThread > 20) {
-    nThread = 20;
-  }
+  int nThread = (maxThread > 20) ? 20 : maxThread;
   if (S.length() < (2 * 21 + 2)) {
     stop("S must have length > 110.");
   }
@@ -267,8 +277,8 @@ IntegerVector do_lemire_rand_par(int n,
       uint64_t ui64;
     } t64;
 
-      t64.v1 = S[2 * t + 1] ^ 5;
-      t64.v2 = S[2 * t + 2] ^ 5;
+      t64.v1 = S[2 * t + 1] ^ 7;
+      t64.v2 = S[2 * t + 2] ^ 7;
       lehmer64_seeds(t64.ui64);
     }
   }
@@ -291,13 +301,19 @@ IntegerVector do_lemire_rand_par(int n,
   return out;
 }
 
-std::vector<char> do_lemire_char_par(int n,
+std::vector<char> do_lemire_char_par(int nn,
                                      double p,
                                      IntegerVector S,
-                                     int nThread = 1) {
+                                     int maxThread = 1) {
+  int nThread = (maxThread > 20) ? 20 : maxThread;
 
-  if (n % 8 != 0) {
-    stop("n must be divisible by 8.");
+  if (nn < 8) {
+    stop("n must be > 8.");
+  }
+
+  int n = nn;
+  while (n % 8) {
+    n += 1;
   }
 
   if (p > 1 || p < 0) {
@@ -310,11 +326,12 @@ std::vector<char> do_lemire_char_par(int n,
   //   threshold += (int)(p * INT_MAX);
   //   threshold += (int)(p * INT_MAX);
   // }
+  int pint = p * 255;
   unsigned char threshold = 0;
   if (p == 1) {
     threshold = 255;
   } else if (p > 0) {
-    threshold = static_cast<unsigned char>(p * 255);
+    threshold = static_cast<unsigned char>(pint);
   }
 
   if (nThread > 20) {
@@ -340,6 +357,7 @@ std::vector<char> do_lemire_char_par(int n,
     }
   }
 
+  // Hugh: this is trivial performance
   std::vector<char> out;
   out.reserve(n);
   std::fill(out.begin(), out.end(), 0);
@@ -362,6 +380,7 @@ std::vector<char> do_lemire_char_par(int n,
     bytes[5] = static_cast<unsigned char>((ux1 >> 16) & 0xFF);
     bytes[6] = static_cast<unsigned char>((ux1 >> 8) & 0xFF);
     bytes[7] = static_cast<unsigned char>((ux1 & 0xFF));
+#pragma omp simd
     for (int b = 0; b < 8; ++b) {
       out[i - b] = (bytes[b] < threshold) ? 1 : 0;
     }
@@ -421,6 +440,31 @@ IntegerVector cf_sample(int n, int m, IntegerVector x, IntegerVector S) {
       out[i] = S[((i * 13) + 17) % slen] > 455;
     }
   }
+  return out;
+}
+
+// [[Rcpp::export]]
+int cf_mod_lemire(int n, double p, IntegerVector S, int m = 0, int nThread = 1) {
+  int out = 0;
+  if (m) {
+    std::vector<char> Srand1 = do_lemire_char_par(n, p, S, nThread);
+    std::vector<char> Srand2 = do_lemire_char_par(n, p, S, nThread);
+    for (int i = 0; i < n; ++i) {
+      if (Srand1[i] || Srand2[i]) {
+        ++out;
+      }
+    }
+  } else {
+    IntegerVector TodaysS = dqsample_int2(1000, NTODAY);
+    int P1000 = 1000 * p;
+    for (int i = 0; i < n; ++i) {
+      if (TodaysS[(i * 3 + 13) % NTODAY] < P1000 ||
+          TodaysS[(i * 11 + 7) % NTODAY] < P1000) {
+        ++out;
+      }
+    }
+  }
+
   return out;
 }
 

@@ -2,6 +2,10 @@
 #' @description Used to supply epidemiological parameters to the main
 #' simulate function, with defaults.
 #'
+#' Note that all parameters are taken together. In particular, attack probabilities,
+#' transmission probabilities, and reproduction parameters affect the overall
+#' transmission multiplicatively .
+#'
 #' @param incubation_distribution One of `"pois"`, `"lnorm"`, and `"dirac"`,
 #' whether the incubation period is Poisson, log-normal, or constant.
 #'
@@ -11,15 +15,14 @@
 #'
 #' @param illness_distribution,illness_mean,illness_sigma As for \code{incubation} above.
 #'
-#' @param a_household_rate \code{double(1)} in \code{[0, 1]}, the (average)
-#' proportion of an infected person's household that may be infected
-#' over the course of the person's illness.
-#' @param a_workplace_rate \code{double(1)} in \code{[0, 1]}, the (average)
-#' proportion of an infected person's colleagues that may be infected
-#' over the course of a person's illness.
-#' @param a_schools_rate \code{double(1)} in \code{[0, 1]}, the (average)
-#' proportion of an infected child's classmates that may be infected
-#' over the course of a child's illness.
+#' @param a_household_rate \code{double(1)} in \code{[0, 1]}, the
+#' proportion of households in which household transmission is possible.
+#'
+#' @param a_workplace_rate \code{double(1)} in \code{[0, 1]}, the proportion
+#' of workplaces in which transmission between colleagues is possible.
+#'
+#' @param a_schools_rate \code{double(1)} in \code{[0, 1]}, the proportion of
+#' schools in which tranmission between students is possible.
 #'
 #' @param q_household Daily transmission probability among household members.
 #' @param q_school Daily transmission probability among students of the same school.
@@ -81,9 +84,11 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
                         illness_distribution = c("pois", "lnorm", "dirac"),
                         illness_mean = 15,
                         illness_sigma = 1,
+                        a_rate = 0.07,
                         a_workplace_rate = 0.07,
                         a_household_rate = 0.15,
                         a_schools_rate = 0.07,
+                        q_workplace = 0.01,
                         q_household = 0.05,
                         q_school = 1/3000,
                         q_school_grade = 1/500,
@@ -111,7 +116,7 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
            checkmate::assert_number(incubation_sigma, finite = TRUE, lower = 0)
          },
          "dirac" = {
-           checkmate::check_int(incubation_mean, lower = 1)
+           checkmate::assert_number(illness_mean, finite = TRUE, lower = 0)
          })
 
   illness_distribution <- match.arg(illness_distribution)
@@ -124,15 +129,12 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
            checkmate::assert_number(illness_sigma, finite = TRUE, lower = 0)
          },
          "dirac" = {
-           checkmate::check_int(illness_mean, finite = TRUE, lower = 1)
+           checkmate::assert_number(illness_mean, finite = TRUE, lower = 0)
          })
 
   checkmate::assert_number(a_workplace_rate, lower = 0, upper = 1)
   checkmate::assert_number(a_household_rate, lower = 0, upper = 1)
   checkmate::assert_number(a_schools_rate, lower = 0, upper = 1)
-  a_workplace_rate <- as.integer(1000 * a_workplace_rate)
-  a_household_rate <- as.integer(1000 * a_household_rate)
-  a_schools_rate <- as.integer(1000 * a_schools_rate)
 
   checkmate::assert_number(q_household, lower = 0, upper = 1)
   checkmate::assert_number(q_school, lower = 0, upper = 1)
