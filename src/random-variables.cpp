@@ -257,11 +257,7 @@ IntegerVector do_lemire_rand_par(int n,
     stop("S must have length > 110.");
   }
 
-  if (S[0] == 0 &&
-      S[1] > 0 &&
-      S[2] > 0 &&
-      S[3] > 0 &&
-      S[4] > 0) {
+  if (S[0]) {
     for (int t = 0; t < 20; ++t) {
       union {
       struct {
@@ -273,7 +269,7 @@ IntegerVector do_lemire_rand_par(int n,
 
       t64.v1 = S[2 * t + 1] ^ 5;
       t64.v2 = S[2 * t + 2] ^ 5;
-      lehmer64_seed(t64.ui64);
+      lehmer64_seeds(t64.ui64);
     }
   }
 
@@ -292,6 +288,101 @@ IntegerVector do_lemire_rand_par(int n,
     out[i + 1] = ensign(ux1);
   }
 
+  return out;
+}
+
+std::vector<char> do_lemire_char_par(int n,
+                                     double p,
+                                     IntegerVector S,
+                                     int nThread = 1) {
+
+  if (n % 8 != 0) {
+    stop("n must be divisible by 8.");
+  }
+
+  if (p > 1 || p < 0) {
+    stop("Internal error p must be in [0, 1]");
+  }
+  // int threshold = INT_MIN;
+  // if (p == 1) {
+  //   threshold = INT_MAX;
+  // } else if (p > 0) {
+  //   threshold += (int)(p * INT_MAX);
+  //   threshold += (int)(p * INT_MAX);
+  // }
+  unsigned char threshold = 0;
+  if (p == 1) {
+    threshold = 255;
+  } else if (p > 0) {
+    threshold = static_cast<unsigned char>(p * 255);
+  }
+
+  if (nThread > 20) {
+    nThread = 20;
+  }
+  if (S.length() < (2 * 21 + 2)) {
+    stop("S must have length > 110.");
+  }
+
+  if (S[0]) {
+    for (int t = 0; t < 20; ++t) {
+      union {
+      struct {
+        int v1;
+        int v2;
+      } __attribute__((packed));
+      uint64_t ui64;
+    } t64;
+
+      t64.v1 = S[2 * t + 1] ^ 5;
+      t64.v2 = S[2 * t + 2] ^ 5;
+      lehmer64_seeds(t64.ui64);
+    }
+  }
+
+  std::vector<char> out;
+  out.reserve(n);
+  std::fill(out.begin(), out.end(), 0);
+
+#pragma omp parallel for num_threads(nThread)
+  for (int i = 7; i < n; i += 8) {
+    int s = 0;
+#ifdef _OPENMP
+    s = omp_get_thread_num();
+#endif
+    uint64_t L = lehmer64_states(s);
+    unsigned int ux0 = L & 0xFFFFFFFF;
+    unsigned int ux1 = static_cast<int32_t>((L & 0xFFFFFFFF00000000LL) >> 32);
+    unsigned char bytes[8] = {};
+    bytes[0] = static_cast<unsigned char>((ux0 >> 24) & 0xFF);
+    bytes[1] = static_cast<unsigned char>((ux0 >> 16) & 0xFF);
+    bytes[2] = static_cast<unsigned char>((ux0 >> 8) & 0xFF);
+    bytes[3] = static_cast<unsigned char>((ux0 & 0xFF));
+    bytes[4] = static_cast<unsigned char>((ux1 >> 24) & 0xFF);
+    bytes[5] = static_cast<unsigned char>((ux1 >> 16) & 0xFF);
+    bytes[6] = static_cast<unsigned char>((ux1 >> 8) & 0xFF);
+    bytes[7] = static_cast<unsigned char>((ux1 & 0xFF));
+    for (int b = 0; b < 8; ++b) {
+      out[i - b] = (bytes[b] < threshold) ? 1 : 0;
+    }
+  }
+
+  return out;
+}
+
+// [[Rcpp::export]]
+LogicalVector lemire_char(int N, double p, IntegerVector S, int return_early = 0,
+                          int nThread = 1) {
+  std::vector<char> the_lemire_char = do_lemire_char_par(N, p, S, nThread);
+  if (return_early) {
+    LogicalVector out(1);
+    out[0] = the_lemire_char[0] != 0;
+    return out;
+  }
+  LogicalVector out = no_init(N);
+  for (int i = 0; i < N; ++i) {
+    out[i] = the_lemire_char[i] > 0;
+  }
   return out;
 }
 

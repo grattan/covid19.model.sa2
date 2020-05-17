@@ -1030,15 +1030,6 @@ void infect_school(IntegerVector Status,
     return;
   }
 
-
-
-
-  // int i_visits[NSCHOOLS][21];
-  // for (int school = 0; school < NSCHOOLS; ++school) {
-  //   for (int a = 0; a < 21; ++a) {
-  //     i_visits[school][a] = 0;
-  //   }
-  // }
   int i_visits[NSCHOOLS] = {};
 
   int all_full_time =
@@ -1505,16 +1496,7 @@ List do_au_simulate(IntegerVector Status,
 
   int nThread20 = (nThread > 20) ? 20 : nThread;
   IntegerVector Srand = do_lemire_rand_par(N, Seed, nThread20);
-  // IntegerVector Srand = no_init(N);
-  //  {
-  //   IntegerVector SP = dqsample_int2(INT_MAX, N);
-  //   for (int i = 0; i < N; ++i) {
-  //     int spi = SP[i];
-  //     Srand[i] = INT_MIN;
-  //     Srand[i] += spi; // don't 2 * spi as this might be > INT_MAX
-  //     Srand[i] += spi;
-  //   }
-  // }
+
 
 
 
@@ -1728,6 +1710,10 @@ List do_au_simulate(IntegerVector Status,
 
 
 
+
+
+
+
     if (display_progress) {
       if (console_width <= 1) {
         p.increment();
@@ -1807,6 +1793,16 @@ List do_au_simulate(IntegerVector Status,
     }
     if (optionz == 3) {
       continue;
+    }
+
+    // at this point we know there are infections
+    int first_infected_i = 0;
+    while (Status[first_infected_i] <= 0) {
+      ++first_infected_i;
+    }
+    int final_infected_i = N - 1;
+    while (Status[final_infected_i] <= 0) {
+      --final_infected_i;
     }
 
     if (age_based_lockdown) {

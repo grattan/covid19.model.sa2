@@ -140,6 +140,10 @@ do_lemire_rand_par <- function(n, S, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_lemire_rand_par`, n, S, nThread)
 }
 
+lemire_char <- function(N, p, S, return_early = 0L, nThread = 1L) {
+    .Call(`_covid19_model_sa2_lemire_char`, N, p, S, return_early, nThread)
+}
+
 cf_sample <- function(n, m, x, S) {
     .Call(`_covid19_model_sa2_cf_sample`, n, m, x, S)
 }
