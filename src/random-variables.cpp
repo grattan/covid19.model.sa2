@@ -268,6 +268,7 @@ IntegerVector do_lemire_rand(int n, IntegerVector S) {
     out[i] = ensign(ux0);
     out[i + 1] = ensign(ux1);
   }
+  S[1] += (S[1] < INT_MAX) ? 1 : INT_MIN;
 
   return out;
 }
@@ -312,6 +313,9 @@ IntegerVector do_lemire_rand_par(int n,
     out[i] = ensign(ux0);
     out[i + 1] = ensign(ux1);
   }
+
+  // update the seed
+  S[1] += (S[1] < INT_MAX) ? 1 : INT_MIN;
 
   return out;
 }
@@ -400,6 +404,7 @@ std::vector<char> do_lemire_char_par(int nn,
       out[i - b] = (bytes[b] < threshold) ? 1 : 0;
     }
   }
+  S[1] += (S[1] < INT_MAX) ? 1 : INT_MIN;
 
   return out;
 }
