@@ -1581,7 +1581,6 @@ List do_au_simulate(IntegerVector Status,
   double illness_m = Epi["illness_mean"];
   double illness_s = Epi["illness_sigma"];
   double r_location = Epi["r_location"];
-  double r_schools_location = Epi["r_schools_location"];
   double r_supermarket_location = Epi["r_supermarket_location"];
   double r_work_location = Epi["r_work_location"];
   double r_scale = Epi["r_scale"];
@@ -2129,7 +2128,7 @@ List do_au_simulate(IntegerVector Status,
                     shortSA2,
                     schoolsIndex,
                     Erand,
-                    r_schools_location, r_scale, r_d,
+                    r_location, r_scale, r_d,
                     do_dirac_every, dirac_num, dirac_per,
                     Srand,
                     Seed,
