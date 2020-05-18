@@ -23,6 +23,7 @@ set_policypars(
   contact_tracing_days_before_test = 0L,
   contact_tracing_days_until_result = 3L,
   contact_tracing_only_sympto = TRUE,
+  contact_tracing_success = 0.9,
   tests_by_state = NULL,
   max_persons_per_event = 5L,
   max_persons_per_supermarket = 200L,
@@ -90,6 +91,10 @@ and the result being known.}
 
 \item{contact_tracing_only_sympto}{\code{TRUE|FALSE} Is contact tracing only
 applied to symptomatic cases?}
+
+\item{contact_tracing_success}{\describe{
+\item{\code{double(1) : [0, 1]}}{The proportion of contacts successfully traced.}
+}}
 
 \item{tests_by_state}{\code{integer(10)} The number of tests per day that states
 perform. First entry is the total tests available across Australia.
