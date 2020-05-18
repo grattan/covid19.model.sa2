@@ -14,6 +14,6 @@ test_that("simulate_cache validates and invalidates", {
 
     expect_false(SByState$N[2] < SByState$N[6])
     expect_true(SInitial$N[2] < SInitial$N[6])
-    expect_equal(SInitial$N[6], 10020L)
+    expect_equal(SInitial$N[6], 10056L)
   })
 })
