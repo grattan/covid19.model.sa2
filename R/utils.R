@@ -41,10 +41,11 @@ ematch <- function(x, table) {
 }
 
 is32bit <- function() {
-  tryCatch(is.logical(seq_len(2^31 - 1)),
-           error = function(e) {
-             TRUE
-           })
+  tryCatch(is.logical(seq_len(2^31 - 1)), error = function(e) TRUE)
+}
+
+is64bit <- function() {
+  tryCatch(is.integer(seq_len(2^31 - 1)), error = function(e) FALSE)
 }
 
 which_last <- function(x) {

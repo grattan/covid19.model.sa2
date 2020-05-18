@@ -37,6 +37,10 @@ set_policypars(
 )
 }
 \arguments{
+\item{default_schools_with_infections}{The number of schools with
+at least `default_schools_with_infections_geq` infections
+to trigger a lockdown.}
+
 \item{default_schools_with_infections_geq}{The minimum number of infections
 a school needs to have to trigger a lockdown criterion.}
 
@@ -116,10 +120,6 @@ rate distribution for the geometric distribution; \code{_lmu} and
 \code{_lsi} are the parameters for the lognormal distribution.}
 
 \item{lockdown_triggers__schools}{A list constructed by \code{\link{set_lockdown_triggers__schools}}.}
-
-\item{defaults_schools_with_infections}{The number of schools with
-at least `default_schools_with_infections_geq` infections
-to trigger a lockdown.}
 }
 \value{
 A list of the components.
