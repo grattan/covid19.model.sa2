@@ -36,7 +36,11 @@
     options(covid19.model.sa2_useDataEnv = FALSE)
   }
 
-
+  # Initializing seems to help
+  tt <- as.integer(Sys.time()) %% 65536L
+  aa <- 8L * tt
+  ll <- do_lemire_rand(aa, do_lemire_rand(2096, c(aa, integer(1024))))
+  tt <- aa <- ll <- NULL
 
 
   invisible(NULL)
