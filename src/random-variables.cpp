@@ -132,7 +132,7 @@ int ensign(unsigned int x) {
 
 bool is64bit = true;
 
-__uint128_t g_lehmer64_state = 353;
+__uint128_t g_lehmer64_state;
 
 uint64_t lehmer64() {
   g_lehmer64_state *= 0xda942042e4dd58b5;
@@ -149,6 +149,20 @@ bool is64bit = false;
 
 int lehmer32() {
   return std::rand();
+}
+
+int g_lehmer64_state = 353;
+
+std::vector<char> do_lemire_char_par(int n, double p, IntegerVector S, int nThread) {
+  warning("do_lemire_char_par not available for 32-bit R.");
+  std::vector<char> out = {};
+  return out;
+}
+
+LogicalVector lemire_char(int n, double p, IntegerVector S, int nThread, int m) {
+  warning("lemire_char not available for 32-bit R.");
+  LogicalVector out(n);
+  return out;
 }
 
 #endif
@@ -468,7 +482,23 @@ int cf_mod_lemire(int n, double p, IntegerVector S, int m = 0, int nThread = 1) 
   return out;
 }
 
+// [[Rcpp::export]]
+IntegerVector RCauchy(IntegerVector U, double location, double scale,
+                      int nThread = 1) {
+  int N = U.length();
+  IntegerVector out = no_init(N);
+#pragma omp parallel for num_threads(nThread)
+  for (int i = 0; i < N; ++i ) {
+    double oi = scale * std::tan(M_PI * (U[i]- 1/2)) + location;
+    if (oi > INT_MIN && oi < INT_MAX) {
+      out[i] = (int)oi;
+    } else {
+      out[i] = (oi <= INT_MIN) ? INT_MIN : INT_MAX;
+    }
+  }
+  return out;
 
+}
 
 
 

@@ -64,6 +64,11 @@
 #' rate distribution for the geometric distribution; \code{_lmu} and
 #' \code{_lsi} are the parameters for the lognormal distribution.
 #'
+#' @param lockdown_trigger_max_schools_infected A positive integer,
+#' the maximum number of schools where at least one
+#'
+#'
+#'
 #' @return A list of the components.
 #'
 #' @export
@@ -92,7 +97,8 @@ set_policypars <- function(supermarkets_open = TRUE,
                            workplace_size_max = 1L,
                            workplace_size_beta = 13,
                            workplace_size_lmu = -1,
-                           workplace_size_lsi = -1) {
+                           workplace_size_lsi = -1,
+                           lockdown_triggers__schools = set_lockdown_triggers__schools()) {
   checkmate::assert_logical(supermarkets_open,
                             any.missing = FALSE,
                             len = 1L)
@@ -461,6 +467,34 @@ dollars <- function(x, .name, ..., .x = vname(x), TRY_EVAL = FALSE) {
     return(.subset2(x, name))
   }
   dollars(.subset2(x, name), ..., .x = .x)
+}
+
+
+#' @rdname set_policypars
+#'
+#' @param defaults_schools_with_infections The number of schools with
+#' at least `default_schools_with_infections_geq` infections
+#' to trigger a lockdown.
+#' @param default_schools_with_infections_geq The minimum number of infections
+#' a school needs to have to trigger a lockdown criterion.
+#'
+#' @param default_schools_with_infections_duration_of_lockdown The duration in
+#' days of the lockdown so triggered.
+#'
+#' @param default_schools_with_any_critical The number of schools with
+#' any critical status pupils.
+#' @param default_schools_with_any_critical_duration_of_lockdown The duration in
+#' day of the lockdown so triggered.
+#'
+#' @export set_lockdown_triggers__schools
+set_lockdown_triggers__schools <- function(default_schools_with_infections = 4L,
+                                           default_schools_with_infections_geq = 3L,
+                                           default_schools_with_infections_duration_of_lockdown = 28L,
+                                           default_schools_with_any_critical = 1L,
+                                           default_schools_with_any_critical_duration_of_lockdown = 91L) {
+  Default <- mget(ls())
+  setNames(lapply(states(), function(s) unlist(Default)),
+           states())
 }
 
 

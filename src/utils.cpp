@@ -143,6 +143,16 @@ List sa2_firsts_finals(IntegerVector SA2, int nsa2 = 2310) {
   return List::create(SA2_firsts, SA2_finals);
 }
 
+bool yday2weekday(const int & yday) {
+  int wday = wday_2020[((yday - 1) % 7)];
+  return wday < 6;
+}
+
+bool yday2monday(const int & yday) {
+  int wday = wday_2020[((yday - 1) % 7)];
+  return wday == 1;
+}
+
 
 
 

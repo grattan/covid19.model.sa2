@@ -111,6 +111,17 @@ const int TAS_TERM3_FINAL_YDAY = 269;
 const int ACT_TERM3_FINAL_YDAY = 269;
 const int  NT_TERM3_FINAL_YDAY = 269;
 
+// weekdays in 2020
+//                  yday  1, 2, 3, 4, 5, 6, 7, ...
+const int wday_2020[7] = {3, 4, 5, 6, 7, 1, 2};
+
+bool yday2weekday(const int & yday);
+bool yday2monday(const int & yday);
+
+void assert_is_weekday(const int & day);
+void assert_is_monday(const int & day);
+
+
 
 int which_unsorted_int(IntegerVector x);
 bool do_is_unsorted_pint(IntegerVector x, int nThread);
