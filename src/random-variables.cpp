@@ -276,9 +276,9 @@ IntegerVector do_lemire_rand(int n, IntegerVector S) {
 // [[Rcpp::export]]
 IntegerVector do_lemire_rand_par(int n,
                                  IntegerVector S,
-                                 int maxThread = 1) {
+                                 int nThread = 1) {
 
-  int nThread = (maxThread > 20) ? 20 : maxThread;
+  nThread = (nThread > 20) ? 20 : nThread;
   if (S.length() < (2 * 21 + 2)) {
     stop("S must have length > 110.");
   }
@@ -324,27 +324,9 @@ std::vector<char> do_lemire_char_par(int nn,
                                      double p,
                                      IntegerVector S,
                                      int maxThread = 1) {
-  int nThread = (maxThread > 20) ? 20 : maxThread;
-
-  if (nn < 8) {
-    stop("n must be > 8.");
-  }
-
-  int n = nn;
-  while (n % 8) {
-    n += 1;
-  }
-
   if (p > 1 || p < 0) {
     stop("Internal error p must be in [0, 1]");
   }
-  // int threshold = INT_MIN;
-  // if (p == 1) {
-  //   threshold = INT_MAX;
-  // } else if (p > 0) {
-  //   threshold += (int)(p * INT_MAX);
-  //   threshold += (int)(p * INT_MAX);
-  // }
   int pint = p * 255;
   unsigned char threshold = 0;
   if (p == 1) {
@@ -353,6 +335,30 @@ std::vector<char> do_lemire_char_par(int nn,
     threshold = static_cast<unsigned char>(pint);
   }
 
+  if (nn < 8) {
+    std::vector<char> early_out;
+    early_out.reserve(8);
+    for (int i = 0; i < nn; ++i) {
+      // not exact but only 8 elements so...
+      early_out.push_back((lehmer32() & 255) < threshold);
+    }
+  }
+
+  int n = nn;
+  while (n & 7) {
+    n += 1;
+  }
+
+
+  // int threshold = INT_MIN;
+  // if (p == 1) {
+  //   threshold = INT_MAX;
+  // } else if (p > 0) {
+  //   threshold += (int)(p * INT_MAX);
+  //   threshold += (int)(p * INT_MAX);
+  // }
+
+  int nThread = (maxThread > 20) ? 20 : maxThread;
   if (nThread > 20) {
     nThread = 20;
   }
@@ -413,6 +419,7 @@ std::vector<char> do_lemire_char_par(int nn,
 LogicalVector lemire_char(int N, double p, IntegerVector S, int return_early = 0,
                           int nThread = 1) {
   std::vector<char> the_lemire_char = do_lemire_char_par(N, p, S, nThread);
+
   if (return_early) {
     LogicalVector out(1);
     out[0] = the_lemire_char[0] != 0;

@@ -143,6 +143,7 @@ IntegerVector test_array4k(IntegerVector w, IntegerVector x, IntegerVector y, In
 void contact_tracing(IntegerVector Status,
                      IntegerVector InfectedOn,
                      IntegerVector Incubation,
+                     IntegerVector Age,
                      int day,
                      int yday,
                      IntegerVector seqN,
@@ -154,20 +155,34 @@ void contact_tracing(IntegerVector Status,
                      IntegerVector HouseholdInfectedToday,
                      int N,
                      IntegerVector School,
+                     const std::vector<int> &schoolsIndex,
                      IntegerVector PlaceId,
                      int ptest_per_mille_sympto,
                      int ptest_per_mille_asympto,
+                     double ct_success,
                      IntegerVector TodaysK,
                      int days_before_test,
                      int days_to_notify,
+                     IntegerVector Seed,
                      int nThread,
                      IntegerVector TestedOn) {
+
 #ifdef _OPENMP
-  if (nThread < 1 || nThread > omp_get_num_procs()) {
+  if (day == 0 && (nThread < 1 || nThread > omp_get_num_procs())) {
     // lots of large ints nearby!
     stop("Internal error: nThread out of range");
   }
 #endif
+
+  if (day == 0) {
+    int n_pupils = schoolsIndex.size();
+    if (n_pupils != NPUPILS) {
+      stop("Internal error(contact tracing): n_pupils != NPUPILS");
+    }
+    if (ct_success < 0 || ct_success > 1) {
+      stop("Internal error(contact tracing): ct_success < 0 || ct_success");
+    }
+  }
 
   // isTested -> isIdentified -> responseReq -> LockdownTomorrw
 
@@ -324,6 +339,13 @@ void contact_tracing(IntegerVector Status,
     }
   }
 
+  int t_perf0_binary_ceil = 1 << ((int)(1 + floor(log2(t_perf0))));
+  int t_perf0_binary_ceilm1 = t_perf0_binary_ceil - 1;
+  // for a power of two sized vector we can efficiently assign i to a cell
+
+  // successfully contacts
+  std::vector<char> CRand = do_lemire_char_par(t_perf0_binary_ceil, ct_success, Seed, nThread);
+
 
 
   // Isolate everyone who is in the same household
@@ -336,18 +358,23 @@ void contact_tracing(IntegerVector Status,
       continue;
     }
 
-    if (Status[i] < 0 || Status[i] >= ISOLATED_PLUS) {
+    int statusi = Status[i];
+
+    // same as below
+    // if (Status[i] < 0 || Status[i] >= ISOLATED_PLUS) {
+    //   continue;
+    // }
+    if ((unsigned int) statusi >= (unsigned int)ISOLATED_PLUS) {
       continue;
     }
 
     bool notified_positive_today = TestedOn[i] == yday;
+    // if (!Crand)
 
 
     if (HouseholdSize[i] == 1) {
-      if (notified_positive_today) {
-        if (Status[i] >= 0 && Status[i] < ISOLATED_PLUS) {
-          Status[i] += ISOLATED_PLUS;
-        }
+      if (notified_positive_today && CRand[i & t_perf0_binary_ceilm1]) {
+        Status[i] += ISOLATED_PLUS;
       }
       // no household tracing for single person
       continue;
@@ -367,12 +394,40 @@ void contact_tracing(IntegerVector Status,
     }
     // if any household member gets notified then
     // they are all put in isolation
-    if (notified_positive_today) {
+    if (notified_positive_today && CRand[i & t_perf0_binary_ceilm1]) {
       for (int j = 0; j < nh; ++j) {
         int statusij = Status[i + j];
-        if (statusij >= 0 && statusij < ISOLATED_PLUS) {
+        if ((unsigned int)statusij < (unsigned int)ISOLATED_PLUS) {
           Status[i + j] += ISOLATED_PLUS;
         }
+      }
+    }
+  }
+  // household id // school id //
+
+  // school and grade infection
+  bool school_infected[NSCHOOLS][16];
+
+  // Isolate every school with an infected student
+#pragma omp parallel num_threads(nThread) reduction(|| : school_infected[:NSCHOOLS][:16])
+  for (int k = 0; k < NPUPILS; ++k) {
+    int i = schoolsIndex[k];
+    if ((((unsigned int)(Status[i])) < (unsigned int)ISOLATED_PLUS) &&
+        CRand[k & t_perf0_binary_ceilm1]) {
+      int agei = Age[i] & 15;
+      int schooli = School[i] - 1;
+      school_infected[schooli][agei] = true;
+    }
+  }
+
+#pragma omp parallel num_threads(nThread)
+  for (int k = 0; k < NPUPILS; ++k) {
+    int i = schoolsIndex[k];
+    int agei = Age[i] & 15;
+    int schooli = School[i] - 1;
+    if (school_infected[schooli][agei]) {
+      if (((unsigned int)(Status[i])) < (unsigned int)ISOLATED_PLUS) {
+        Status[i] += ISOLATED_PLUS;
       }
     }
   }
@@ -969,7 +1024,7 @@ void infect_school(IntegerVector Status,
                    int lockdown_trigger_schools_any_critical,
                    int lockdown_trigger_schools_any_critical_duration_of_lockdown,
                    IntegerVector shortSA2,
-                   const std::vector<int> &schoolIndices,
+                   const std::vector<int> &schoolsIndex,
                    const std::vector<char> &Erand,
                    double r_location,
                    double r_scale,
@@ -1113,7 +1168,7 @@ void infect_school(IntegerVector Status,
 #pragma omp parallel for num_threads(nThread)
     for (int k = 0; k < NPUPILS; ++k) {
       int k5 = wday0 + (5 * k);
-      int i = schoolIndices[k];
+      int i = schoolsIndex[k];
 
       int Agei = (Age[i] > 20) ? 20 : Age[i];
       if (only_Year12 && Agei < 17) {
@@ -1190,7 +1245,7 @@ void infect_school(IntegerVector Status,
   reduction(||:lockdownTriggeredByCritic)
 #endif
   for (int k = 0; k < NPUPILS; ++k) {
-    int i = schoolIndices[k];
+    int i = schoolsIndex[k];
     if (anySchoolsLockedDown && areSchoolsLockedDown[State[i]]) {
       continue;
     }
@@ -1232,7 +1287,7 @@ void infect_school(IntegerVector Status,
     if (!AttendsWday[k5]) {
       continue;
     }
-    int i = schoolIndices[k];
+    int i = schoolsIndex[k];
     int statei = State[i];
     if (anySchoolsLockedDown && areSchoolsLockedDown[statei]) {
       continue;
@@ -1406,7 +1461,7 @@ List do_au_simulate(IntegerVector Status,
                     IntegerVector PlaceTypeBySA2,
                     IntegerVector LabourForceStatus,
                     IntegerVector Resistance,
-                    IntegerVector Seed,
+                    IntegerVector SeedOriginal,
                     List Policy,
                     List nPlacesByDestType,
                     List FreqsByDestType,
@@ -1427,7 +1482,7 @@ List do_au_simulate(IntegerVector Status,
 
 
   Progress p(days_to_sim, display_progress && console_width <= 1);
-
+  IntegerVector Seed = clone(SeedOriginal);
 
 
   if (FreqsByDestType.length() <= 98 ||
@@ -1525,6 +1580,10 @@ List do_au_simulate(IntegerVector Status,
   }
   int ct_days_before_test = Policy["contact_tracing_days_before_test"];
   int ct_days_until_result = Policy["contact_tracing_days_until_result"];
+  double ct_success = Policy["contact_tracing_success"];
+
+
+
 
   int workplaces_open = 0;
   int workplace_size_max = 10;
@@ -2180,6 +2239,7 @@ List do_au_simulate(IntegerVector Status,
       contact_tracing(Status,
                       InfectedOn,
                       Incubation,
+                      Age,
                       day,
                       yday,
                       seqN,
@@ -2191,12 +2251,15 @@ List do_au_simulate(IntegerVector Status,
                       HouseholdInfectedToday,
                       N,
                       School,
+                      schoolsIndex,
                       PlaceId,
                       ptest_per_mille_asympto,
                       ptest_per_mille_sympto,
+                      ct_success,
                       TodaysK,
                       ct_days_before_test,
                       ct_days_until_result,
+                      Seed,
                       nThread,
                       TestedOn);
     }
