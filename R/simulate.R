@@ -402,8 +402,8 @@ simulate_sa2 <- function(days_to_simulate = 5,
   if (returner) {
     if (returner == 1L) {
       DT <- data.table(N = out[[1]])
-      DT[, Status := rep_len(c("Killed", "Healed", "Suscep", "NoSymp", "InSymp", "Critic", "Isolated"), .N)]
-      DT[, Day := rep(seq_len(days_to_simulate), each = 7L)]
+      DT[, "Status" := rep_len(c("Killed", "Healed", "Suscep", "NoSymp", "InSymp", "Critic", "Isolated"), .N)]
+      DT[, "Day" := rep(seq_len(days_to_simulate), each = 7L)]
       hutils::set_cols_first(DT, c("Day", "Status"))
       return(DT)
     }
@@ -417,7 +417,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
         warning("Internal error: returning components separately.")
         return(invisible(list(DT = DT, NN = NN)))
       }
-      DT[, N := NN]
+      DT[, "N" := NN]
       return(DT)
     }
   }

@@ -18,6 +18,7 @@
 #' @importFrom fastmatch fmatch
 #' @importFrom magrittr %>%
 #' @importFrom stats rbeta
+#' @importFrom stats setNames
 #' @importFrom utils packageName
 #' @importFrom utils hasName
 #' @importFrom utils combn
