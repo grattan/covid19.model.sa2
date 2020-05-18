@@ -148,7 +148,7 @@ int lehmer32() {
 bool is64bit = false;
 
 int lehmer32() {
-  return std::rand();
+  return dqsample_int2(INT_MAX, 1)[0];
 }
 
 int g_lehmer64_state = 353;
@@ -237,6 +237,7 @@ static inline void lehmer64_seeds(uint64_t seed) {
       splitmix64_stateless(seed + 1);
   }
 }
+
 
 // [[Rcpp::export]]
 IntegerVector do_lemire_rand(int n, IntegerVector S) {
@@ -482,14 +483,26 @@ int cf_mod_lemire(int n, double p, IntegerVector S, int m = 0, int nThread = 1) 
   return out;
 }
 
+inline double scale2radius(int x, double r) {
+  // from [INT_MIN, INT_MAX] -> [-r, r]
+  double xr = x * r;
+  double d = (double)(INT_MAX);
+  return xr / d;
+}
+
 // [[Rcpp::export]]
 IntegerVector RCauchy(IntegerVector U, double location, double scale,
                       int nThread = 1) {
+  // U has domain [-INT_MIN, INT_MAX]
+  // output -
   int N = U.length();
+
+
   IntegerVector out = no_init(N);
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i ) {
-    double oi = scale * std::tan(M_PI * (U[i]- 1/2)) + location;
+    double theta = scale2radius(U[i] / 2, M_PI);
+    double oi = scale * std::tan(theta) + location;
     if (oi > INT_MIN && oi < INT_MAX) {
       out[i] = (int)oi;
     } else {

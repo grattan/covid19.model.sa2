@@ -21,7 +21,6 @@ set_epipars(
   illness_distribution = c("pois", "lnorm", "dirac"),
   illness_mean = 15,
   illness_sigma = 1,
-  a_rate = 0.07,
   a_workplace_rate = 0.07,
   a_household_rate = 0.15,
   a_schools_rate = 0.07,
@@ -64,12 +63,8 @@ proportion of households in which household transmission is possible.}
 \item{a_schools_rate}{\code{double(1)} in \code{[0, 1]}, the proportion of
 schools in which tranmission between students is possible.}
 
-\item{q_household}{Daily transmission probability among household members.}
-
-\item{q_school}{Daily transmission probability among students of the same school.}
-
-\item{q_school_grade}{Daily transmission probability among students of the same
-school and age.}
+\item{q_household, q_school, q_school_grade, q_workplace}{Daily transmission probability among household members / students of the same school / students of the same school and same same
+grade / workers of the same workplace.}
 
 \item{r_distribution}{The distribution of the number of infections from each
 infected person, one of `"cauchy"`, `"lnorm"`, `"pois"`, or `"dirac"`.}

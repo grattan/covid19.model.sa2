@@ -1,4 +1,5 @@
 test_that("lockdown triggers work", {
+  skip_if(is32bit())
   skip_if_not_installed("data.table")
   library(data.table)
 
