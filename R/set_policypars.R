@@ -339,13 +339,11 @@ write_yaml_config <- function(Epi, Policies) {
         distribution = decode_distr(dollars(Epi, r_distribution)),
         location = list(
           default = dollars(Epi, r_location),
-          supermarket = dollars(Epi, r_supermarket_location),
-          schools = dollars(Epi, r_schools_location),
+          supermarket = dollars(Epi, r_supermarket_location)
         ),
         scale = list(
           default = dollars(Epi, r_scale),
-          supermarket = dollars(Epi, r_supermarket_scale),
-          schools: dollars(Epi, r_schools_scale)
+          supermarket = dollars(Epi, r_supermarket_scale)
         )
       ),
       resistance = list(

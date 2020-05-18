@@ -1,6 +1,6 @@
 Package: covid19.model.sa2
 Title: What the Package Does (One Line, Title Case)
-Version: 0.0.9
+Version: 0.10.0
 Authors@R: 
     person(given = "Hugh",
            family = "Parsonage",
