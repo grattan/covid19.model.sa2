@@ -31,9 +31,6 @@ set_epipars(
   r_distribution = c("cauchy", "lnorm", "pois", "dirac"),
   r_location = 2/5,
   r_scale = 1/5,
-  r_schools_distribution = r_distribution,
-  r_schools_location = r_location * 0.25,
-  r_schools_scale = r_scale,
   r_supermarket_location = r_location,
   r_supermarket_scale = r_scale,
   r_work_location = r_location,
@@ -78,9 +75,6 @@ persons infect the same number of people. Can also be provided in the form
 \code{a/b} where \code{a} and {b} are whole numbers, in which case each
 infectious person will infect \code{a} individuals every \code{b} days
 (precisely, not on average).}
-
-\item{r_schools_distribution, r_schools_location, r_schools_scale}{Variables
-particular for schools.}
 
 \item{r_supermarket_location, r_supermarket_scale}{Variables particular
 for supermarket.}

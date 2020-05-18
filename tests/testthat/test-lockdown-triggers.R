@@ -88,8 +88,6 @@ test_that("lockdown triggers work", {
                 q_school = 0.25,
                 r_distribution = "dirac",
                 r_location = 1,
-                r_schools_distribution = "dirac",
-                r_schools_location = 1,
                 p_asympto = 0.5,
                 p_critical = 0,
                 p_death = 0)

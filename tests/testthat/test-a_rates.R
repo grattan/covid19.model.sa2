@@ -17,8 +17,7 @@ test_that("a_household_rate", {
                         illness_mean = 4,
                         r_distribution = "dirac",
                         q_household = 1,
-                        r_location = 2,
-                        r_schools_location = 1)
+                        r_location = 2)
   Epi050 <- set_epipars(a_household_rate = 0.5,
                         incubation_distribution = "dirac",
                         incubation_mean = 4,
@@ -26,8 +25,7 @@ test_that("a_household_rate", {
                         illness_mean = 4,
                         r_distribution = "dirac",
                         q_household = 1,
-                        r_location = 2,
-                        r_schools_location = 1)
+                        r_location = 2)
   Epi100 <- set_epipars(a_household_rate = 1,
                         incubation_distribution = "dirac",
                         incubation_mean = 4,
@@ -35,8 +33,7 @@ test_that("a_household_rate", {
                         illness_mean = 4,
                         r_distribution = "dirac",
                         q_household = 1,
-                        r_location = 2,
-                        r_schools_location = 1)
+                        r_location = 2)
 
   aus <- read_sys("australia.fst")
   aus[, c("seqN", "HouseholdSize") := do_seqN_N(hid, pid)]

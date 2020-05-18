@@ -40,8 +40,6 @@
 #' infectious person will infect \code{a} individuals every \code{b} days
 #' (precisely, not on average).
 #'
-#' @param r_schools_distribution,r_schools_location,r_schools_scale Variables
-#' particular for schools.
 #'
 #' @param r_supermarket_location,r_supermarket_scale Variables particular
 #' for supermarket.
@@ -92,9 +90,6 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
                         r_distribution = c("cauchy", "lnorm", "pois", "dirac"),
                         r_location = 2/5,
                         r_scale = 1/5,
-                        r_schools_distribution = r_distribution,
-                        r_schools_location = r_location * 0.25,
-                        r_schools_scale = r_scale,
                         r_supermarket_location = r_location,
                         r_supermarket_scale = r_scale,
                         r_work_location = r_location,
@@ -160,12 +155,10 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
       # integerish
       checkmate::assert_int(r_location, lower = 1)
       checkmate::assert_int(r_supermarket_location, lower = 1)
-      checkmate::assert_int(r_schools_location, lower = 1)
     }
   } else {
     checkmate::assert_number(r_location, finite = TRUE, lower = 0)
     checkmate::assert_number(r_supermarket_location, finite = TRUE, lower = 0)
-    checkmate::assert_number(r_schools_location, finite = TRUE, lower = 0)
     checkmate::assert_number(r_scale, finite = TRUE, lower = 0)
   }
 
