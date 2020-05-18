@@ -1,5 +1,6 @@
 test_that("a_household_rate", {
   skip_if(is32bit())
+  skip_on_travis()
   skip_if_not_installed("magrittr")
   skip_if_not_installed("data.table")
   library(magrittr)
