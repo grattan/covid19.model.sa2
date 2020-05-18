@@ -109,6 +109,7 @@ test_that("a_household_rate", {
                    yday_start = 100L,
                    days_to_sim = days_to_sim,
                    N = nrow(aus),
+                   display_progress = FALSE,
                    nThread = getOption("covid19.model.sa2_nThread", 1L)) %>%
       .[["nInfected"]]
   }
