@@ -1267,7 +1267,6 @@ void infect_school(IntegerVector Status,
     if (!Erand[schooli]) {
       continue;
     }
-    // rcauchy relates to the single day
     if (statusi == STATUS_NOSYMP) {
       i_visits[schooli] += 1;
     } else if ((statusi % ISOLATED_PLUS) == STATUS_CRITIC) {
@@ -1730,24 +1729,26 @@ List do_au_simulate(IntegerVector Status,
   }
   std::vector<char> Wrand = do_lemire_char_par(WID_SUPREMUM, a_workplace_rate, Seed, nThread);
 
+  IntegerVector Incubation = (incubation_d == 4) ? RCauchy(do_lemire_rand_par(N, Seed, nThread), incubation_m, incubation_s, nThread) : no_init(N);
+
   // variables which will be updated on day = 0
   // int n_schools = -1;
 
   IntegerVector nInfected = no_init(days_to_sim);
-  IntegerVector Incubation = no_init(N);
   IntegerVector Illness = no_init(N);
   IntegerVector SupermarketTarget = no_init(N);
 
   // These could potentially be smaller vectors
   IntegerVector HouseholdInfectedToday = no_init(N); // was the household infected today?
-
+  if (incubation_d != 4) {
 #pragma omp parallel for num_threads(nThread)
-  for (int i = 0; i < N; ++i) {
-    Incubation[i] = 0;
-    Illness[i] = 0;
-    SupermarketTarget[i] = 0;
-    HouseholdInfectedToday[i] = 0;
-    TestedOn[i] = 0;
+    for (int i = 0; i < N; ++i) {
+      Incubation[i] = 0;
+      Illness[i] = 0;
+      SupermarketTarget[i] = 0;
+      HouseholdInfectedToday[i] = 0;
+      TestedOn[i] = 0;
+    }
   }
 
   if (which_unsorted_int(SA2)) {
@@ -2039,7 +2040,7 @@ List do_au_simulate(IntegerVector Status,
 
         // If the incubation period is zero, it has not been evaluated
         // for this individual. Draw from the distribution (once)
-        if (Incubation[i] == 0) {
+        if ((incubation_d != 4) && Incubation[i] == 0) {
           Incubation[i] = incubRand(incubation_m, incubation_s, incubation_d);
         }
         int incubation = Incubation[i];
