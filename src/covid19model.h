@@ -159,6 +159,7 @@ IntegerVector do_minmax_par(IntegerVector x, int nThread);
 IntegerVector do_lag_int(IntegerVector s, int nThread);
 IntegerVector modulo(IntegerVector x, int m, int d, int nThread);
 IntegerVector prlnorm_int(int n, double a, double b, int nThread);
+IntegerVector RCauchy(IntegerVector U, double location, double scale, int nThread);
 IntegerVector do_lemire_rand_par(int n, IntegerVector S, int nThread);
 int lehmer32();
 std::vector<char> do_lemire_char_par(int n, double p, IntegerVector S, int nThread);

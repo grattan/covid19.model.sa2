@@ -15,7 +15,7 @@ See also AceMOD
 }
 \usage{
 set_epipars(
-  incubation_distribution = c("pois", "lnorm", "dirac"),
+  incubation_distribution = c("pois", "lnorm", "dirac", "cauchy"),
   incubation_mean = 5,
   incubation_sigma = 0.44,
   illness_distribution = c("pois", "lnorm", "dirac"),

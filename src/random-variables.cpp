@@ -503,8 +503,7 @@ inline double scale2radius(int x, double r) {
 }
 
 // [[Rcpp::export]]
-IntegerVector RCauchy(IntegerVector U, double location, double scale,
-                      int nThread = 1) {
+IntegerVector RCauchy(IntegerVector U, double location, double scale, int nThread = 1) {
   // U has domain [-INT_MIN, INT_MAX]
   // output -
   int N = U.length();
@@ -524,6 +523,7 @@ IntegerVector RCauchy(IntegerVector U, double location, double scale,
   return out;
 
 }
+
 
 
 
