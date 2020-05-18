@@ -960,6 +960,14 @@ void infect_school(IntegerVector Status,
                    const int &yday,
                    const int &N,
                    IntegerVector State,
+                   const unsigned char state_by_school[],
+                   const std::array<bool, NSTATES1> &areSchoolsLockedDown,
+                   unsigned char state_trigger_pulled[],
+                   int lockdown_trigger_schools_with_infections,
+                   int lockdown_trigger_schools_with_infections_geq,
+                   int lockdown_trigger_schools_with_infections_duration_of_lockdown,
+                   int lockdown_trigger_schools_any_critical,
+                   int lockdown_trigger_schools_any_critical_duration_of_lockdown,
                    IntegerVector shortSA2,
                    const std::vector<int> &schoolIndices,
                    const std::vector<char> &Erand,
@@ -968,10 +976,12 @@ void infect_school(IntegerVector Status,
                    const int &r_d,
                    bool do_dirac_every, int dirac_num, int dirac_per,
                    IntegerVector Srand,
-                   int q_school,
+                   IntegerVector Seed,
+                   double q_school_dbl,
                    bool only_Year12,
                    List school_days_per_wk,
                    const int &nThread = 1,
+                   int optionz = 0,
                    int zero = 0) {
   if (zero != -99) {
     stop("zero expected.");
@@ -1019,6 +1029,10 @@ void infect_school(IntegerVector Status,
       stop("Internal error(infect_schools): max_too_large");
     }
 
+    if (shortSA2.length() != N) {
+      stop("Internal error(infect_schools):shortSA2.length() != N");
+    }
+
   }
 
   bool all_states_in_school = true;
@@ -1031,8 +1045,21 @@ void infect_school(IntegerVector Status,
   if (!any_states_in_school) {
     return;
   }
+  // 0 -> AUS i.e. all schools are locked down
+  if (areSchoolsLockedDown[0]) {
+    return;
+  }
+  const bool anySchoolsLockedDown =
+    areSchoolsLockedDown[1] ||
+    areSchoolsLockedDown[2] ||
+    areSchoolsLockedDown[3] ||
+    areSchoolsLockedDown[4] ||
+    areSchoolsLockedDown[5] ||
+    areSchoolsLockedDown[6] ||
+    areSchoolsLockedDown[7] ||
+    areSchoolsLockedDown[8] ||
+    areSchoolsLockedDown[9];
 
-  int i_visits[NSCHOOLS] = {};
 
   int all_full_time =
     school_days_per_wk.containsElementNamed("all_full_time") &&
@@ -1115,7 +1142,8 @@ void infect_school(IntegerVector Status,
       bool attends_today = daysPerWk_Agei == 5;
 
       if (!attends_today) {
-        int schooli = School[i] - 1; // this is ok because school[i] is only in indices of pupils
+        // this is ok because school[i] is only in indices of pupils
+        int schooli = School[i] - 1;
         if (daysPerWk_Agei == 1) {
           // this state-age combination is only set to go to school
           // once per week
@@ -1152,36 +1180,52 @@ void infect_school(IntegerVector Status,
     }
   }
 
+  int i_visits[NSCHOOLS] = {};
+  bool lockdownTriggeredByCritic[NSTATES1] = {};
+
+
 #if defined _OPENMP && _OPENMP >= 201511
-#pragma omp parallel for num_threads(nThread) reduction(+:i_visits[:NSCHOOLS])
+#pragma omp parallel for num_threads(nThread) \
+  reduction(+:i_visits[:NSCHOOLS])            \
+  reduction(||:lockdownTriggeredByCritic)
 #endif
   for (int k = 0; k < NPUPILS; ++k) {
+    int i = schoolIndices[k];
+    if (anySchoolsLockedDown && areSchoolsLockedDown[State[i]]) {
+      continue;
+    }
 
+    int statusi = Status[i];
+    if (statusi <= 0) {
+      continue;
+    }
     int k5 = wday0 + (5 * k);
     if (!AttendsWday[k5]) {
       continue;
     }
-    int i = schoolIndices[k];
     int statei = State[i];
     if (!all_states_in_school && !during_school_term(statei, yday)) {
       continue;
     }
 
-
-    // int Agei = (Age[i] > 20) ? 20 : Age[i];
     int schooli = School[i] - 1;
     if (!Erand[schooli]) {
       continue;
     }
     // rcauchy relates to the single day
-    if (Status[i] == STATUS_NOSYMP) {
-      int infectedi = r_Rand(r_location, r_scale, r_d, do_dirac_every, dirac_num, dirac_per, i);
-      i_visits[schooli] += infectedi;
-      // i_visits[schooli][Agei] += infectedi;
+    if (statusi == STATUS_NOSYMP) {
+      i_visits[schooli] += 1;
+    } else if ((statusi % ISOLATED_PLUS) == STATUS_CRITIC) {
+      lockdownTriggeredByCritic[statei] = true;
     }
   }
+
+  int newInfectionsBySchool[NSCHOOLS] = {};
+
+  std::vector<char> Prand = do_lemire_char_par(NPUPILS, q_school_dbl, Seed, nThread);
+
 #if defined _OPENMP && _OPENMP >= 201511
-#pragma omp parallel for num_threads(nThread) reduction(+:i_visits[:NSCHOOLS])
+#pragma omp parallel for num_threads(nThread) reduction(+ :newInfectionsBySchool[:NSCHOOLS])
 #endif
   for (int k = 0; k < NPUPILS; ++k) {
     int k5 = wday0 + (5 * k);
@@ -1190,14 +1234,17 @@ void infect_school(IntegerVector Status,
     }
     int i = schoolIndices[k];
     int statei = State[i];
+    if (anySchoolsLockedDown && areSchoolsLockedDown[statei]) {
+      continue;
+    }
     if (!all_states_in_school && !during_school_term(statei, yday)) {
       continue;
     }
-    // int sa2i = shortSA2[i];
 
     if (Status[i]) {
       continue;
     }
+
     int schooli = School[i] - 1;
     if (!Erand[schooli]) {
       continue;
@@ -1207,12 +1254,35 @@ void infect_school(IntegerVector Status,
     // first.  We could randomize this, but I don't think it matters.
 
     // TODO: make students of the same age more likely/first to be infected
-    if (i_visits[schooli] && Srand[i] < q_school) {
+    if (i_visits[schooli] && Prand[k]) {
       Status[i] = STATUS_NOSYMP;
       InfectedOn[i] = yday;
-      i_visits[schooli] -= 1;
+      newInfectionsBySchool[schooli] += 1;
     }
   }
+
+  int schoolsWithGeqInfections[NSTATES1] = {};
+  const int b = lockdown_trigger_schools_with_infections_geq;
+  for (int schooli = 0; schooli < NSCHOOLS; ++schooli) {
+    if (newInfectionsBySchool[schooli] >= b) {
+      if (optionz) Rcout << "schooli = " << schooli << "\t" << "newInfectionsBySchool = " << newInfectionsBySchool[schooli] << "\n";
+      int statei = static_cast<int>(state_by_school[schooli]);
+      schoolsWithGeqInfections[statei] += 1;
+    }
+  }
+
+
+
+  for (int s = 0; s < NSTATES1; ++s) {
+    if (lockdownTriggeredByCritic[s]) {
+      state_trigger_pulled[s] = 2;
+    } else if (schoolsWithGeqInfections[s] >= lockdown_trigger_schools_with_infections) {
+      state_trigger_pulled[s] = 1;
+    }
+  }
+
+
+
   // void
 }
 
@@ -1418,6 +1488,23 @@ List do_au_simulate(IntegerVector Status,
   }
   List school_days_per_wk = Policy["school_days_per_wk"];
 
+  // Dynamic modelling relating to schools
+  int lockdown_trigger_schools_with_infections = 4;
+  int lockdown_trigger_schools_with_infections_geq = 3;
+  int lockdown_trigger_schools_with_infections_duration_of_lockdown = 28;
+  int lockdown_trigger_schools_with_any_critical = 1;
+  int lockdown_trigger_schools_with_any_critical_duration_of_lockdown = 91;
+  if (Policy.containsElementNamed("lockdown_triggers__schools")) {
+    List lockdown_triggers__schools = Policy["lockdown_triggers__schools"];
+    List lockdown_triggers__schools_AUS = lockdown_triggers__schools[0];
+    lockdown_trigger_schools_with_infections = lockdown_triggers__schools_AUS["default_schools_with_infections"];
+    lockdown_trigger_schools_with_infections_geq = lockdown_triggers__schools_AUS["default_schools_with_infections_geq"];
+    lockdown_trigger_schools_with_infections_duration_of_lockdown = lockdown_triggers__schools_AUS["default_schools_with_infections_duration_of_lockdown"];
+    lockdown_trigger_schools_with_any_critical = lockdown_triggers__schools_AUS["default_schools_with_any_critical"];
+    lockdown_trigger_schools_with_any_critical_duration_of_lockdown = lockdown_triggers__schools_AUS["default_schools_with_any_critical_duration_of_lockdown"];
+  }
+
+
 
   bool do_contact_tracing = true;
   if (Policy.length() && Policy.containsElementNamed("do_contact_tracing")) {
@@ -1513,6 +1600,7 @@ List do_au_simulate(IntegerVector Status,
 
   int q_household = Epi["q_household"];
   int q_school = Epi["q_school"];
+  double q_school_dbl = ((double)(q_school - INT_MIN) / 2) / (double)INT_MAX;
 
   IntegerVector Srand = do_lemire_rand_par(N, Seed, nThread);
 
@@ -1544,15 +1632,22 @@ List do_au_simulate(IntegerVector Status,
 
 
   int n_pupils = 0;
+  unsigned char state_by_school[NSCHOOLS] = {};
+  unsigned char state_trigger_pulled[NSTATES1] = {};
   std::vector<int> schoolsIndex;
   schoolsIndex.reserve(NPUPILS);
   for (int i = 0; i < N; ++i) {
     if (School[i] > 0) {
+      int schooli = School[i] - 1;
       ++n_pupils;
       schoolsIndex.push_back(i);
+      if (!state_by_school[schooli]) {
+        state_by_school[schooli] = State[i];
+      }
     }
   }
   std::vector<char> Erand = do_lemire_char_par(NSCHOOLS, a_schools_rate, Seed, nThread);
+
 
   if (n_pupils != NPUPILS) {
     Rcout << NPUPILS << "\n";
@@ -1564,8 +1659,10 @@ List do_au_simulate(IntegerVector Status,
   IntegerVector AttendsWday = no_init(NPUPILS * 5);
   // memset(AttendsWday, 0, sizeof AttendsWday);
 
+  std::array<int, NSTATES1> schools_lockdown_until = {};
+  std::array<bool, NSTATES1> areSchoolsLockedDown = {};
 
-  int n_workplaces = 0;
+
   std::vector<int> widIndex;
   widIndex.reserve(WID_SUPREMUM);
   for (int i = 0; i < N; ++i) {
@@ -1648,16 +1745,24 @@ List do_au_simulate(IntegerVector Status,
 
 
   for (int day = 0; day < days_to_sim; ++day) {
+
+    // Start with basic calendar information, needed for
+    // opening hours, especially of schools
     int yday = yday_start + day;
 
-    //                  yday  1, 2, 3, 4, 5, 6, 7, ...
-    const int wday_2020[7] = {3, 4, 5, 6, 7, 1, 2};
+    assert_is_weekday(day);
+    assert_is_monday(day);
     // i.e yday 1 was a Wednesday, make the week start on Monday
-
     int wday = wday_2020[((yday - 1) % 7)];
-    bool is_weekday = wday < 6;
+    bool is_weekday = yday2weekday(yday);
+    bool is_monday = yday2monday(yday);
 
 
+
+    // Aggregate the information to return
+    // Doing it the head rather than the tail of this loop means
+    // we can (a) exit early if there are no infections and (b) potentially
+    // supply these aggregates to other functions to provide early returns.
     int n_infected_today = 0;
     if (returner == 0) {
 #if defined _OPENMP && _OPENMP >= 201511
@@ -1761,7 +1866,7 @@ List do_au_simulate(IntegerVector Status,
         // w < 1024 in case of very large console width
         while (w < pbar_w && w < 1024) {
           Rcpp::checkUserInterrupt();
-          int w_yday = w_d + yday_start + 0.5;
+          int w_yday = w_d + yday_start + 1 + 0.5;
           int w_wday = wday_2020[((w_yday - 1) % 7)];
           w_d += di;
           r_d += di;
@@ -1822,13 +1927,21 @@ List do_au_simulate(IntegerVector Status,
       continue;
     }
 
+    // Exit point.
+    // We have aggregated "today's" information above so if we are on the final
+    // day but don't break here we will model the result but never save it.
+    if (day + 1 == days_to_sim) {
+      break;
+    }
+
+
     // at this point we know there are infections
     int first_infected_i = 0;
     while (Status[first_infected_i] <= 0) {
       ++first_infected_i;
     }
-    int final_infected_i = N - 1;
-    while (Status[final_infected_i] <= 0) {
+    int final_infected_i = N;
+    while (Status[final_infected_i - 1] <= 0) {
       --final_infected_i;
     }
 
@@ -1847,7 +1960,7 @@ List do_au_simulate(IntegerVector Status,
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread)
 #endif
-    for (int i = 0; i < N; ++i) {
+    for (int i = first_infected_i; i < final_infected_i; ++i) {
 
       // First, examine all individuals infected last night
       // and move them accordingly.
@@ -1974,21 +2087,57 @@ List do_au_simulate(IntegerVector Status,
 
 
     if (is_weekday && schools_open) {
+      // Check whether any states are in lockdown
+      // We only check every 'Monday' (i.e. just before Monday)
+      // to reflect decision timing.
+
+
+        for (int s = 0; s < NSTATES; ++s) {
+          // Each Monday morning we check whether there has been an
+          // event to trigger a lockdown (and what sort of trigger it was)
+          // If there was one we set the lockdown period then reset the
+          // trigger. A lockdown so triggered takes place immediately (i.e.
+          // before 9am)
+
+          // Otherwise, we continue any extant lockdown
+
+          if (is_monday && state_trigger_pulled[s] != 0) {
+              areSchoolsLockedDown[s] = true;
+              int d_1 = lockdown_trigger_schools_with_infections_duration_of_lockdown;
+              int d_2 = lockdown_trigger_schools_with_any_critical_duration_of_lockdown;
+              schools_lockdown_until[s] = yday + ((state_trigger_pulled[s] == 1) ? d_1 : d_2);
+              state_trigger_pulled[s] = 0;  // can only be reset on Mondays
+          } else if (schools_lockdown_until[s]) {
+            schools_lockdown_until[s] -= 1;
+            areSchoolsLockedDown[s] = schools_lockdown_until[s] > yday;
+          }
+        }
+
       infect_school(Status, InfectedOn, School, Age,
                     AttendsWday,
                     day, wday, yday,
                     N,
                     State,
+                    state_by_school,
+                    areSchoolsLockedDown,
+                    state_trigger_pulled,
+                    lockdown_trigger_schools_with_infections,
+                    lockdown_trigger_schools_with_infections_geq,
+                    lockdown_trigger_schools_with_infections_duration_of_lockdown,
+                    lockdown_trigger_schools_with_any_critical,
+                    lockdown_trigger_schools_with_any_critical_duration_of_lockdown,
                     shortSA2,
                     schoolsIndex,
                     Erand,
                     r_schools_location, r_scale, r_d,
                     do_dirac_every, dirac_num, dirac_per,
                     Srand,
-                    q_school,
+                    Seed,
+                    q_school_dbl,
                     only_Year12,
                     school_days_per_wk,
                     nThread,
+                    optionz,
                     -99);
     }
     if (workplaces_open) {

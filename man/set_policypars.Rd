@@ -2,6 +2,7 @@
 % Please edit documentation in R/set_policypars.R
 \name{set_policypars}
 \alias{set_policypars}
+\alias{set_lockdown_triggers__schools}
 \title{Set policy parameters}
 \usage{
 set_policypars(
@@ -22,7 +23,16 @@ set_policypars(
   workplace_size_max = 1L,
   workplace_size_beta = 13,
   workplace_size_lmu = -1,
-  workplace_size_lsi = -1
+  workplace_size_lsi = -1,
+  lockdown_triggers__schools = set_lockdown_triggers__schools()
+)
+
+set_lockdown_triggers__schools(
+  default_schools_with_infections = 4L,
+  default_schools_with_infections_geq = 3L,
+  default_schools_with_infections_duration_of_lockdown = 28L,
+  default_schools_with_any_critical = 1L,
+  default_schools_with_any_critical_duration_of_lockdown = 91L
 )
 }
 \arguments{
@@ -91,6 +101,25 @@ that everyone interacts on a single day).}
 \item{workplace_size_beta, workplace_size_lmu, workplace_size_lsi}{Parameters for the distribution of workplace sizes. \code{_beta} is the
 rate distribution for the geometric distribution; \code{_lmu} and
 \code{_lsi} are the parameters for the lognormal distribution.}
+
+\item{default_schools_with_infections_geq}{The minimum number of infections
+a school needs to have to trigger a lockdown criterion.}
+
+\item{default_schools_with_infections_duration_of_lockdown}{The duration in
+days of the lockdown so triggered.}
+
+\item{default_schools_with_any_critical}{The number of schools with
+any critical status pupils.}
+
+\item{default_schools_with_any_critical_duration_of_lockdown}{The duration in
+day of the lockdown so triggered.}
+
+\item{lockdown_trigger_max_schools_infected}{A positive integer,
+the maximum number of schools where at least one}
+
+\item{defaults_schools_with_infections}{The number of schools with
+at least `default_schools_with_infections_geq` infections
+to trigger a lockdown.}
 }
 \value{
 A list of the components.

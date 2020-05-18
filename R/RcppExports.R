@@ -152,6 +152,10 @@ cf_mod_lemire <- function(n, p, S, m = 0L, nThread = 1L) {
     .Call(`_covid19_model_sa2_cf_mod_lemire`, n, p, S, m, nThread)
 }
 
+RCauchy <- function(U, location, scale, nThread = 1L) {
+    .Call(`_covid19_model_sa2_RCauchy`, U, location, scale, nThread)
+}
+
 short_sa2 <- function(sa2) {
     .Call(`_covid19_model_sa2_short_sa2`, sa2)
 }
