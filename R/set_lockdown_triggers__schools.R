@@ -3,7 +3,7 @@
 #'
 #' @name set_policypars
 #'
-#' @param defaults_schools_with_infections The number of schools with
+#' @param default_schools_with_infections The number of schools with
 #' at least `default_schools_with_infections_geq` infections
 #' to trigger a lockdown.
 #' @param default_schools_with_infections_geq The minimum number of infections
