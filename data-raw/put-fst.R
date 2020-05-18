@@ -654,6 +654,19 @@ try({
          read_pappu)
 })
 
+# Get data by LGA
+dollars <- covid19.model.sa2:::dollars
+Cases_by_LGA <-
+  jsonlite::fromJSON("https://services1.arcgis.com/vHnIGBHHqDR6y0CR/arcgis/rest/services/Australian_Cases_by_LGA/FeatureServer/0/query?where=1%3D1&outFields=Cases,LGA_CODE19&returnGeometry=false&outSR=4326&f=json") %>%
+  dollars(features, attributes) %>%
+  as.data.table
+
+Cases_by_LGA[, Cases := coalesce(Cases, 0L)]
+write_fst(Cases_by_LGA, "inst/extdata/Cases-by-LGA.fst")
+
+
+
+
 # // data-raw/google/sa2_by_place_id.fst
 if (!requireNamespace("ASGS", quietly = TRUE)) {
   message("ASGS not installed, skipping. Consider\n\t",
