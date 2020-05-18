@@ -27,6 +27,7 @@ test_that("lemire works", {
 
 test_that("lemire_char", {
   skip_on_cran()
+  skip_if(is32bit())
   p25 <- lemire_char(8000, 0.25, .Random.seed)
   expect_true(mean(p25) >= 0.2 && mean(p25) <= 0.3)
   withr::with_seed(37, {
