@@ -1,3 +1,7 @@
+<h3 id="experimental"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt=""></h3>
+
+This model is free to use but not yet mature enough to be relied upon or cited. Please refrain from attributing this model to Grattan Institute until this advice changes.
+
 # covid19.model.sa2
 
 A model of the COVID-19 pandemic stratified by SA2.
