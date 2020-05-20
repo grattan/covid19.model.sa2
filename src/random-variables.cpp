@@ -153,9 +153,9 @@ int lehmer32() {
 
 int g_lehmer64_state = 353;
 
-std::vector<char> do_lemire_char_par(int n, double p, IntegerVector S, int nThread) {
+std::vector<unsigned char> do_lemire_char_par(int n, double p, IntegerVector S, int nThread, bool return_char = false) {
   warning("do_lemire_char_par not available for 32-bit R.");
-  std::vector<char> out = {};
+  std::vector<unsigned char> out = {};
   return out;
 }
 
@@ -320,10 +320,11 @@ IntegerVector do_lemire_rand_par(int n,
   return out;
 }
 
-std::vector<char> do_lemire_char_par(int nn,
-                                     double p,
-                                     IntegerVector S,
-                                     int maxThread = 1) {
+std::vector<unsigned char> do_lemire_char_par(int nn,
+                                              double p,
+                                              IntegerVector S,
+                                              int maxThread = 1,
+                                              bool return_char = false) {
   if (p > 1 || p < 0) {
     stop("Internal error p must be in [0, 1]");
   }
@@ -383,7 +384,7 @@ std::vector<char> do_lemire_char_par(int nn,
   }
 
   // Hugh: this is trivial performance
-  std::vector<char> out;
+  std::vector<unsigned char> out;
   out.reserve(n);
   std::fill(out.begin(), out.end(), 0);
 
@@ -405,9 +406,16 @@ std::vector<char> do_lemire_char_par(int nn,
     bytes[5] = static_cast<unsigned char>((ux1 >> 16) & 0xFF);
     bytes[6] = static_cast<unsigned char>((ux1 >> 8) & 0xFF);
     bytes[7] = static_cast<unsigned char>((ux1 & 0xFF));
+    if (return_char) {
 #pragma omp simd
-    for (int b = 0; b < 8; ++b) {
-      out[i - b] = (bytes[b] < threshold) ? 1 : 0;
+      for (int b = 0; b < 8; ++b) {
+        out[i - b] = bytes[b];
+      }
+    } else {
+#pragma omp simd
+      for (int b = 0; b < 8; ++b) {
+        out[i - b] = (bytes[b] < threshold) ? 1 : 0;
+      }
     }
   }
   S[1] += (S[1] < INT_MAX) ? 1 : INT_MIN;
@@ -418,7 +426,7 @@ std::vector<char> do_lemire_char_par(int nn,
 // [[Rcpp::export]]
 LogicalVector lemire_char(int N, double p, IntegerVector S, int return_early = 0,
                           int nThread = 1) {
-  std::vector<char> the_lemire_char = do_lemire_char_par(N, p, S, nThread);
+  std::vector<unsigned char> the_lemire_char = do_lemire_char_par(N, p, S, nThread, false);
 
   if (return_early) {
     LogicalVector out(1);
@@ -474,8 +482,8 @@ IntegerVector cf_sample(int n, int m, IntegerVector x, IntegerVector S) {
 int cf_mod_lemire(int n, double p, IntegerVector S, int m = 0, int nThread = 1) {
   int out = 0;
   if (m) {
-    std::vector<char> Srand1 = do_lemire_char_par(n, p, S, nThread);
-    std::vector<char> Srand2 = do_lemire_char_par(n, p, S, nThread);
+    std::vector<unsigned char> Srand1 = do_lemire_char_par(n, p, S, nThread, false);
+    std::vector<unsigned char> Srand2 = do_lemire_char_par(n, p, S, nThread, false);
     for (int i = 0; i < n; ++i) {
       if (Srand1[i] || Srand2[i]) {
         ++out;

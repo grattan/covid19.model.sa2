@@ -115,33 +115,7 @@ IntegerVector do_pminCppp(IntegerVector x, int a = 0, int nThread = 1) {
 
 
 
-// [[Rcpp::export]]
-List sa2_firsts_finals(IntegerVector SA2, int nsa2 = 2310) {
-  IntegerVector SA2_firsts = no_init(nsa2);
-  IntegerVector SA2_finals = no_init(nsa2);
-  int s = 0;
-  int N = SA2.length();
-  SA2_firsts[s] = 0;
-  SA2_finals[nsa2 - 1] = N - 1;
 
-  for (int i = 1; i < N; ++i) {
-    int d = SA2[i] - SA2[i - 1];
-    // if nonzero continue;
-    // if d == 1 great! just a regular increment
-    // if d == 2 then next SA2 doesn't appear so
-    // it both starts and stops here
-    while (d > 0 && ++s < nsa2) {
-      --d;
-      SA2_firsts[s] = i;
-      SA2_finals[s - 1] = i;
-    }
-  }
-  while (++s < nsa2) {
-    SA2_firsts[s] = N - 1;
-    SA2_finals[s - 1] = N - 1;
-  }
-  return List::create(SA2_firsts, SA2_finals);
-}
 
 bool yday2weekday(const int & yday) {
   int wday = wday_2020[((yday - 1) % 7)];

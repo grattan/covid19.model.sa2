@@ -128,7 +128,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
       !identical(InitialStatus, get0("_InitialStatus_", envir = dataEnv)) ||
       is.null(aus <- get0("aus_", envir = dataEnv)) ||
       is.null(nPlacesByDestType <- get0("nPlacesByDestType_", envir = dataEnv)) ||
-      is.null(FreqsByDestType <- get0("FreqsByDestType_", envir = dataEnv)) ||
+      # is.null(FreqsByDestType <- get0("FreqsByDestType_", envir = dataEnv)) ||
       is.null(.first_day <- get0(".first_day_", envir = dataEnv))) {
 
     # CRAN NOTE AVOIDANCE
@@ -263,9 +263,6 @@ simulate_sa2 <- function(days_to_simulate = 5,
     aus[demo_by_person, Age := i.age, on = "pid"]
     aus[demo_by_person, LabourForceStatus := i.lfsi, on = "pid"]
 
-    Resistance <- NULL
-    aus[, Resistance := rep_len(sample(1:1000, size = 13381L, replace = TRUE), .N)]
-
     nPlacesByDestType <-
       lapply(1:106, function(i) {
         if (i == 98L) {
@@ -275,28 +272,28 @@ simulate_sa2 <- function(days_to_simulate = 5,
           integer(0)
         }
       })
-
-    # Times per year each person visits the matching type
-    weekly <- rep_len(52L, nrow(aus))
-
-    FreqsByDestType <-
-      lapply(1:106, function(i) {
-        if (i == 15L) {
-          # cafes
-          # assume uniformly n/week
-          cafe <- 52L * (0:7)
-          return(dqrng::dqsample(cafe, size = 1e6, replace = TRUE))
-        }
-        if (i == 98L) {
-          ## Assume supermarket visits are beta distributed
-          rep_len(as.integer(360 * rbeta(1e6, 3, 1)), nrow(aus))
-        } else {
-          weekly
-        }
-      })
-
-    FreqsByDestType <-
-      lapply(FreqsByDestType, function(x) rep_len(as.integer(x), nrow(aus)))
+    #
+    # # Times per year each person visits the matching type
+    # weekly <- rep_len(52L, nrow(aus))
+    #
+    # FreqsByDestType <-
+    #   lapply(1:106, function(i) {
+    #     if (i == 15L) {
+    #       # cafes
+    #       # assume uniformly n/week
+    #       cafe <- 52L * (0:7)
+    #       return(dqrng::dqsample(cafe, size = 1e6, replace = TRUE))
+    #     }
+    #     if (i == 98L) {
+    #       ## Assume supermarket visits are beta distributed
+    #       rep_len(as.integer(360 * rbeta(1e6, 3, 1)), nrow(aus))
+    #     } else {
+    #       weekly
+    #     }
+    #   })
+    #
+    # FreqsByDestType <-
+    #   lapply(FreqsByDestType, function(x) rep_len(as.integer(x), nrow(aus)))
 
 
 
@@ -342,21 +339,20 @@ simulate_sa2 <- function(days_to_simulate = 5,
     # aus[, Incubation := dq_rnlorm(.N, m = EpiPars[["incubation_m"]], s = 0.44)]
     # aus[, Illness := dq_rnlorm(.N, m = EpiPars[["illness_m"]], s = 0.99)]
 
-    aus[, c("seqN", "HouseholdSize") := do_seqN_N(hid, pid)]
     if (isTRUE(use_dataEnv)) {
       assign("_by_state_", value = copy(by_state), envir = dataEnv)
       assign("_InitialStatus_", value = copy(InitialStatus), envir = dataEnv)
       assign("aus_", value = copy(aus), envir = dataEnv)
       assign("nPlacesByDestType_", value = nPlacesByDestType, envir = dataEnv)
-      assign("FreqsByDestType_", value = FreqsByDestType, envir = dataEnv)
+      # assign("FreqsByDestType_", value = FreqsByDestType, envir = dataEnv)
       assign(".first_day_", value = .first_day, envir = dataEnv)
     }
   }
 
 
 
-  copied_Status <- copy(.subset2(aus, "Status"))
-  copied_InfectedOn <- copy(.subset2(aus, "InfectedOn"))
+  copied_Status <- (.subset2(aus, "Status"))
+  copied_InfectedOn <- (.subset2(aus, "InfectedOn"))
   hh_ss("pre-C++")
 
   on_terminal <- identical(.Platform$GUI, "RTerm")
@@ -366,26 +362,21 @@ simulate_sa2 <- function(days_to_simulate = 5,
     with(aus,
          do_au_simulate(Status = copied_Status,
                         InfectedOn = copied_InfectedOn,
-                        State = state,
                         SA2 = sa2,
                         DZN = short_dzn,
                         wid = wid,
                         nColleagues = nColleagues,
                         hid = hid,
-                        seqN = seqN,
-                        HouseholdSize = HouseholdSize,
                         Age = Age,
                         School = short_school_id,
                         PlaceTypeBySA2 = integer(0),
                         LabourForceStatus = LabourForceStatus,
-                        Resistance = Resistance,
-                        SeedOriginal = .Random.seed,
+                        SeedOriginal = c(0L, .Random.seed),
                         Policy = Policy,
-                        nPlacesByDestType = nPlacesByDestType,
-                        FreqsByDestType = FreqsByDestType,
                         Epi = EpiPars,
                         nSupermarketsAvbl = nSupermarketsAvbl,
                         SupermarketTypical = SupermarketTypical,
+                        nPlacesByDestType = nPlacesByDestType,
                         minPlaceID_nPlacesByDestType = copy(minPlaceID_nPlacesByDestType),
                         yday_start = .first_day,
                         days_to_sim = days_to_simulate,

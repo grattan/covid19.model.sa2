@@ -36,8 +36,8 @@ test_that("a_household_rate", {
                         r_location = 2)
 
   aus <- read_sys("australia.fst")
-  aus[, c("seqN", "HouseholdSize") := do_seqN_N(hid, pid)]
   aus[, Status := 0L]
+  aus[, c("seqN", "HouseholdSize") := do_seqN_N(hid, pid)]
   aus[pid < 200e3L, Status := fifelse(seqN == 1L & HouseholdSize >= 2L & runif(.N) > 0.5, 1L, 0L)]
   aus[Status != 0L, InfectedOn := rep_len(98:100, .N)]
   aus[, Age := 42L]
@@ -59,37 +59,14 @@ test_that("a_household_rate", {
       }
     })
 
-  # Times per year each person visits the matching type
-  weekly <- rep_len(52L, nrow(aus))
 
-  FreqsByDestType <-
-    lapply(1:106, function(i) {
-      if (i == 15L) {
-        # cafes
-        # assume uniformly n/week
-        cafe <- 52L * (0:7)
-        return(dqrng::dqsample(cafe, size = 1e6, replace = TRUE))
-      }
-      if (i == 98L) {
-        ## Assume supermarket visits are beta distributed
-        rep_len(as.integer(360 * rbeta(1e6, 3, 1)), nrow(aus))
-      } else {
-        weekly
-      }
-    })
-
-  FreqsByDestType <-
-    lapply(FreqsByDestType, function(x) rep_len(as.integer(x), nrow(aus)))
 
   simulate_minimal <- function(epi, days_to_sim = 14L) {
     aus <- copy(aus)
     do_au_simulate(Status = aus$Status,
                    InfectedOn = aus$InfectedOn,
-                   State = aus$state,
                    SA2 = aus$sa2,
                    hid = aus$hid,
-                   seqN = aus$seqN,
-                   HouseholdSize = aus$HouseholdSize,
                    Age = aus$Age,
                    School = aus$School,
                    DZN = aus$DZN,
@@ -97,11 +74,10 @@ test_that("a_household_rate", {
                    nColleagues = aus$nColleagues,
                    PlaceTypeBySA2 = integer(0),
                    LabourForceStatus = aus$LabourForceStatus,
-                   Resistance = aus$Resistance,
                    Seed = integer(2048),
                    Policy = Policy,
                    nPlacesByDestType = nPlacesByDestType,
-                   FreqsByDestType = FreqsByDestType,
+                   # FreqsByDestType = FreqsByDestType,
                    Epi = epi,
                    nSupermarketsAvbl = integer(nrow(aus)),
                    SupermarketTypical = integer(nrow(aus)),

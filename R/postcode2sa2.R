@@ -14,8 +14,8 @@ postcode2sa2 <- function(postcode,
 
   if (length(postcode) > 1) {
     DT <- setDT(list(x = postcode))
-    out <- DT[, ans := postcode2sa2(.BY[[1]], the_mult = the_mult, n = .N, SA2_BY_POSTCODE), by = "x"][["ans"]]
-    return(out)
+    DT[, "ans" := postcode2sa2(.BY[[1]], the_mult = the_mult, n = .N, SA2_BY_POSTCODE), by = "x"]
+    return(.subset2(DT, "ans"))
   }
 
 
