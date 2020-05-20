@@ -27,25 +27,6 @@ test_that("lockdown triggers work", {
       }
     })
 
-  # Times per year each person visits the matching type
-  weekly <- rep_len(52L, nrow(aus))
-
-  FreqsByDestType <-
-    lapply(1:106, function(i) {
-      if (i == 15L) {
-        # cafes
-        # assume uniformly n/week
-        cafe <- 52L * (0:7)
-        return(rep_len(cafe, nrow(aus)))
-      }
-      if (i == 98L) {
-        ## Assume supermarket visits are beta distributed
-        rep_len(as.integer(360 * rbeta(1e6, 3, 1)), nrow(aus))
-      } else {
-        weekly
-      }
-    })
-
 
 
   INT_MAX <- .Machine$integer.max
@@ -88,6 +69,7 @@ test_that("lockdown triggers work", {
                 q_school = 0.25,
                 r_distribution = "dirac",
                 r_location = 1,
+                resistance_threshold = 1000L,
                 p_asympto = 0.5,
                 p_critical = 0,
                 p_death = 0)
@@ -100,11 +82,8 @@ test_that("lockdown triggers work", {
 
     do_au_simulate(Status = dollars(aus, Status),
                    InfectedOn = dollars(aus, InfectedOn),
-                   State = dollars(aus, state),
                    SA2 = dollars(aus, sa2),
                    hid = dollars(aus, hid),
-                   seqN = dollars(aus, seqN),
-                   HouseholdSize = dollars(aus, HouseholdSize),
                    Age = dollars(aus, Age),
                    School = dollars(aus, short_school_id),
                    DZN = dollars(aus, short_dzn),
@@ -112,14 +91,11 @@ test_that("lockdown triggers work", {
                    nColleagues = dollars(aus, nColleagues),
                    PlaceTypeBySA2 = integer(0),
                    LabourForceStatus = dollars(aus, LabourForceStatus),
-                   Resistance = integer(N),  # No resistance
-
                    # TODO: this should work with a 'fixed' seed (n.b. Seed[1] == 0 means no seed)
                    Seed = integer(2048),
 
                    Policy = Policy,
                    nPlacesByDestType = nPlacesByDestType,
-                   FreqsByDestType = FreqsByDestType,
                    Epi = Epi,
                    nSupermarketsAvbl = integer(nrow(aus)),
                    SupermarketTypical = integer(nrow(aus)),

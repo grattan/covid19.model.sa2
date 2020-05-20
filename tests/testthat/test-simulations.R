@@ -156,9 +156,11 @@ test_that("a_household_infections", {
   skip_if(is32bit())
   skip_if_not(identical(.Platform$r_arch, "x64"))
   library(data.table)
-  SH000 <- simulate_sa2(40, EpiPars = set_epipars(a_household_rate = 0.00), returner = 1)
-  SH005 <- simulate_sa2(40, EpiPars = set_epipars(a_household_rate = 0.05), returner = 1)
-  SH025 <- simulate_sa2(40, EpiPars = set_epipars(a_household_rate = 0.25), returner = 1)
+  # Policy to expose household effects
+  PolicyH <- set_policypars(do_contact_tracing = FALSE, workplaces_open = FALSE)
+  SH000 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.00), returner = 1)
+  SH005 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.05), returner = 1)
+  SH025 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.25), returner = 1)
   s000 <- SH000[Status == "Suscep"][["N"]]
   s005 <- SH005[Status == "Suscep"][["N"]]
   s025 <- SH025[Status == "Suscep"][["N"]]
