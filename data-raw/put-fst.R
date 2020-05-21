@@ -687,6 +687,12 @@ if (!requireNamespace("ASGS", quietly = TRUE)) {
 
   ASGS::SA2016_decoder[, .(SA2_MAIN16, SA2_5DIG16)] %>%
     write_fst("data-raw/SA2_MAIN16-vsSA2_5DIG16.fst")
+
+  SA2_2016_centroids <-
+    cbind(data.table(SA2 = ASGS::SA2_2016@data$SA2_MAIN16),
+          as.data.table(as.data.frame(rgeos::gCentroid(ASGS::SA2_2016, byid = TRUE)))) %>%
+    setnames(c("x", "y"), c("lon", "lat")) %>%
+    .[]
 }
 
 
