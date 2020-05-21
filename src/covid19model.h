@@ -36,6 +36,7 @@ const int PLACEID_ESTABLISHMENT = 33;
 const int PLACEID_POINT_OF_INTEREST = 78;
 const int PLACEID_STORE = 94;
 const int PLACES_HRS_OPEN = 8;
+const int CAFES_MIN_AGE = 12;
 
 
 
