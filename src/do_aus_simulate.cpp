@@ -39,68 +39,6 @@ int supermarket_weekend_hrs() {
 }
 
 
-// [[Rcpp::export(rng = false)]]
-int do_max_par_int(IntegerVector x, int nThread = 1) {
-  int N = x.length();
-  int out = x[0];
-#pragma omp parallel for num_threads(nThread) reduction(max:out)
-  for (int i = 0; i < N; ++i) {
-    out = out < x[i] ? x[i] : out;
-  }
-  return out;
-}
-
-// Just a way to get quasi-cauchy distributed nonnegative integer vector
-int rcauchy_int(double l, double s) {
-  double out = cauchyRand(l, s);
-  out = (out < -1 || out > 1000) ? 0 : out;
-  return out;
-}
-
-int rpois_int(int l) {
-  return Rcpp::rpois(1, l)[0];
-}
-
-int incubRand(double m, double s, int d) {
-  // 1: Poisson  2: lognormal  3: dirac
-  if (d == 1)
-    return poisRand(m);
-  if (d == 2)
-    return lnormRand(m2mu(m, s), s);
-  if (d == 3)
-    return m;
-
-  return m;
-}
-
-int illRand(double m, double s, int d) {
-  if (d == 1)
-    return poisRand(m);
-  if (d == 2)
-    return lnormRand(m2mu(m, s), s);
-  if (d == 3)
-    return m;
-  if (d == 4)
-    return cauchyRand0(m, s);
-
-  return m;
-}
-
-int r_Rand(double m, double s, int d, bool dper, int e, int per, int yday) {
-  if (dper)
-    return (yday % per) ? 0 : e;
-  if (d == 1)
-    return poisRand(m);
-  if (d == 2)
-    return lnormRand(m2mu(m, s), s);
-  if (d == 3)
-    return m;
-  if (d == 4)
-    return cauchyRand0(m, s);
-
-  return m;
-}
-
 int array3k(int x, int y, int z, int ny, int nz) {
   return x * (ny * nz) + y * (nz) + z;
 }
@@ -342,6 +280,8 @@ void contact_tracing(IntegerVector Status,
       TestedOn[i] = 0;
       continue;
     }
+    // otherwise we test whether the tests have been exceeded and
+    // then reset an excess number of people tested tested
     bool tests_exceeded = tests_performed[statei] > tests_avbl[statei];
     if (tests_exceeded &&
         TestedOn[i] &&
@@ -609,10 +549,6 @@ void infect_place(int place_id,
                   const std::vector<unsigned char> &Resistance,
                   unsigned char resistance1,
                   IntegerVector TodaysHz,
-                  double r_location,
-                  double r_scale,
-                  int r_d,
-                  bool do_dirac_every, int dirac_num, int dirac_per,
                   int max_persons_per_place,
                   IntegerVector TodaysK) {
 
@@ -873,10 +809,6 @@ void infect_dzn(IntegerVector Status,
                 const std::vector<unsigned char> &Wrand,
                 int workplaces_open,
                 int workplace_size_max,
-                double r_location,
-                double r_scale,
-                int r_d,
-                bool do_dirac_every, int dirac_num, int dirac_per,
                 IntegerVector TodaysK,
                 const std::vector<unsigned char> &Resistance,
                 int zero,
@@ -900,9 +832,6 @@ void infect_dzn(IntegerVector Status,
       Rcout << resistance1 << " ";
       Rcout << workplaces_open << " ";
       Rcout << workplace_size_max << " ";
-      Rcout << r_location << " ";
-      Rcout << r_scale << " ";
-      Rcout << r_d << " ";
       Rcout << "\n";
     }
 
@@ -962,7 +891,7 @@ void infect_dzn(IntegerVector Status,
     if (workplaces_open < 1000 && ((widi0 % 1000) > workplaces_open)) {
       continue;
     }
-    InfectionsByWorkplace[widi0] += 1;// r_Rand(r_location, r_scale, r_d);
+    InfectionsByWorkplace[widi0] += 1;
   }
 
   // reinfection
@@ -1073,10 +1002,6 @@ void infect_school(IntegerVector Status,
                    int lockdown_trigger_schools_any_critical_duration_of_lockdown,
                    const std::vector<int> &schoolsIndex,
                    const std::vector<unsigned char> &Erand,
-                   double r_location,
-                   double r_scale,
-                   const int &r_d,
-                   bool do_dirac_every, int dirac_num, int dirac_per,
                    IntegerVector Srand,
                    IntegerVector Seed,
                    double q_school_dbl,
@@ -1687,14 +1612,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 
   // attach epipars
-  // double incubation_m = Epi["incubation_mean"];
-  // double incubation_s = Epi["incubation_sigma"];
-  // double illness_m = Epi["illness_mean"];
-  // double illness_s = Epi["illness_sigma"];
-  double r_location = Epi["r_location"];
-  // double r_supermarket_location = Epi["r_supermarket_location"];
-  double r_work_location = Epi["r_work_location"];
-  double r_scale = Epi["r_scale"];
+
   int resistance1000 = Epi["resistance_threshold"];
 
 
@@ -1707,18 +1625,10 @@ List do_au_simulate(IntegerVector StatusOriginal,
   std::vector<unsigned char> ProgKilled = do_lemire_char_par(N, p_death, Seed, nThread, false);
 
 
-
-  // int incubation_d = Epi["incubation_distribution"];
-  // int illness_d = Epi["illness_distribution"];
-  int r_d = Epi["r_distribution"];
-
-  bool do_dirac_every = Epi.containsElementNamed("dirac_num");
-  int dirac_num = do_dirac_every ? Epi["dirac_num"] : 0;
-  int dirac_per = do_dirac_every ? Epi["dirac_per"] : 0;
-
-  int q_household = Epi["q_household"];
-  int q_school = Epi["q_school"];
-  double q_school_dbl = ((double)(q_school - INT_MIN) / 2) / (double)INT_MAX;
+  double q_workplace = Epi["q_workplace"];
+  double q_household = Epi["q_household"];
+  double q_school = Epi["q_school"];
+  double q_supermarket = Epi["q_supermarket"];
 
   IntegerVector Srand = do_lemire_rand_par(N, Seed, nThread);
 
@@ -2187,7 +2097,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 
     if (supermarkets_open) {
-      double q_supermarket = q_school_dbl;
       infect_supermarkets(Status,
                           InfectedOn,
                           shortSA2,
@@ -2230,10 +2139,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
                    Resistance,
                    resistance_threshold,
                    TodayHz,
-                   r_location,
-                   r_scale,
-                   r_d,
-                   do_dirac_every, dirac_num, dirac_per,
                    max_persons_per_cafe,
                    TodaysK);
     }
@@ -2282,11 +2187,9 @@ List do_au_simulate(IntegerVector StatusOriginal,
                     lockdown_trigger_schools_with_any_critical_duration_of_lockdown,
                     schoolsIndex,
                     Erand,
-                    r_location, r_scale, r_d,
-                    do_dirac_every, dirac_num, dirac_per,
                     Srand,
                     Seed,
-                    q_school_dbl,
+                    q_school,
                     only_Year12,
                     school_days_per_wk,
                     nThread,
@@ -2304,8 +2207,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
                  Wrand,
                  workplaces_open,
                  workplace_size_max,
-                 r_work_location, r_scale, r_d,
-                 do_dirac_every, dirac_num, dirac_per,
                  TodaysK, Resistance, 0, optionz, nThread);
       if (day < 2 && optionz) {
         Rcout << "infected_dzn = " << day << "\n";

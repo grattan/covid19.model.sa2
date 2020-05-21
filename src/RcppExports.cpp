@@ -92,17 +92,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// do_max_par_int
-int do_max_par_int(IntegerVector x, int nThread);
-RcppExport SEXP _covid19_model_sa2_do_max_par_int(SEXP xSEXP, SEXP nThreadSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
-    Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
-    rcpp_result_gen = Rcpp::wrap(do_max_par_int(x, nThread));
-    return rcpp_result_gen;
-END_RCPP
-}
 // test_array4k
 IntegerVector test_array4k(IntegerVector w, IntegerVector x, IntegerVector y, IntegerVector z, int nw, int nx, int ny, int nz);
 RcppExport SEXP _covid19_model_sa2_test_array4k(SEXP wSEXP, SEXP xSEXP, SEXP ySEXP, SEXP zSEXP, SEXP nwSEXP, SEXP nxSEXP, SEXP nySEXP, SEXP nzSEXP) {
@@ -573,7 +562,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_status_critic", (DL_FUNC) &_covid19_model_sa2_status_critic, 0},
     {"_covid19_model_sa2_supermarket_weekday_hrs", (DL_FUNC) &_covid19_model_sa2_supermarket_weekday_hrs, 0},
     {"_covid19_model_sa2_supermarket_weekend_hrs", (DL_FUNC) &_covid19_model_sa2_supermarket_weekend_hrs, 0},
-    {"_covid19_model_sa2_do_max_par_int", (DL_FUNC) &_covid19_model_sa2_do_max_par_int, 2},
     {"_covid19_model_sa2_test_array4k", (DL_FUNC) &_covid19_model_sa2_test_array4k, 8},
     {"_covid19_model_sa2_do_rep", (DL_FUNC) &_covid19_model_sa2_do_rep, 2},
     {"_covid19_model_sa2_do_au_simulate", (DL_FUNC) &_covid19_model_sa2_do_au_simulate, 30},

@@ -21,7 +21,7 @@ test_that("simulation works", {
                          PolicyPars = set_policypars(supermarkets_open = TRUE,
                                                      max_persons_per_supermarket = 25,
                                                      do_contact_tracing = FALSE),
-                         EpiPars = set_epipars(r_supermarket_location = 1/20,
+                         EpiPars = set_epipars(q_supermarket = 1/20,
                                                a_household_rate = 0,
                                                a_schools_rate = 0,
                                                a_workplace_rate = 0))[["nInfected"]]
@@ -30,7 +30,7 @@ test_that("simulation works", {
       S2 <- simulate_sa2(DAYS,
                          PolicyPars = set_policypars(supermarkets_open = TRUE,
                                                      max_persons_per_supermarket = 40),
-                         EpiPars = set_epipars(r_supermarket_location = 1/20,
+                         EpiPars = set_epipars(q_supermarket = 1/20,
                                                a_household_rate = 0,
                                                a_schools_rate = 0,
                                                a_workplace_rate = 0))[["nInfected"]]
@@ -39,7 +39,7 @@ test_that("simulation works", {
       S3 <- simulate_sa2(DAYS,
                          PolicyPars = set_policypars(supermarkets_open = TRUE,
                                                      max_persons_per_supermarket = 40),
-                         EpiPars = set_epipars(r_supermarket_location = 1/10,
+                         EpiPars = set_epipars(q_supermarket = 1/10,
                                                a_household_rate = 0,
                                                a_schools_rate = 0,
                                                a_workplace_rate = 0))[["nInfected"]]
@@ -52,7 +52,7 @@ test_that("simulation works", {
                                                      only_Year12 = TRUE,
                                                      school_days_per_wk = 3L,
                                                      max_persons_per_supermarket = 45),
-                         EpiPars = set_epipars(r_supermarket_location = 1/10,
+                         EpiPars = set_epipars(q_supermarket = 1/10,
                                                a_household_rate = 0,
                                                a_schools_rate = 0,
                                                a_workplace_rate = 0))[["nInfected"]]
@@ -70,7 +70,7 @@ test_that("simulation works", {
                                                      only_Year12 = FALSE,
                                                      school_days_per_wk = 3L,
                                                      max_persons_per_supermarket = 50),
-                         EpiPars = set_epipars(r_supermarket_location = 1/10,
+                         EpiPars = set_epipars(q_supermarket = 1/10,
                                                a_household_rate = 0,
                                                a_schools_rate = 0,
                                                a_workplace_rate = 0),
@@ -83,7 +83,7 @@ test_that("simulation works", {
                                                      only_Year12 = FALSE,
                                                      school_days_per_wk = 5L,
                                                      max_persons_per_supermarket = 60),
-                         EpiPars = set_epipars(r_supermarket_location = 1/10,
+                         EpiPars = set_epipars(q_supermarket = 1/10,
                                                a_household_rate = 0,
                                                a_schools_rate = 0,
                                                a_workplace_rate = 0))[["nInfected"]]
