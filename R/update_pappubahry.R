@@ -18,8 +18,11 @@ update_pappubahry <- function() {
   read_pappu <- function(nom) {
     stopifnot(!endsWith(nom, ".csv"))
     github_url <- paste0("https://github.com/pappubahry/AU_COVID19/raw/master/", nom, ".csv")
-    dataraw.csv <- paste0("data-raw/pappubahry/AU_COVID19/", nom, ".csv")
-    extdata.fst <- system.file("extdata", paste0(nom, "fst"), package = packageName())
+    dataraw.csv <- tempfile(fileext = ".csv")
+    extdata.fst <- system.file("extdata", paste0(nom, ".fst"), package = packageName())
+    if (!file.exists(extdata.fst)) {
+      stop("`extdata.fst = ", extdata.fst, "`.")
+    }
     fread(github_url) %T>%
       fwrite(provide.file(dataraw.csv)) %>%
       .[, Date := as.Date(Date)] %>%
