@@ -117,7 +117,6 @@ void contact_tracing(IntegerVector Status,
                      IntegerVector TodaysK,
                      const int days_before_test,
                      const int days_to_notify,
-                     IntegerVector Seed,
                      const int nThread,
                      IntegerVector TestedOn) {
 
@@ -309,7 +308,7 @@ void contact_tracing(IntegerVector Status,
   // for a power of two sized vector we can efficiently assign i to a cell
 
   // successfully contacts
-  std::vector<unsigned char> CRand = do_lemire_char_par(t_perf0_binary_ceil, ct_success, Seed, nThread, false);
+  std::vector<unsigned char> CRand = do_lemire_char_par(t_perf0_binary_ceil, ct_success, nThread, false);
 
 
 
@@ -431,7 +430,6 @@ void infect_supermarkets(IntegerVector Status,
                          IntegerVector TodaysHz,
                          const unsigned char resistance1,
                          const int max_persons_per_supermarket,
-                         IntegerVector Seed,
                          const bool verbose = false) {
   if (day < 0) {
     stop("Internal error(infect_supermarkets): day < 0");
@@ -504,7 +502,7 @@ void infect_supermarkets(IntegerVector Status,
   }
 
   bool check_max_persons = max_persons_per_supermarket < 255;
-  std::vector<unsigned char> SuperRand = do_lemire_char_par(N, q_supermarket, Seed, nThread, false);
+  std::vector<unsigned char> SuperRand = do_lemire_char_par(N, q_supermarket, nThread, false);
 
 #pragma omp parallel for num_threads(nThread)
   for (int sa2i = 0; sa2i < NSA2; ++sa2i) {
@@ -1014,11 +1012,10 @@ void infect_school(IntegerVector Status,
                    const std::vector<int> &schoolsIndex,
                    const std::vector<unsigned char> &Erand,
                    IntegerVector Srand,
-                   IntegerVector Seed,
                    double q_school_dbl,
                    bool only_Year12,
                    List school_days_per_wk,
-                   const int &nThread = 1,
+                   const int nThread,
                    int optionz = 0,
                    int zero = 0) {
   if (zero != -99) {
@@ -1258,7 +1255,7 @@ void infect_school(IntegerVector Status,
 
   int newInfectionsBySchool[NSCHOOLS] = {};
 
-  std::vector<unsigned char> Prand = do_lemire_char_par(NPUPILS, q_school_dbl, Seed, nThread, false);
+  std::vector<unsigned char> Prand = do_lemire_char_par(NPUPILS, q_school_dbl, nThread, false);
 
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread) reduction(+ :newInfectionsBySchool[:NSCHOOLS])
@@ -1460,7 +1457,15 @@ List do_au_simulate(IntegerVector StatusOriginal,
 #endif
 
   Progress p(days_to_sim, display_progress && console_width <= 1);
-  IntegerVector Seed = clone(SeedOriginal);
+  IntegerVector S = clone(SeedOriginal);
+  uint64_t s64 = 0;
+  for (int t = 0; t < 20; ++t) {
+    s64 += S[t];
+    s64 <<= 32;
+    s64 += S[t + 1];
+    s64 <<= 32;
+  }
+  update_seed(s64);
 
   IntegerVector Status = no_init(N);
   IntegerVector InfectedOn = no_init(N);
@@ -1613,9 +1618,9 @@ List do_au_simulate(IntegerVector StatusOriginal,
   const double p_critical = Epi["p_critical"];
   const double p_death = Epi["p_death"];
 
-  std::vector<unsigned char> ProgInSymp = do_lemire_char_par(N, 1 - p_asympto, Seed, nThread, false);
-  std::vector<unsigned char> ProgCritic = do_lemire_char_par(N, p_critical, Seed, nThread, false);
-  std::vector<unsigned char> ProgKilled = do_lemire_char_par(N, p_death, Seed, nThread, false);
+  std::vector<unsigned char> ProgInSymp = do_lemire_char_par(N, 1 - p_asympto, nThread, false);
+  std::vector<unsigned char> ProgCritic = do_lemire_char_par(N, p_critical, nThread, false);
+  std::vector<unsigned char> ProgKilled = do_lemire_char_par(N, p_death, nThread, false);
 
 
   const double q_workplace = Epi["q_workplace"];
@@ -1623,7 +1628,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
   const double q_school = Epi["q_school"];
   const double q_supermarket = Epi["q_supermarket"];
 
-  IntegerVector Srand = do_lemire_rand_par(N, Seed, nThread);
+  IntegerVector Srand = do_lemire_rand_par(N, nThread);
 
 
   std::vector<unsigned char> seqN(N, 0);
@@ -1676,12 +1681,12 @@ List do_au_simulate(IntegerVector StatusOriginal,
     }
   }
 
-  std::vector<unsigned char> Resistance = do_lemire_char_par(N, 1, Seed, nThread, true);
+  std::vector<unsigned char> Resistance = do_lemire_char_par(N, 1, nThread, true);
   int r255 = 255 * resistance1000;
   unsigned char resistance_threshold = static_cast<unsigned char>(r255 / 1000);
 
   // Hrand is the probability of infecting 100% of your household
-  std::vector<unsigned char> Hrand = do_lemire_char_par(n_households, a_household_rate, Seed, nThread, false);
+  std::vector<unsigned char> Hrand = do_lemire_char_par(n_households, a_household_rate, nThread, false);
 
 
 
@@ -1700,7 +1705,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
       }
     }
   }
-  std::vector<unsigned char> Erand = do_lemire_char_par(NSCHOOLS, a_schools_rate, Seed, nThread, false);
+  std::vector<unsigned char> Erand = do_lemire_char_par(NSCHOOLS, a_schools_rate, nThread, false);
 
 
   if (n_pupils != NPUPILS) {
@@ -1734,7 +1739,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
   ++n_workplaces; // 0-indexing
 
 
-  std::vector<unsigned char> Wrand = do_lemire_char_par(WID_SUPREMUM, a_workplace_rate, Seed, nThread, false);
+  std::vector<unsigned char> Wrand = do_lemire_char_par(WID_SUPREMUM, a_workplace_rate, nThread, false);
 
   // variables which will be updated on day = 0
   // int n_schools = -1;
@@ -1804,6 +1809,9 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 
   for (int day = 0; day < days_to_sim; ++day) {
+    update_seed(s64);
+    s64 <<= 32;
+    s64 += day;
 
     // Start with basic calendar information, needed for
     // opening hours, especially of schools
@@ -2144,7 +2152,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
                           TodayHz,
                           resistance_threshold,
                           max_persons_per_supermarket,
-                          Seed,
                           false);
     }
 
@@ -2189,6 +2196,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
           // Otherwise, we continue any extant lockdown
 
           if (is_monday && state_trigger_pulled[s] != 0) {
+            if (optionz) Rcout << "triggered";
               areSchoolsLockedDown[s] = true;
               int d_1 = lockdown_trigger_schools_with_infections_duration_of_lockdown;
               int d_2 = lockdown_trigger_schools_with_any_critical_duration_of_lockdown;
@@ -2216,7 +2224,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
                     schoolsIndex,
                     Erand,
                     Srand,
-                    Seed,
                     q_school,
                     only_Year12,
                     school_days_per_wk,
@@ -2283,7 +2290,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
                       TodaysK,
                       ct_days_before_test,
                       ct_days_until_result,
-                      Seed,
                       nThread,
                       TestedOn);
     }

@@ -12,7 +12,7 @@ test_that("lockdown triggers work", {
   aus[, Status := 0L]
   aus[, InfectedOn := NA_integer_]
   aus[sa2 == 116021310L & !is.na(short_school_id), # (large school-population sa2)
-      Status := fifelse(pid %in% head(pid, 1000L) == 0L, 1L, 0L)]
+      Status := fifelse((pid %% 13L) == 0L, 1L, 0L)]
 
   # Set the InfectedOn to day before start day
   aus[Status == 1L, InfectedOn := 134L]
@@ -66,17 +66,15 @@ test_that("lockdown triggers work", {
                 illness_mean = 1L,
                 a_household_rate = 0,
                 a_schools_rate = 1,
-                q_school = 0.25,
+                q_school = 0.005,
                 resistance_threshold = 1000L,
                 p_asympto = 0.5,
                 p_critical = 0,
                 p_death = 0)
 
-  simulate_minimal <- function(Policy, days_to_sim = 24) {
+  simulate_minimal <- function(Policy, SeedOriginal = rep(1L, 500L), days_to_sim = 24) {
     aus <- copy(aus)
     N <- nrow(aus)
-
-
 
     do_au_simulate(Status = dollars(aus, Status),
                    InfectedOn = dollars(aus, InfectedOn),
@@ -89,9 +87,7 @@ test_that("lockdown triggers work", {
                    nColleagues = dollars(aus, nColleagues),
                    PlaceTypeBySA2 = integer(0),
                    LabourForceStatus = dollars(aus, LabourForceStatus),
-                   # TODO: this should work with a 'fixed' seed (n.b. Seed[1] == 0 means no seed)
-                   Seed = integer(2048),
-
+                   SeedOriginal = SeedOriginal,
                    Policy = Policy,
                    nPlacesByDestType = nPlacesByDestType,
                    Epi = Epi,
@@ -104,13 +100,16 @@ test_that("lockdown triggers work", {
                    days_to_sim = days_to_sim,
                    N = N,
                    display_progress = getOption("covid19.showProgress", 0L),
-                   optionz = 0L,
+                   optionz = getOption("optionz", 0L),
                    nThread = getOption("covid19.model.sa2_nThread", 1L))
   }
 
-  S_w_lockdown <- simulate_minimal(Policy_w_lockdown)
-  S_no_lockdown <- simulate_minimal(Policy_no_lockdown)
-
+  withr::with_seed(40, {
+    S_w_lockdown <- simulate_minimal(Policy_w_lockdown)
+  })
+  withr::with_seed(40, {
+    S_no_lockdown <- simulate_minimal(Policy_no_lockdown)
+  })
   expect_equal(S_w_lockdown$nInfected[20], 0L)
   expect_gt(S_no_lockdown$nInfected[20], 10L)
 })

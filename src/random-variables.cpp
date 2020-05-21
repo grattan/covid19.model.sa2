@@ -154,13 +154,13 @@ int lehmer32() {
 
 int g_lehmer64_state = 353;
 
-std::vector<unsigned char> do_lemire_char_par(int n, double p, IntegerVector S, int nThread, bool return_char = false) {
+std::vector<unsigned char> do_lemire_char_par(int n, double p,  int nThread, bool return_char = false) {
   warning("do_lemire_char_par not available for 32-bit R.");
   std::vector<unsigned char> out = {};
   return out;
 }
 
-LogicalVector lemire_char(int n, double p, IntegerVector S, int nThread, int m) {
+LogicalVector lemire_char(int n, double p,  int nThread, int m) {
   warning("lemire_char not available for 32-bit R.");
   LogicalVector out(n);
   return out;
@@ -239,21 +239,18 @@ static inline void lehmer64_seeds(uint64_t seed) {
   }
 }
 
+void update_seed(uint64_t s64) {
+  lehmer64_seed(s64);
+  lehmer64_seeds(s64);
+  s64 += 1;
+}
+
 
 // [[Rcpp::export]]
-IntegerVector do_lemire_rand(int n, IntegerVector S) {
+IntegerVector do_lemire_rand(int n) {
   if (n <= 0 || (n % 2)) {
     stop("n must be positive and even.");
   }
-  if (S.length() < 5) {
-    stop("S must be longer than 5.");
-  }
-  uint64_t s64 = 0;
-  for (int i = 0; i < S.length(); ++i) {
-    s64 += S[i];
-    s64 <<= 32;
-  }
-  lehmer64_seed(s64);
 
   IntegerVector out = no_init(n);
   for (int i = 0; i < n; i += 2) {
@@ -263,28 +260,16 @@ IntegerVector do_lemire_rand(int n, IntegerVector S) {
     out[i] = ensign(ux0);
     out[i + 1] = ensign(ux1);
   }
-  S[1] += (S[1] < INT_MAX) ? 1 : INT_MIN;
 
   return out;
 }
 
 // [[Rcpp::export]]
 IntegerVector do_lemire_rand_par(int n,
-                                 IntegerVector S,
                                  int nThread = 1) {
 
   nThread = (nThread > 20) ? 20 : nThread;
-  if (S.length() < (2 * 21 + 2)) {
-    stop("S must have length > 110.");
-  }
-  for (int t = 0; t < 20; ++t) {
-    uint64_t s64 = 0;
-    s64 += S[t];
-    s64 <<= 32;
-    s64 += S[t + 1];
-    s64 <<= 32;
-    lehmer64_seeds(s64);
-  }
+
 
 
   IntegerVector out = no_init(n);
@@ -302,15 +287,11 @@ IntegerVector do_lemire_rand_par(int n,
     out[i + 1] = ensign(ux1);
   }
 
-  // update the seed
-  S[1] += (S[1] < INT_MAX) ? 1 : INT_MIN;
-
   return out;
 }
 
 std::vector<unsigned char> do_lemire_char_par(int nn,
                                               double p,
-                                              IntegerVector S,
                                               int maxThread = 1,
                                               bool return_char = false) {
   if (p > 1 || p < 0) {
@@ -339,17 +320,6 @@ std::vector<unsigned char> do_lemire_char_par(int nn,
   }
 
   int nThread = (maxThread > 20) ? 20 : maxThread;
-  if (S.length() < (2 * 21 + 2)) {
-    stop("S must have length > 110.");
-  }
-  for (int t = 0; t < 20; ++t) {
-    uint64_t s64 = 0;
-    s64 += S[t];
-    s64 <<= 32;
-    s64 += S[t + 1];
-    s64 <<= 32;
-    lehmer64_seeds(s64);
-  }
 
   // Hugh: this is trivial performance
   std::vector<unsigned char> out;
@@ -386,15 +356,14 @@ std::vector<unsigned char> do_lemire_char_par(int nn,
       }
     }
   }
-  S[1] += (S[1] < INT_MAX) ? 1 : INT_MIN;
 
   return out;
 }
 
 // [[Rcpp::export]]
-LogicalVector lemire_char(int N, double p, IntegerVector S, int return_early = 0,
+LogicalVector lemire_char(int N, double p, int return_early = 0,
                           int nThread = 1) {
-  std::vector<unsigned char> the_lemire_char = do_lemire_char_par(N, p, S, nThread, false);
+  std::vector<unsigned char> the_lemire_char = do_lemire_char_par(N, p, nThread, false);
 
   if (return_early) {
     LogicalVector out(1);
@@ -411,15 +380,15 @@ LogicalVector lemire_char(int N, double p, IntegerVector S, int return_early = 0
 #else
 
 
-IntegerVector do_lemire_rand(int n, IntegerVector S) {
+IntegerVector do_lemire_rand(int n) {
   warning("Unable.");
-  return S;
+  return IntegerVector(1);
 }
 
 
-IntegerVector do_lemire_rand_par(int n, IntegerVector S, int nThread = 1) {
+IntegerVector do_lemire_rand_par(int n,  int nThread = 1) {
   warning("Unable.");
-  return S;
+  return IntegerVector(1);
 }
 
 
@@ -427,7 +396,7 @@ IntegerVector do_lemire_rand_par(int n, IntegerVector S, int nThread = 1) {
 
 
 // [[Rcpp::export]]
-IntegerVector cf_sample(int n, int m, IntegerVector x, IntegerVector S) {
+IntegerVector cf_sample(int n, int m, IntegerVector S, IntegerVector x) {
   int slen = S.length();
   int N = x.length();
   if (N != slen) {
@@ -447,11 +416,11 @@ IntegerVector cf_sample(int n, int m, IntegerVector x, IntegerVector S) {
 }
 
 // [[Rcpp::export]]
-int cf_mod_lemire(int n, double p, IntegerVector S, int m = 0, int nThread = 1) {
+int cf_mod_lemire(int n, double p, int m = 0, int nThread = 1) {
   int out = 0;
   if (m) {
-    std::vector<unsigned char> Srand1 = do_lemire_char_par(n, p, S, nThread, false);
-    std::vector<unsigned char> Srand2 = do_lemire_char_par(n, p, S, nThread, false);
+    std::vector<unsigned char> Srand1 = do_lemire_char_par(n, p, nThread, false);
+    std::vector<unsigned char> Srand2 = do_lemire_char_par(n, p, nThread, false);
     for (int i = 0; i < n; ++i) {
       if (Srand1[i] || Srand2[i]) {
         ++out;

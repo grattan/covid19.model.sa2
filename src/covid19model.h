@@ -748,9 +748,10 @@ IntegerVector do_lag_int(IntegerVector s, int nThread);
 IntegerVector modulo(IntegerVector x, int m, int d, int nThread);
 IntegerVector prlnorm_int(int n, double a, double b, int nThread);
 IntegerVector RCauchy(IntegerVector U, double location, double scale, int nThread);
-IntegerVector do_lemire_rand_par(int n, IntegerVector S, int nThread);
+IntegerVector do_lemire_rand_par(int n, int nThread);
+void update_seed(uint64_t s64);
 int lehmer32();
-std::vector<unsigned char> do_lemire_char_par(int n, double p, IntegerVector S, int nThread, bool return_char);
+std::vector<unsigned char> do_lemire_char_par(int n, double p, int nThread, bool return_char);
 
 IntegerVector get_nColleagues(int nr, int N,
                               IntegerVector LabourForceStatus,

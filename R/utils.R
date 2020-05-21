@@ -57,4 +57,8 @@ which_last <- function(x) {
   return(0L)
 }
 
+rep_each <- function(x, len) {
+  rep(x, each = len / length(x), length.out = len)
+}
+
 
