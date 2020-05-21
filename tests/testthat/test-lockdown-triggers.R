@@ -97,6 +97,8 @@ test_that("lockdown triggers work", {
                    Policy = Policy,
                    nPlacesByDestType = nPlacesByDestType,
                    Epi = Epi,
+                   Incubation = rep(14L, nrow(aus)),
+                   Illness = rep(1L, nrow(aus)),
                    nSupermarketsAvbl = integer(nrow(aus)),
                    SupermarketTypical = integer(nrow(aus)),
                    minPlaceID_nPlacesByDestType = minPlaceID_nPlacesByDestType,

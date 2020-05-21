@@ -359,10 +359,10 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
   hh_ss("pre-Incubation")
   Incubation <-
-    with(Epi, {
+    with(EpiPars, {
       m <- incubation_mean
       s <- incubation_sigma
-      switch(distrs()[.subset2(Epi, "incubation_distribution")],
+      switch(distrs()[incubation_distribution],
              "pois" = rep_len(rpois(131059, m), nrow(aus)),
              "lnorm" = rep_len(as.integer(rlnorm(131059, m, s), nrow(aus))),
              "dirac" = rep_len(as.integer(m, s), nrow(aus)),
@@ -375,10 +375,10 @@ simulate_sa2 <- function(days_to_simulate = 5,
     })
 
   Illness <-
-    with(Epi, {
+    with(EpiPars, {
       m <- illness_mean
       s <- illness_sigma
-      switch(distrs()[.subset2(Epi, "illness_distribution")],
+      switch(distrs()[illness_distribution],
              "pois" = rep_len(rpois(131063, m), nrow(aus)),
              "lnorm" = rep_len(as.integer(rlnorm(131063, m, s), nrow(aus))),
              "dirac" = rep_len(as.integer(m, s), nrow(aus)),

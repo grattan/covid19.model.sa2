@@ -79,6 +79,8 @@ test_that("a_household_rate", {
                    nPlacesByDestType = nPlacesByDestType,
                    # FreqsByDestType = FreqsByDestType,
                    Epi = epi,
+                   Incubation = rep(4L, nrow(aus)),
+                   Illness = rep(4L, nrow(aus)),
                    nSupermarketsAvbl = integer(nrow(aus)),
                    SupermarketTypical = integer(nrow(aus)),
                    minPlaceID_nPlacesByDestType = minPlaceID_nPlacesByDestType,
