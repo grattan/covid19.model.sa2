@@ -14,6 +14,7 @@
 #' @importFrom glue glue
 #' @importFrom hutils coalesce
 #' @importFrom hutils weight2rows
+#' @importFrom hutils XOR
 #' @importFrom hutilscpp is_constant
 #' @importFrom hutilscpp which_first
 #' @importFrom fastmatch fmatch
