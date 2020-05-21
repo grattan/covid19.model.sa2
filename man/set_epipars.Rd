@@ -28,12 +28,7 @@ set_epipars(
   q_household = 0.05,
   q_school = 1/3000,
   q_school_grade = 1/500,
-  r_distribution = c("cauchy", "lnorm", "pois", "dirac"),
-  r_location = 2/5,
-  r_scale = 1/5,
-  r_supermarket_location = r_location,
-  r_supermarket_scale = r_scale,
-  r_work_location = r_location,
+  q_supermarket = 1/500,
   resistance_threshold = 400L,
   p_asympto = 0.48,
   p_critical = 0.02,
@@ -63,24 +58,6 @@ schools in which tranmission between students is possible.}
 \item{q_household, q_school, q_school_grade, q_workplace}{Daily transmission probability among household members / students of the same school / students of the same school and same same
 grade / workers of the same workplace.}
 
-\item{r_distribution}{The distribution of the number of infections from each
-infected person, one of `"cauchy"`, `"lnorm"`, `"pois"`, or `"dirac"`.}
-
-\item{r_location, r_scale}{Parameters for \code{r_distribution}. The number of
-infections \strong{per day}.
-
-If \code{r_distribution = "dirac"} there is no distribution;
-the infection will be deterministic. If an integer is provided, all infectious
-persons infect the same number of people. Can also be provided in the form
-\code{a/b} where \code{a} and {b} are whole numbers, in which case each
-infectious person will infect \code{a} individuals every \code{b} days
-(precisely, not on average).}
-
-\item{r_supermarket_location, r_supermarket_scale}{Variables particular
-for supermarket.}
-
-\item{r_work_location}{Parameters for work infection distribution.}
-
 \item{resistance_threshold}{An integer in \code{[0, 1000]}, the resistance
 required to not be infected. A value of 0
 means no-one will be infected; a value of 1000 means everyone will.}
@@ -93,6 +70,8 @@ are asymptomatic.}
 
 \item{p_death}{A number in \code{[0, 1]}, the proportion of
 \strong{critical cases} that die.}
+
+\item{r_work_location}{Parameters for work infection distribution.}
 }
 \value{
 A list of the components, plus an entry \code{CHECKED} having the
