@@ -60,10 +60,6 @@ supermarket_weekend_hrs <- function() {
     .Call(`_covid19_model_sa2_supermarket_weekend_hrs`)
 }
 
-do_max_par_int <- function(x, nThread = 1L) {
-    .Call(`_covid19_model_sa2_do_max_par_int`, x, nThread)
-}
-
 test_array4k <- function(w, x, y, z, nw, nx, ny, nz) {
     .Call(`_covid19_model_sa2_test_array4k`, w, x, y, z, nw, nx, ny, nz)
 }

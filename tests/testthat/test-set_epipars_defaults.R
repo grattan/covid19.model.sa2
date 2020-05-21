@@ -5,8 +5,7 @@ test_that("set_epipars works", {
                     "incubation_distribution",
                     "incubation_mean", "incubation_sigma",
                     "p_asympto", "p_critical",
-                    "p_death", "r_distribution", "r_location",
-                    "r_scale") %in% names(ans)))
+                    "p_death") %in% names(ans)))
 
   ans1 <- set_epipars(p_asympto = 0.5)
   expect_equal(length(ans1), length(ans))

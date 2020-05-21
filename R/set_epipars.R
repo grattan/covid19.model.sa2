@@ -27,23 +27,6 @@
 #' @param q_household,q_school,q_school_grade,q_workplace Daily transmission probability among household members / students of the same school / students of the same school and same same
 #' grade / workers of the same workplace.
 #'
-#' @param r_distribution The distribution of the number of infections from each
-#' infected person, one of `"cauchy"`, `"lnorm"`, `"pois"`, or `"dirac"`.
-#'
-#' @param r_location,r_scale Parameters for \code{r_distribution}. The number of
-#' infections \strong{per day}.
-#'
-#' If \code{r_distribution = "dirac"} there is no distribution;
-#' the infection will be deterministic. If an integer is provided, all infectious
-#' persons infect the same number of people. Can also be provided in the form
-#' \code{a/b} where \code{a} and {b} are whole numbers, in which case each
-#' infectious person will infect \code{a} individuals every \code{b} days
-#' (precisely, not on average).
-#'
-#'
-#' @param r_supermarket_location,r_supermarket_scale Variables particular
-#' for supermarket.
-#'
 #' @param resistance_threshold An integer in \code{[0, 1000]}, the resistance
 #' required to not be infected. A value of 0
 #' means no-one will be infected; a value of 1000 means everyone will.
@@ -87,12 +70,7 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac", "c
                         q_household = 0.05,
                         q_school = 1/3000,
                         q_school_grade = 1/500,
-                        r_distribution = c("cauchy", "lnorm", "pois", "dirac"),
-                        r_location = 2/5,
-                        r_scale = 1/5,
-                        r_supermarket_location = r_location,
-                        r_supermarket_scale = r_scale,
-                        r_work_location = r_location,
+                        q_supermarket = 1/500,
                         resistance_threshold = 400L,
                         p_asympto = 0.48,
                         p_critical = 0.02,
@@ -131,36 +109,8 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac", "c
   checkmate::assert_number(q_household, lower = 0, upper = 1)
   checkmate::assert_number(q_school, lower = 0, upper = 1)
   checkmate::assert_number(q_school_grade, lower = 0, upper = 1)
-  q_household <- percentage_to_int32(q_household)
-  q_school <- percentage_to_int32(q_school)
-  q_school_grade <- percentage_to_int32(q_school_grade)
+  checkmate::assert_number(q_supermarket, lower = 0, upper = 1)
 
-  q_household <- checkmate::assert_int(q_household, coerce = TRUE)
-  q_school <- checkmate::assert_int(q_school, coerce = TRUE)
-  q_school_grade <- checkmate::assert_int(q_school_grade, coerce = TRUE)
-
-
-  r_distribution <- match.arg(r_distribution)
-  if (r_distribution == "dirac") {
-    if (is.double(r_location) &&
-        is.call(substitute(r_location)) &&
-        length(substitute(r_location)) == 3L &&
-        as.character(substitute(r_location))[[1]] == "/") {
-      # e.g. 1/5
-      dirac_num <- eval(substitute(r_location)[[2]])
-      dirac_per <- eval(substitute(r_location)[[3]])
-      checkmate::assert_int(dirac_num, lower = 1)
-      checkmate::assert_int(dirac_per, lower = 1)
-    } else {
-      # integerish
-      checkmate::assert_int(r_location, lower = 1)
-      checkmate::assert_int(r_supermarket_location, lower = 1)
-    }
-  } else {
-    checkmate::assert_number(r_location, finite = TRUE, lower = 0)
-    checkmate::assert_number(r_supermarket_location, finite = TRUE, lower = 0)
-    checkmate::assert_number(r_scale, finite = TRUE, lower = 0)
-  }
 
   checkmate::assert_number(p_asympto, finite = TRUE, lower = 0, upper = 1)
   checkmate::assert_number(p_critical, finite = TRUE, lower = 0, upper = 1)
@@ -169,7 +119,6 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac", "c
   # Convert to int for convenience
   incubation_distribution <- match_distr(incubation_distribution)
   illness_distribution <- match_distr(illness_distribution)
-  r_distribution <- match_distr(r_distribution)
 
   checkmate::assert_number(resistance_threshold,
                            lower = 0,
