@@ -267,9 +267,16 @@ simulate_sa2 <- function(days_to_simulate = 5,
                                          size = .N,
                                          w = N_by_Duration$N)]
 
+
     Age <- i.age <- LabourForceStatus <- lfsi <- i.lfsi <- NULL
-    aus[demo_by_person, Age := i.age, on = "pid"]
-    aus[demo_by_person, LabourForceStatus := i.lfsi, on = "pid"]
+    if (identical(aus$pid, demo_by_person$pid)) {
+      # save a couple a seconds
+      set(aus, j = "Age", value = .subset2(demo_by_person, "age"))
+      set(aus, j = "LabourForceStatus", value = .subset2(demo_by_person, "lfsi"))
+    } else {
+      aus[demo_by_person, Age := i.age, on = "pid"]
+      aus[demo_by_person, LabourForceStatus := i.lfsi, on = "pid"]
+    }
 
     nPlacesByDestType <-
       lapply(1:106, function(i) {
