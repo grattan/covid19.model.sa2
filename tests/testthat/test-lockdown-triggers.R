@@ -99,6 +99,7 @@ test_that("lockdown triggers work", {
                    Epi = Epi,
                    nSupermarketsAvbl = integer(nrow(aus)),
                    SupermarketTypical = integer(nrow(aus)),
+                   SupermarketFreq = rep(360L, nrow(aus)),
                    minPlaceID_nPlacesByDestType = minPlaceID_nPlacesByDestType,
                    yday_start = 135L,  # a Thursday (one day of pre-trigger school)
                    days_to_sim = days_to_sim,

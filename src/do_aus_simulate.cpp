@@ -5,6 +5,7 @@ using namespace Rcpp;
 
 #define N_SUPERMARKETS 7487
 
+
 // [[Rcpp::export(rng = false)]]
 int status_killed() {
   return STATUS_KILLED;
@@ -145,13 +146,13 @@ inline bool isolatable(const int & statusi) {
 }
 
 
-void contact_tracing(std::vector<int> Status,
-                     std::vector<int> InfectedOn,
+void contact_tracing(IntegerVector Status,
+                     IntegerVector InfectedOn,
                      IntegerVector Age,
                      int day,
                      int yday,
-                     std::vector<unsigned char> seqN,
-                     std::vector<unsigned char> HouseholdSize,
+                     const std::vector<unsigned char> & seqN,
+                     const std::vector<unsigned char> & HouseholdSize,
                      IntegerVector TestsAvbl,
                      bool by_state,
                      IntegerVector SA2,
@@ -457,8 +458,8 @@ void contact_tracing(std::vector<int> Status,
 //' the likelihood of both critical and active cases among the elderly.
 //' @noRd
 
-void infect_supermarkets(std::vector<int> Status,
-                         std::vector<int> InfectedOn,
+void infect_supermarkets(IntegerVector Status,
+                         IntegerVector InfectedOn,
                          IntegerVector shortSA2,
                          IntegerVector SA2_starts,
                          IntegerVector SA2_finals,
@@ -473,6 +474,7 @@ void infect_supermarkets(std::vector<int> Status,
                          int yday,
                          int N,
                          IntegerVector SupermarketTypical,
+                         IntegerVector SupermarketFreq,
                          double q_supermarket,
                          IntegerVector TodaysHz,
                          unsigned char resistance1,
@@ -516,16 +518,7 @@ void infect_supermarkets(std::vector<int> Status,
 
   const int hrs_open = (wday < 6) ? SUPERMARKET_WEEKDAY_HRS : SUPERMARKET_WEEKEND_HRS;
 
-  // beta distribution (can't use R::rbeta inside omp)
-  const int nFreqs = 1024;
-  std::vector<int> SupermarketFreq;
-  SupermarketFreq.reserve(nFreqs);
-  for (int i = 0; i < nFreqs; ++i) {
-    double o = R::rbeta(3, 1);
-    o *= 360;
-    int oi = (int)(o);
-    SupermarketFreq.push_back(oi);
-  }
+
 
 
 
@@ -538,7 +531,8 @@ void infect_supermarkets(std::vector<int> Status,
 #pragma omp parallel for num_threads(nThread) reduction(|| : i_supermarkets[:NSA2][:MAXSUPERMARKETSBYSA2][:SUPERMARKET_WEEKDAY_HRS])
 #endif
   for (int i = 0; i < N; ++i) {
-    if (Status[i] != STATUS_NOSYMP || TodaysHz[(i * 11 + yday) % NTODAY] > SupermarketFreq[i % nFreqs]) {
+    int statusi = Status[i];
+    if ((statusi & 15) != STATUS_NOSYMP || TodaysHz[(i * 11 + yday) % NTODAY] > SupermarketFreq[i]) {
       continue;
     }
     int sa2i = shortSA2[i];
@@ -562,7 +556,7 @@ void infect_supermarkets(std::vector<int> Status,
       if (!i_supermarkets[sa2i][supermarketi][hr]) {
         continue;
       }
-      if (Status[i] || !nSupermarketsAvbl[i] || TodaysHz[(i * 11 + yday) % NTODAY] > SupermarketFreq[i % nFreqs]) {
+      if (Status[i] || !nSupermarketsAvbl[i] || TodaysHz[(i * 11 + yday) % NTODAY] > SupermarketFreq[i]) {
         continue;
       }
 
@@ -590,8 +584,8 @@ void infect_supermarkets(std::vector<int> Status,
 }
 
 void infect_place(int place_id,
-                  std::vector<int> Status,
-                  std::vector<int> InfectedOn,
+                  IntegerVector Status,
+                  IntegerVector InfectedOn,
                   IntegerVector shortSA2,
                   IntegerVector SA2_firsts,
                   IntegerVector SA2_finals,
@@ -824,8 +818,8 @@ IntegerVector do_rep(IntegerVector r, int nThread = 1) {
 
 
 
-void infect_dzn(std::vector<int> Status,
-                std::vector<int> InfectedOn,
+void infect_dzn(IntegerVector Status,
+                IntegerVector InfectedOn,
                 IntegerVector DZN,
                 IntegerVector wid,
                 int n_workplaces,
@@ -1018,8 +1012,8 @@ bool during_school_term(const int & state, const int & yday) {
 }
 
 
-void infect_school(std::vector<int> Status,
-                   std::vector<int> InfectedOn,
+void infect_school(IntegerVector Status,
+                   IntegerVector InfectedOn,
                    IntegerVector School,
                    IntegerVector Age,
                    IntegerVector AttendsWday,
@@ -1349,8 +1343,8 @@ void infect_school(std::vector<int> Status,
 }
 
 
-void infect_household(std::vector<int> Status,
-                      std::vector<int> InfectedOn,
+void infect_household(IntegerVector Status,
+                      IntegerVector InfectedOn,
                       IntegerVector shortSA2,
                       IntegerVector hid,
                       const std::vector<unsigned char> &HouseholdSize,
@@ -1470,6 +1464,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
                     List Epi, /* Epidemiological parameters */
                     IntegerVector nSupermarketsAvbl,
                     IntegerVector SupermarketTypical,
+                    IntegerVector SupermarketFreq,
                     List minPlaceID_nPlacesByDestType,
                     int yday_start,
                     int days_to_sim,
@@ -1491,31 +1486,10 @@ List do_au_simulate(IntegerVector StatusOriginal,
   Progress p(days_to_sim, display_progress && console_width <= 1);
   IntegerVector Seed = clone(SeedOriginal);
 
+  IntegerVector Status = clone(StatusOriginal);
+  IntegerVector InfectedOn = clone(InfectedOnOriginal);
 
-  std::vector<int> Status;
-  Status.reserve(N);
-  std::fill(Status.begin(), Status.end(), 0);
 
-  IntegerVector StatusOriginalClone = clone(StatusOriginal);
-
-#pragma omp parallel for simd num_threads(nThread)
-  for (int i = 0; i < N; ++i) {
-    int statusi = StatusOriginalClone[i];
-    Status[i] = statusi;
-
-  }
-
-  std::vector<int> InfectedOn;
-  InfectedOn.reserve(N);
-  std::fill(InfectedOn.begin(), InfectedOn.end(), 0);
-
-  IntegerVector InfectedOnOriginalClone = clone(InfectedOnOriginal);
-
-#pragma omp parallel for simd num_threads(nThread)
-  for (int i = 0; i < N; ++i) {
-    int infecti = InfectedOnOriginalClone[i];
-    InfectedOn[i] = infecti;
-  }
 
 
   if (nPlacesByDestType.length() <= 98) {
@@ -1524,7 +1498,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
   IntegerVector nSupermarketsBySA2 = nPlacesByDestType[97];
   // IntegerVector SupermarketFreq = FreqsByDestType[97]; // Type_by_TypeInt.fst
-
 
   if (N != nSupermarketsAvbl.length()) {
     stop("Internal error: nSupermarketsAvbl.length mismatch");
@@ -2060,9 +2033,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
       IntegerVector StatusInt = wrap(Status);
       Statuses.push_back(clone(StatusInt));
     }
-    if (day <= 2) {
-      Rcout <<  "_A_";
-    }
     if (optionz == 3) {
       continue;
     }
@@ -2093,9 +2063,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
           Status[i] += ISOLATED_PLUS;
         }
       }
-    }
-    if (day <= 2) {
-      Rcout <<  "_B_";
     }
 
     int n_new_cases = 0;
@@ -2148,9 +2115,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
         break;
       }
     }
-    if (day <= 2) {
-      Rcout <<  "_C_";
-    }
 
     for (int k = 0; k < n_new_cases; ++k) {
       int i = newCaseIndices[k];
@@ -2158,10 +2122,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
       int illness = IllnessToday[k];
       Status[i] += (incubation << 7);
       Status[i] += (illness << 15);
-    }
-
-    if (day <= 2) {
-      Rcout <<  "_D_";
     }
 
 
@@ -2233,9 +2193,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
         }
       }
     }
-    if (day <= 2) {
-      Rcout <<  "_E_";
-    }
+
 
     // This function actually performs the interactions and infections
 
@@ -2258,16 +2216,13 @@ List do_au_simulate(IntegerVector StatusOriginal,
                           yday,
                           N,
                           SupermarketTypical,
+                          SupermarketFreq,
                           q_supermarket,
                           TodayHz,
                           resistance_threshold,
                           max_persons_per_supermarket,
                           Seed,
                           false);
-    }
-
-    if (day <= 2) {
-      Rcout <<  "_F_";
     }
 
     // infect cafes
@@ -2293,10 +2248,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
                    do_dirac_every, dirac_num, dirac_per,
                    max_persons_per_cafe,
                    TodaysK);
-    }
-
-    if (day <= 2) {
-      Rcout <<  "_G_";
     }
 
 

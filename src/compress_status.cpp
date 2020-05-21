@@ -2,11 +2,11 @@
 #include <Rcpp.h>
 using namespace Rcpp;
 
-bool is_isolated(std::vector<int> Status, int i) {
+bool is_isolated(IntegerVector Status, int i) {
   return Status[i] >> 5;
 }
 
-void isolate_status(std::vector<int> Status, int i) {
+void isolate_status(IntegerVector Status, int i) {
   if (!is_isolated(Status, i) && Status[i] >= 0) {
     Status[i] += 32;
   }
