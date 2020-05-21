@@ -141,7 +141,9 @@ IntegerVector test_array4k(IntegerVector w, IntegerVector x, IntegerVector y, In
 inline bool isolatable(const int & statusi) {
   // needs assertion about 0 <= status < ISOLATED PLUS
   // from optimizing_cpp.pdf
-  return (unsigned int)statusi < (unsigned int)ISOLATED_PLUS;
+  const int MIN_ISOL = STATUS_KILLED + ISOLATED_PLUS;
+
+  return (unsigned int)statusi < (unsigned int)MIN_ISOL;
 }
 
 
@@ -408,7 +410,7 @@ void contact_tracing(IntegerVector Status,
     if (notified_positive_today && CRand[i & t_perf0_binary_ceilm1]) {
       for (int j = 0; j < nh; ++j) {
         int statusij = Status[i + j];
-        if ((unsigned int)statusij < (unsigned int)ISOLATED_PLUS) {
+        if (isolatable(statusij)) {
           Status[i + j] += ISOLATED_PLUS;
         }
       }
@@ -595,6 +597,7 @@ void infect_place(int place_id,
                   IntegerVector shortSA2,
                   IntegerVector SA2_firsts,
                   IntegerVector SA2_finals,
+                  IntegerVector Age,
                   int nThread,
                   List minPlaceID_nPlacesByDestType,
                   int day,
@@ -660,12 +663,27 @@ void infect_place(int place_id,
       stop("Internal error(infect_place): NTODAY != TodaysK.length().");
     }
 
+    if (Age.length() != N) {
+      stop("Internal error(infect_place): Age.length() != N.");
+    }
+
+    int observed_min_age = 100;
+    int observed_max_age = 0;
+#pragma omp parallel for num_threads(nThread) reduction(min : observed_min_age) reduction(max : observed_max_age)
+    for (int i = 0; i < N; ++i) {
+      observed_min_age = (Age[i] < observed_min_age) ? Age[i] : observed_min_age;
+      observed_max_age = (Age[i] > observed_max_age) ? Age[i] : observed_max_age;
+    }
+    if (observed_min_age != 0 || observed_max_age != 100) {
+      stop("Internal error(infect_place): Age was not in 0:100.");
+    }
+
 
   }
 
   int irandd = (int)(R::runif(0, 2147483646 - N)); // irandd + i must always be < INT_MAX
 
-  int FreqCafe[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+  // int FreqCafe[8] = {0, 1, 2, 3, 4, 5, 6, 7}; // just use mod 8
 
 
   // # Infect
@@ -709,7 +727,13 @@ void infect_place(int place_id,
       if (Status[i] != STATUS_INSYMP && Status[i] != STATUS_NOSYMP) {
         continue;
       }
-      int placefreqi = (place_id == 14) ? FreqCafe[i % 8] : 1;
+      int placefreqi = 1;
+      if (place_id == 14) {
+        if (Age[i] < 12) {
+          continue;
+        }
+        placefreqi = i % 8;
+      }
       placefreqi *= 52;
       int randi = TodaysHz[(i + irandd) % NTODAY];
       if (randi > placefreqi) {
@@ -720,8 +744,8 @@ void infect_place(int place_id,
       int placei = min_place_id + (i % n_places_this_sa2);
       int hri = i % PLACES_HRS_OPEN;
       // occasionally (1/8 times) go at a different time
-      if (randi < 128) {
-        hri = randi % PLACES_HRS_OPEN;
+      if (irandd < 268435456) {
+        hri = irandd % PLACES_HRS_OPEN;
       }
 
       unsigned char infected_visits = i_places[placei][hri];
@@ -769,8 +793,15 @@ void infect_place(int place_id,
       if (!Status[i]) {
         continue;
       }
-      int placefreqi = (place_id == 14) ? FreqCafe[i % 8] : 1;
+      int placefreqi = 1;
+      if (place_id == 14) {
+        if (Age[i] < CAFES_MIN_AGE) {
+          continue;
+        }
+        placefreqi = i % 8;
+      }
       placefreqi *= 52;
+
       int randi = TodaysK[(i + irandd) % NTODAY];
       if (randi > placefreqi) {
         continue;
@@ -2187,6 +2218,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
                    shortSA2,
                    SA2_firsts,
                    SA2_finals,
+                   Age,
                    nThread,
                    minPlaceID_nPlacesByDestType,
                    day,
