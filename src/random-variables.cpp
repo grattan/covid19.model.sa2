@@ -248,19 +248,13 @@ IntegerVector do_lemire_rand(int n, IntegerVector S) {
   if (S.length() < 5) {
     stop("S must be longer than 5.");
   }
-  if (S[0]) {
-    union {
-    struct {
-      int v1;
-      int v2;
-    } __attribute__((packed));
-    uint64_t ui64;
-  } t64;
-
-    t64.v1 = S[5];
-    t64.v2 = S[6];
-    lehmer64_seed(t64.ui64);
+  uint64_t s64 = 0;
+  for (int i = 0; i < S.length(); ++i) {
+    s64 += S[i];
+    s64 <<= 32;
   }
+  lehmer64_seed(s64);
+
   IntegerVector out = no_init(n);
   for (int i = 0; i < n; i += 2) {
     uint64_t L = lehmer64();
@@ -283,22 +277,15 @@ IntegerVector do_lemire_rand_par(int n,
   if (S.length() < (2 * 21 + 2)) {
     stop("S must have length > 110.");
   }
-
-  if (S[0]) {
-    for (int t = 0; t < 20; ++t) {
-      union {
-      struct {
-        int v1;
-        int v2;
-      } __attribute__((packed));
-      uint64_t ui64;
-    } t64;
-
-      t64.v1 = S[2 * t + 1] ^ 7;
-      t64.v2 = S[2 * t + 2] ^ 7;
-      lehmer64_seeds(t64.ui64);
-    }
+  for (int t = 0; t < 20; ++t) {
+    uint64_t s64 = 0;
+    s64 += S[t];
+    s64 <<= 32;
+    s64 += S[t + 1];
+    s64 <<= 32;
+    lehmer64_seeds(s64);
   }
+
 
   IntegerVector out = no_init(n);
 
@@ -351,37 +338,17 @@ std::vector<unsigned char> do_lemire_char_par(int nn,
     n += 1;
   }
 
-
-  // int threshold = INT_MIN;
-  // if (p == 1) {
-  //   threshold = INT_MAX;
-  // } else if (p > 0) {
-  //   threshold += (int)(p * INT_MAX);
-  //   threshold += (int)(p * INT_MAX);
-  // }
-
   int nThread = (maxThread > 20) ? 20 : maxThread;
-  if (nThread > 20) {
-    nThread = 20;
-  }
   if (S.length() < (2 * 21 + 2)) {
     stop("S must have length > 110.");
   }
-
-  if (S[0]) {
-    for (int t = 0; t < 20; ++t) {
-      union {
-      struct {
-        int v1;
-        int v2;
-      } __attribute__((packed));
-      uint64_t ui64;
-    } t64;
-
-      t64.v1 = S[2 * t + 1] ^ 5;
-      t64.v2 = S[2 * t + 2] ^ 5;
-      lehmer64_seeds(t64.ui64);
-    }
+  for (int t = 0; t < 20; ++t) {
+    uint64_t s64 = 0;
+    s64 += S[t];
+    s64 <<= 32;
+    s64 += S[t + 1];
+    s64 <<= 32;
+    lehmer64_seeds(s64);
   }
 
   // Hugh: this is trivial performance
