@@ -10,5 +10,5 @@ test_that("set_epipars works", {
 
   ans1 <- set_epipars(p_asympto = 0.5)
   expect_equal(length(ans1), length(ans))
-  expect_equal(ans1[["p_asympto"]], 0.5 * 1000)
+  expect_equal(ans1[["p_asympto"]], 0.5)
 })
