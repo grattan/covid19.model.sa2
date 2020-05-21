@@ -414,7 +414,10 @@ void contact_tracing(IntegerVector Status,
     // they are all put in isolation
     if (notified_positive_today && CRand[i & t_perf0_binary_ceilm1]) {
       for (int j = 0; j < nh; ++j) {
-        isolate_status(Status, i + j);
+        int statusi = Status[i];
+        if (statusi >= 0 && (statusi >> 5) == 0) {
+          Status[i] += 32;
+        }
       }
     }
   }
@@ -427,7 +430,11 @@ void contact_tracing(IntegerVector Status,
     int agei = Age[i] & 15;
     int schooli = School[i] - 1;
     if (school_infected[schooli][agei]) {
-      isolate_status(Status, i);
+      // isolate_status(Status, i);
+      int statusi = Status[i];
+      if (statusi >= 0 && (statusi >> 5) == 0) {
+        Status[i] += 32;
+      }
     }
   }
 
@@ -1649,13 +1656,13 @@ List do_au_simulate(IntegerVector StatusOriginal,
   double r_scale = Epi["r_scale"];
   int resistance1000 = Epi["resistance_threshold"];
 
-  std::vector<unsigned char> PrognosisRand = do_lemire_char_par((1 << 20), 0, Seed, nThread, true);
-  int p_asympto = Epi["p_asympto"];
-  unsigned char p_asympto_char = static_cast<unsigned char>((p_asympto * 255) / 1000);
-  int p_critical = Epi["p_critical"];
-  unsigned char p_critical_char = static_cast<unsigned char>((p_critical * 255) / 1000);
-  int p_death = Epi["p_death"];
-  unsigned char p_death_char = static_cast<unsigned char>((p_death * 255) / 1000);
+
+  double p_asympto = Epi["p_asympto"];
+  double p_critical = Epi["p_critical"];
+  double p_death = Epi["p_death"];
+  std::vector<unsigned char> PrognosisDead = do_lemire_char_par(N, p_death, Seed, nThread, false);
+  std::vector<unsigned char> PrognosisCritic = do_lemire_char_par(N, p_critical, Seed, nThread, false);
+  std::vector<unsigned char> PrognosisSymp = do_lemire_char_par(N, 1 - p_asympto, Seed, nThread, false);
 
   int incubation_d = Epi["incubation_distribution"];
   int illness_d = Epi["illness_distribution"];
@@ -2030,8 +2037,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
       continue;
     }
     if (returner == 0) {
-      IntegerVector StatusInt = wrap(Status);
-      Statuses.push_back(clone(StatusInt));
+      Statuses.push_back(clone(Status));
     }
     if (optionz == 3) {
       continue;
@@ -2059,7 +2065,8 @@ List do_au_simulate(IntegerVector StatusOriginal,
 #pragma omp parallel for num_threads(nThread)
       for (int i = 0; i < N; ++i) {
         int agei = Age[i];
-        if (AgesLockdown[agei]) {
+        int statusi = Status[i];
+        if (AgesLockdown[agei] && !(statusi >> 5)) {
           Status[i] += ISOLATED_PLUS;
         }
       }
@@ -2120,8 +2127,14 @@ List do_au_simulate(IntegerVector StatusOriginal,
       int i = newCaseIndices[k];
       int incubation = IncubationToday[k];
       int illness = IllnessToday[k];
+      incubation = (incubation >= 0 && incubation < 255) ? incubation : 0;
+      illness = (illness >= 0 && illness < 255) ? illness : 0;
       Status[i] += (incubation << 7);
       Status[i] += (illness << 15);
+    }
+
+    if (returner == 0) {
+      Statuses.push_back(clone(Status));
     }
 
 
@@ -2150,6 +2163,10 @@ List do_au_simulate(IntegerVector StatusOriginal,
         // for this individual. Draw from the distribution (once)
 
         int incubation = incubation_of(statusi);
+        if (day == 0 && incubation == 0) {
+          // on day 0 no incubation is yet assigned so just assume the average
+          incubation = (int)incubation_m;
+        }
 
         if (yday <= InfectedOn[i] + incubation) {
           // Today is before the incubation period is over
@@ -2158,12 +2175,13 @@ List do_au_simulate(IntegerVector StatusOriginal,
           // This is reevaluated each day, but because they are uniform
           // this is okay. Nonetheless we don't second-guess the original
           // statusi
-          int p_i = i % 1048576;
-          bool becomes_symptomatic = PrognosisRand[p_i] > p_asympto_char;
-          ++p_i; p_i %= 1048576;
-          bool becomes_critical = becomes_symptomatic && PrognosisRand[p_i] < p_critical_char;
-          ++p_i; p_i %= 1048576;
-          bool dies = becomes_critical && PrognosisRand[p_i] < p_death_char;
+
+          // apparent prognosis (i.e. they have already moved to a particular stauts)
+          int app_prog = statusi & 15;
+
+          bool becomes_symptomatic = (app_prog == STATUS_INSYMP) || PrognosisSymp[i];
+          bool becomes_critical = (app_prog == STATUS_CRITIC) || (becomes_symptomatic && PrognosisCritic[i]);
+          bool dies = becomes_critical && PrognosisDead[i];
           bool in_isolation = 1 & (statusi >> 5);
             // (statusi == (STATUS_SUSCEP + ISOLATED_PLUS)) || // most common first
             // (statusi == (STATUS_HEALED + ISOLATED_PLUS)) ||
@@ -2174,9 +2192,13 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
           // As before with incubation
           int illness = illness_of(statusi);
-          // Today is after the incubation, during the illness.
-          // Assumption: if the person becomes critical, it happens immediately.
-          if (yday <= InfectedOn[i] + incubation + illness) {
+          if (day == 0 && illness == 0) {
+            // on day 0 no incubation is yet assigned so just assume the average
+            incubation = (int)illness_m;
+          }
+          if (yday == InfectedOn[i] + incubation + 1) {
+            // Today is after the incubation, during the illness.
+            // Assumption: if the person becomes critical, it happens immediately.
             if (becomes_symptomatic) {
               Status[i] += STATUS_INSYMP + becomes_critical * CRITIC_MINUS_INSYMP;
               Status[i] += in_isolation * ISOLATED_PLUS;
@@ -2184,10 +2206,12 @@ List do_au_simulate(IntegerVector StatusOriginal,
               // nothing to do: they're still ill, but at Status 1.
             }
           } else {
-            // Today is after the illness has run its course
-            Status[i] = STATUS_HEALED - dies * HEALED_MINUS_KILLED;
-            // int sa2i = shortSA2[i];
-            // interactions no longer relevant
+            if (yday == InfectedOn[i] + incubation + illness + 1) {
+              // Today is after the illness has run its course
+              Status[i] = STATUS_HEALED - dies * HEALED_MINUS_KILLED;
+              // int sa2i = shortSA2[i];
+              // interactions no longer relevant
+            }
             continue;
           }
         }
@@ -2199,6 +2223,9 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 
     if (supermarkets_open) {
+      if (optionz && day < 2) {
+        Rcout << "_SUPER";
+      }
       double q_supermarket = q_school_dbl;
       infect_supermarkets(Status,
                           InfectedOn,
@@ -2223,10 +2250,16 @@ List do_au_simulate(IntegerVector StatusOriginal,
                           max_persons_per_supermarket,
                           Seed,
                           false);
+      if (optionz && day < 2) {
+        Rcout << "MARKET_";
+      }
     }
 
     // infect cafes
     if (cafes_open) {
+      if (optionz && day < 2) {
+        Rcout << "_CAFES";
+      }
       infect_place(15 - 1, // 15 is place id for cafe -1 for 0-index
                    Status,
                    InfectedOn,
@@ -2248,6 +2281,9 @@ List do_au_simulate(IntegerVector StatusOriginal,
                    do_dirac_every, dirac_num, dirac_per,
                    max_persons_per_cafe,
                    TodaysK);
+      if (optionz && day < 2) {
+        Rcout << "_OPEN_";
+      }
     }
 
 
@@ -2339,8 +2375,8 @@ List do_au_simulate(IntegerVector StatusOriginal,
                      resistance_threshold,
                      q_household,
                      nThread);
-    if (day < 2 && optionz) {
-      Rcout << "infected_household " << "\n";
+    if (optionz && day < 2) {
+      Rcout << "_infected_household_";
     }
 
     if (do_contact_tracing) {
@@ -2368,6 +2404,9 @@ List do_au_simulate(IntegerVector StatusOriginal,
                       Seed,
                       nThread,
                       TestedOn);
+      if (optionz && day < 2) {
+        Rcout << "_CONTACT_";
+      }
     }
 
 

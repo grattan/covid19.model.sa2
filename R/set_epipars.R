@@ -166,11 +166,6 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac", "c
   checkmate::assert_number(p_critical, finite = TRUE, lower = 0, upper = 1)
   checkmate::assert_number(p_death, finite = TRUE, lower = 0, upper = 1)
 
-  # Convert to integer to 1000
-  p_asympto <- as.integer(1000 * p_asympto)
-  p_critical <- as.integer(1000 * p_critical)
-  p_death <- as.integer(1000 * p_death)
-
   # Convert to int for convenience
   incubation_distribution <- match_distr(incubation_distribution)
   illness_distribution <- match_distr(illness_distribution)

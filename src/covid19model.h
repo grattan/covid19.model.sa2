@@ -763,8 +763,6 @@ int short_sa2(int sa2);
 int sa2_to_state(int sa2);
 
 // compressors
-void isolate_status(IntegerVector Status, int i);
-bool is_isolated(IntegerVector Status, int i);
 int incubation_of(int statusi);
 int illness_of(int statusi);
 
