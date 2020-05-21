@@ -353,11 +353,44 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
   copied_Status <- (.subset2(aus, "Status"))
   copied_InfectedOn <- (.subset2(aus, "InfectedOn"))
-  hh_ss("pre-C++")
+
 
   on_terminal <- identical(.Platform$GUI, "RTerm")
 
+  hh_ss("pre-Incubation")
+  Incubation <-
+    with(Epi, {
+      m <- incubation_mean
+      s <- incubation_sigma
+      switch(distrs()[.subset2(Epi, "incubation_distribution")],
+             "pois" = rep_len(rpois(131059, m), nrow(aus)),
+             "lnorm" = rep_len(as.integer(rlnorm(131059, m, s), nrow(aus))),
+             "dirac" = rep_len(as.integer(m, s), nrow(aus)),
+             "cauchy" = RCauchy(do_lemire_rand_par(nrow(aus), copy(.Random.seed), nThread = pmin.int(20L, nThread)),
+                                location = m,
+                                scale = s,
+                                nThread = pmin.int(20L, nThread)),
+             stop("Internal error(Incubation): ", distrs()[.subset2(Epi, "incubation_distribution")],
+                  " was unexpected at this time."))
+    })
 
+  Illness <-
+    with(Epi, {
+      m <- illness_mean
+      s <- illness_sigma
+      switch(distrs()[.subset2(Epi, "illness_distribution")],
+             "pois" = rep_len(rpois(131063, m), nrow(aus)),
+             "lnorm" = rep_len(as.integer(rlnorm(131063, m, s), nrow(aus))),
+             "dirac" = rep_len(as.integer(m, s), nrow(aus)),
+             "cauchy" = RCauchy(do_lemire_rand_par(nrow(aus), copy(.Random.seed), nThread = pmin.int(20L, nThread)),
+                                location = m,
+                                scale = s,
+                                nThread = pmin.int(20L, nThread)),
+             stop("Internal error(Illness): ", distrs()[.subset2(Epi, "illness_distribution")],
+                  " was unexpected at this time."))
+    })
+
+  hh_ss("pre-C++")
   out <-
     with(aus,
          do_au_simulate(Status = copied_Status,
@@ -374,6 +407,8 @@ simulate_sa2 <- function(days_to_simulate = 5,
                         SeedOriginal = c(0L, .Random.seed),
                         Policy = Policy,
                         Epi = EpiPars,
+                        Incubation = Incubation,
+                        Illness = Illness,
                         nSupermarketsAvbl = nSupermarketsAvbl,
                         SupermarketTypical = SupermarketTypical,
                         nPlacesByDestType = nPlacesByDestType,
