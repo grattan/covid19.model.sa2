@@ -240,7 +240,9 @@ void contact_tracing(IntegerVector Status,
   bool school_infected[NSCHOOLS][16];
 
 
+#if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread) reduction(+:t_perf0,t_perf1,t_perf2,t_perf3,t_perf4,t_perf5,t_perf6,t_perf7,t_perf8,t_perf9) reduction(|| : school_infected[:NSCHOOLS][:16])
+#endif
   for (int i = 0; i < N; ++i) {
 
     int test_k = ((Status[i] == STATUS_NOSYMP) + (Status[i] == STATUS_INSYMP));
