@@ -129,7 +129,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
       is.null(aus <- get0("aus_", envir = dataEnv)) ||
       is.null(nPlacesByDestType <- get0("nPlacesByDestType_", envir = dataEnv)) ||
       # is.null(FreqsByDestType <- get0("FreqsByDestType_", envir = dataEnv)) ||
-      is.null(.first_day <- get0(".first_day_", envir = dataEnv))) {
+      XOR(is.null(.first_day), is.null(..first_day <- get0(".first_day_", envir = dataEnv)))) {
 
     # CRAN NOTE AVOIDANCE
     Date <- VIC <- i.VIC <- VicCases <-
@@ -194,6 +194,14 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
     if (is.null(.first_day)) {
       .first_day <- Deaths.csv[, yday(last(Date))]
+    } else {
+      if (!is.integer(.first_day)) {
+        .first_day <- yday(.first_day)
+      }
+
+      Cases.csv <- Cases.csv[yday(Date) <= .first_day]
+      Recovered.csv <- Recovered.csv[yday(Date) <= .first_day]
+      Deaths.csv <- Deaths.csv[yday(Date) <= .first_day]
     }
 
     hh_ss("post-read")
@@ -347,6 +355,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
       # assign("FreqsByDestType_", value = FreqsByDestType, envir = dataEnv)
       assign(".first_day_", value = .first_day, envir = dataEnv)
     }
+    ..first_day <- .first_day
   }
 
 
@@ -413,7 +422,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
                         SupermarketTypical = SupermarketTypical,
                         nPlacesByDestType = nPlacesByDestType,
                         minPlaceID_nPlacesByDestType = copy(minPlaceID_nPlacesByDestType),
-                        yday_start = .first_day,
+                        yday_start = ..first_day,
                         days_to_sim = days_to_simulate,
                         N = nrow(aus),
                         by_state = by_state,
