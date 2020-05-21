@@ -123,7 +123,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // do_au_simulate
-List do_au_simulate(IntegerVector StatusOriginal, IntegerVector InfectedOnOriginal, IntegerVector SA2, IntegerVector hid, IntegerVector Age, IntegerVector School, IntegerVector DZN, IntegerVector wid, IntegerVector nColleagues, IntegerVector PlaceTypeBySA2, IntegerVector LabourForceStatus, IntegerVector SeedOriginal, List Policy, List nPlacesByDestType, List Epi, /* Epidemiological parameters */                     IntegerVector Incubation, IntegerVector Illness, IntegerVector nSupermarketsAvbl, IntegerVector SupermarketTypical, List minPlaceID_nPlacesByDestType, int yday_start, int days_to_sim, int N, bool display_progress, bool on_terminal, bool by_state, int returner, int console_width, int optionz, int nThread);
+List do_au_simulate(IntegerVector StatusOriginal, IntegerVector InfectedOnOriginal, IntegerVector SA2, IntegerVector hid, IntegerVector Age, IntegerVector School, IntegerVector DZN, IntegerVector wid, IntegerVector nColleagues, IntegerVector PlaceTypeBySA2, IntegerVector LabourForceStatus, IntegerVector SeedOriginal, List Policy, List nPlacesByDestType, List Epi, /* Epidemiological parameters */                     IntegerVector Incubation, IntegerVector Illness, IntegerVector nSupermarketsAvbl, IntegerVector SupermarketTypical, List minPlaceID_nPlacesByDestType, const int yday_start, const int days_to_sim, const int N, bool display_progress, bool on_terminal, bool by_state, int returner, int console_width, int optionz, int nThread);
 RcppExport SEXP _covid19_model_sa2_do_au_simulate(SEXP StatusOriginalSEXP, SEXP InfectedOnOriginalSEXP, SEXP SA2SEXP, SEXP hidSEXP, SEXP AgeSEXP, SEXP SchoolSEXP, SEXP DZNSEXP, SEXP widSEXP, SEXP nColleaguesSEXP, SEXP PlaceTypeBySA2SEXP, SEXP LabourForceStatusSEXP, SEXP SeedOriginalSEXP, SEXP PolicySEXP, SEXP nPlacesByDestTypeSEXP, SEXP EpiSEXP, SEXP IncubationSEXP, SEXP IllnessSEXP, SEXP nSupermarketsAvblSEXP, SEXP SupermarketTypicalSEXP, SEXP minPlaceID_nPlacesByDestTypeSEXP, SEXP yday_startSEXP, SEXP days_to_simSEXP, SEXP NSEXP, SEXP display_progressSEXP, SEXP on_terminalSEXP, SEXP by_stateSEXP, SEXP returnerSEXP, SEXP console_widthSEXP, SEXP optionzSEXP, SEXP nThreadSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -148,9 +148,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< IntegerVector >::type nSupermarketsAvbl(nSupermarketsAvblSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type SupermarketTypical(SupermarketTypicalSEXP);
     Rcpp::traits::input_parameter< List >::type minPlaceID_nPlacesByDestType(minPlaceID_nPlacesByDestTypeSEXP);
-    Rcpp::traits::input_parameter< int >::type yday_start(yday_startSEXP);
-    Rcpp::traits::input_parameter< int >::type days_to_sim(days_to_simSEXP);
-    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< const int >::type yday_start(yday_startSEXP);
+    Rcpp::traits::input_parameter< const int >::type days_to_sim(days_to_simSEXP);
+    Rcpp::traits::input_parameter< const int >::type N(NSEXP);
     Rcpp::traits::input_parameter< bool >::type display_progress(display_progressSEXP);
     Rcpp::traits::input_parameter< bool >::type on_terminal(on_terminalSEXP);
     Rcpp::traits::input_parameter< bool >::type by_state(by_stateSEXP);

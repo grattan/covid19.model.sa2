@@ -11,6 +11,7 @@ double m2mu(double m, double s) {
 }
 
 // thread-safe random variables
+// but not inheriting from R's RNG (for better or worse)
 int unifRand(const int & a, const int & b) {
   static thread_local std::mt19937 generator;
   std::uniform_int_distribution<int> distribution(a, b);

@@ -38,6 +38,22 @@ int supermarket_weekend_hrs() {
   return SUPERMARKET_WEEKEND_HRS;
 }
 
+constexpr int MIN_ISOL = STATUS_KILLED + ISOLATED_PLUS;
+
+inline bool isolatable(const int & statusi) {
+  // Equivalent to  0 <= status < MIN_ISOL
+  // from optimizing_cpp.pdf
+  return (unsigned int)statusi < (unsigned int)MIN_ISOL;
+}
+
+inline bool is_isolated(const int & statusi) {
+  return statusi >= MIN_ISOL;
+}
+
+inline bool is_infected(const int & statusi) {
+  return statusi > 0 && statusi < MIN_ISOL;
+}
+
 
 int array3k(int x, int y, int z, int ny, int nz) {
   return x * (ny * nz) + y * (nz) + z;
@@ -76,39 +92,33 @@ IntegerVector test_array4k(IntegerVector w, IntegerVector x, IntegerVector y, In
   return out;
 }
 
-inline bool isolatable(const int & statusi) {
-  // needs assertion about 0 <= status < ISOLATED PLUS
-  // from optimizing_cpp.pdf
-  const int MIN_ISOL = STATUS_KILLED + ISOLATED_PLUS;
 
-  return (unsigned int)statusi < (unsigned int)MIN_ISOL;
-}
 
 
 void contact_tracing(IntegerVector Status,
                      IntegerVector InfectedOn,
                      IntegerVector Incubation,
                      IntegerVector Age,
-                     int day,
-                     int yday,
-                     std::vector<unsigned char> seqN,
-                     std::vector<unsigned char> HouseholdSize,
+                     const int day,
+                     const int yday,
+                     const std::vector<unsigned char> &seqN,
+                     const std::vector<unsigned char> &HouseholdSize,
                      IntegerVector TestsAvbl,
                      bool by_state,
                      IntegerVector SA2,
                      IntegerVector hid,
                      IntegerVector HouseholdInfectedToday,
-                     int N,
+                     const int N,
                      IntegerVector School,
                      const std::vector<int> &schoolsIndex,
-                     int ptest_per_mille_sympto,
-                     int ptest_per_mille_asympto,
-                     double ct_success,
+                     const int ptest_per_mille_sympto,
+                     const int ptest_per_mille_asympto,
+                     const double ct_success,
                      IntegerVector TodaysK,
-                     int days_before_test,
-                     int days_to_notify,
+                     const int days_before_test,
+                     const int days_to_notify,
                      IntegerVector Seed,
-                     int nThread,
+                     const int nThread,
                      IntegerVector TestedOn) {
 
 #ifdef _OPENMP
@@ -406,23 +416,23 @@ void infect_supermarkets(IntegerVector Status,
                          IntegerVector shortSA2,
                          IntegerVector SA2_starts,
                          IntegerVector SA2_finals,
-                         int nThread,
+                         const int nThread,
                          IntegerVector Age,
                          IntegerVector Employment,
                          IntegerVector nSupermarketsBySA2,
                          IntegerVector nSupermarketsAvbl,
                          const std::vector<unsigned char> &Resistance,
-                         int day,
-                         int wday,
-                         int yday,
-                         int N,
+                         const int day,
+                         const int wday,
+                         const int yday,
+                         const int N,
                          IntegerVector SupermarketTypical,
-                         double q_supermarket,
+                         const double q_supermarket,
                          IntegerVector TodaysHz,
-                         unsigned char resistance1,
-                         int max_persons_per_supermarket,
+                         const unsigned char resistance1,
+                         const int max_persons_per_supermarket,
                          IntegerVector Seed,
-                         bool verbose = false) {
+                         const bool verbose = false) {
   if (day < 0) {
     stop("Internal error(infect_supermarkets): day < 0");
   }
@@ -461,6 +471,7 @@ void infect_supermarkets(IntegerVector Status,
   const int hrs_open = (wday < 6) ? SUPERMARKET_WEEKDAY_HRS : SUPERMARKET_WEEKEND_HRS;
 
   // beta distribution (can't use R::rbeta inside omp)
+  // todo: accept user-supplied
   const int nFreqs = 1024;
   std::vector<int> SupermarketFreq;
   SupermarketFreq.reserve(nFreqs);
@@ -540,16 +551,16 @@ void infect_place(int place_id,
                   IntegerVector SA2_firsts,
                   IntegerVector SA2_finals,
                   IntegerVector Age,
-                  int nThread,
+                  const int nThread,
                   List minPlaceID_nPlacesByDestType,
-                  int day,
-                  int wday,
-                  int yday,
-                  int N,
+                  const int day,
+                  const int wday,
+                  const int yday,
+                  const int N,
                   const std::vector<unsigned char> &Resistance,
-                  unsigned char resistance1,
+                  const unsigned char resistance1,
                   IntegerVector TodaysHz,
-                  int max_persons_per_place,
+                  const int max_persons_per_place,
                   IntegerVector TodaysK) {
 
   if (place_id == PLACEID_ESTABLISHMENT ||
@@ -797,23 +808,23 @@ void infect_dzn(IntegerVector Status,
                 IntegerVector InfectedOn,
                 IntegerVector DZN,
                 IntegerVector wid,
-                int n_workplaces,
+                const int n_workplaces,
                 const std::vector<int> &widIndex,
                 IntegerVector LabourForceStatus,
                 IntegerVector nColleagues,
-                int day,
-                int wday,
-                int yday,
-                int N,
-                unsigned char resistance1,
+                const int day,
+                const int wday,
+                const int yday,
+                const int N,
+                const unsigned char resistance1,
                 const std::vector<unsigned char> &Wrand,
-                int workplaces_open,
-                int workplace_size_max,
+                const int workplaces_open,
+                const int workplace_size_max,
                 IntegerVector TodaysK,
                 const std::vector<unsigned char> &Resistance,
-                int zero,
-                int optionz,
-                int nThread = 1) {
+                const int zero,
+                const int optionz,
+                const int nThread) {
   if (zero != 0) {
     stop("zero != 0");
   }
@@ -1058,12 +1069,15 @@ void infect_school(IntegerVector Status,
 
   }
 
-  bool all_states_in_school = true;
-  bool any_states_in_school = false;
+  bool tmp_all_states_in_school = true;
+  bool tmp_any_states_in_school = false;
   for (int state = 1; state <= 8; ++state) {
-    all_states_in_school = all_states_in_school && during_school_term(state, yday);
-    any_states_in_school = any_states_in_school || during_school_term(state, yday);
+    tmp_all_states_in_school = tmp_all_states_in_school && during_school_term(state, yday);
+    tmp_any_states_in_school = tmp_any_states_in_school || during_school_term(state, yday);
   }
+
+  const bool all_states_in_school = tmp_all_states_in_school;
+  const bool any_states_in_school = tmp_any_states_in_school;
 
   if (!any_states_in_school) {
     return;
@@ -1084,12 +1098,12 @@ void infect_school(IntegerVector Status,
     areSchoolsLockedDown[9];
 
 
-  int all_full_time =
+  const bool all_full_time =
     school_days_per_wk.containsElementNamed("all_full_time") &&
     school_days_per_wk["all_full_time"];
 
 
-  int combn2[10][2] =
+  constexpr int combn2[10][2] =
     {{1, 2},
     {1, 3},
     {1, 4},
@@ -1101,7 +1115,7 @@ void infect_school(IntegerVector Status,
     {3, 5},
     {4, 5}};
 
-  int combn3[10][3] =
+  constexpr int combn3[10][3] =
     {{1, 2, 3},
     {1, 2, 4},
     {1, 2, 5},
@@ -1317,16 +1331,15 @@ void infect_household(IntegerVector Status,
                       const std::vector<int> &hhIndex,
                       const std::vector<unsigned char> &Resistance,
                       IntegerVector Age,
-                      int n_households,
+                      const int n_households,
                       const std::vector<unsigned char> &Hrand,
                       IntegerVector Srand,
-                      int yday,
-                      int N,
+                      const int yday,
+                      const int N,
                       IntegerVector HouseholdInfectedToday,
-                      unsigned char resistance1,
-                      int q_household,
-                      int a_household,
-                      int nThread = 1) {
+                      const unsigned char resistance1,
+                      const int q_household,
+                      const int nThread) {
   // resistance_penalty = penalty against Resistance[i]
   // that makes infection more likely. Higher penalties
   // make infection more likely among otherwise resistant
@@ -1341,21 +1354,19 @@ void infect_household(IntegerVector Status,
       continue;
     }
     int i = hhIndex[k];
+    const int nh = HouseholdSize[i] == 1;
 
-    if (HouseholdSize[i] == 1) {
+    if (nh == 1) {
       // no transmission in single-person household
       continue;
     }
 
+    const int statusi = Status[i];
 
-
-
-
-
-
-    if (HouseholdSize[i] == 2) {
+    if (nh == 2) {
       // in this case, we only need to check adjacent
-      bool household_infected = Status[i] > 0 || Status[i + 1] > 0;
+      int statusi_partner = Status[i + 1];
+      const bool household_infected = is_infected(statusi) || is_infected(statusi_partner);
       // Prima facie we have a race condition on Status, but in fact
       // we have skipped anyone who has Status[i] != 0 so the only way
       // the following assignment can occur is if the other thread is
@@ -1380,14 +1391,12 @@ void infect_household(IntegerVector Status,
     // household, skip -- we've already calculated it
 
 
-    bool household_infected = Status[i] > 0;
 
-    int nh = HouseholdSize[i]; // just for convenience
+    bool household_infected = false;
     // loop through the household, stop once an infection detected
-    for (int j = 1; j < nh; ++j) {
-      if (Status[i + j] > 0) {
-        household_infected = true;
-      }
+    for (int j = 0; j < nh; ++j) {
+      int statusij = Status[i + j];
+      household_infected = household_infected || is_infected(statusij);
     }
 
     if (household_infected) {
@@ -1433,9 +1442,9 @@ List do_au_simulate(IntegerVector StatusOriginal,
                     IntegerVector nSupermarketsAvbl,
                     IntegerVector SupermarketTypical,
                     List minPlaceID_nPlacesByDestType,
-                    int yday_start,
-                    int days_to_sim,
-                    int N = 25e6,
+                    const int yday_start,
+                    const int days_to_sim,
+                    const int N,
                     bool display_progress = true,
                     bool on_terminal = false,
                     bool by_state = true,
@@ -1491,30 +1500,17 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
   // attach policy changes
 
-  bool supermarkets_open = true;
-  if (Policy.length() && Policy.containsElementNamed("supermarkets_open")) {
-    supermarkets_open = Policy["supermarkets_open"];
-  }
-  bool use_mpps = Policy.length() && Policy.containsElementNamed("max_persons_per_supermarket");
-  const int max_persons_per_supermarket =
-    use_mpps ? Policy["max_persons_per_supermarket"] : 2e9;
+  const bool supermarkets_open = Policy["supermarkets_open"];
+  const bool use_mpps = Policy.length() && Policy.containsElementNamed("max_persons_per_supermarket");
+  const int max_persons_per_supermarket = use_mpps ? Policy["max_persons_per_supermarket"] : 2e9;
 
 
-  bool cafes_open = true;
-  if (Policy.length() && Policy.containsElementNamed("cafes_open")) {
-    cafes_open = Policy["cafes_open"];
-  }
+  const bool cafes_open = Policy["cafes_open"];
   const int max_persons_per_cafe = 10; // TODO: all this needs to be IntegerVectors!
   // school policies
-  bool schools_open = false;
-  bool only_Year12  = false;
+  const bool schools_open = Policy["schools_open"];
+  const bool only_Year12  = Policy["only_Year12"];
 
-  if (Policy.length() && Policy.containsElementNamed("schools_open")) {
-    schools_open = Policy["schools_open"];
-  }
-  if (Policy.length() && Policy.containsElementNamed("only_Year12")) {
-    only_Year12 = Policy["only_Year12"];
-  }
   if (!Policy.containsElementNamed("school_days_per_wk")) {
     stop("Internal error: 'Policy' did not contain element 'school_days_per_wk'.");
   }
@@ -1555,9 +1551,9 @@ List do_au_simulate(IntegerVector StatusOriginal,
       }
     }
   }
-  int ct_days_before_test = Policy["contact_tracing_days_before_test"];
-  int ct_days_until_result = Policy["contact_tracing_days_until_result"];
-  double ct_success = Policy["contact_tracing_success"];
+  const int ct_days_before_test = Policy["contact_tracing_days_before_test"];
+  const int ct_days_until_result = Policy["contact_tracing_days_until_result"];
+  const double ct_success = Policy["contact_tracing_success"];
 
 
 
@@ -1575,11 +1571,8 @@ List do_au_simulate(IntegerVector StatusOriginal,
     }
   }
 
-  double a_household_rate = 1;
-  if (Epi.containsElementNamed("a_household_rate")) {
-    a_household_rate = Epi["a_household_rate"];
-  }
-  double a_schools_rate = 1;
+  const double a_household_rate = Epi["a_household_rate"];
+  const double a_schools_rate = Epi["a_schools_rate"];
   // int a_household_rate = 1000;
   // int a_schools_rate = 1000;
 
@@ -1616,19 +1609,19 @@ List do_au_simulate(IntegerVector StatusOriginal,
   int resistance1000 = Epi["resistance_threshold"];
 
 
-  double p_asympto = Epi["p_asympto"];
-  double p_critical = Epi["p_critical"];
-  double p_death = Epi["p_death"];
+  const double p_asympto = Epi["p_asympto"];
+  const double p_critical = Epi["p_critical"];
+  const double p_death = Epi["p_death"];
 
   std::vector<unsigned char> ProgInSymp = do_lemire_char_par(N, 1 - p_asympto, Seed, nThread, false);
   std::vector<unsigned char> ProgCritic = do_lemire_char_par(N, p_critical, Seed, nThread, false);
   std::vector<unsigned char> ProgKilled = do_lemire_char_par(N, p_death, Seed, nThread, false);
 
 
-  double q_workplace = Epi["q_workplace"];
-  double q_household = Epi["q_household"];
-  double q_school = Epi["q_school"];
-  double q_supermarket = Epi["q_supermarket"];
+  const double q_workplace = Epi["q_workplace"];
+  const double q_household = Epi["q_household"];
+  const double q_school = Epi["q_school"];
+  const double q_supermarket = Epi["q_supermarket"];
 
   IntegerVector Srand = do_lemire_rand_par(N, Seed, nThread);
 
@@ -1759,10 +1752,10 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 
   // Convert state to short_sa2 directly
-  // unsigned char stateShortSA2[NSA2];
-  // for (int i = 0; i < NSA2; ++i) {
-  //   stateShortSA2[i] = sa2_to_state(sa2s[i]);
-  // }
+  unsigned char stateShortSA2[NSA2];
+  for (int i = 0; i < NSA2; ++i) {
+    stateShortSA2[i] = sa2_to_state(sa2s[i]);
+  }
 
 
 
@@ -1800,27 +1793,28 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
   // returner 1: days by state by age by status
   //
-  // const int out1_len = (days_to_sim * out1d_len);
-  // IntegerVector out1 = no_init(out1_len);
-  // int out1i = 0;
-  IntegerVector out1 = no_init(days_to_sim * 7); // 7 statuses for each
+
+  int o_r = 0;
+  const int o_r_len =
+    (returner == 3) ? days_to_sim * (NSTATES * (6 * 2)) :
+    ((returner == 1) ? days_to_sim * 7 : 1);
+
+  IntegerVector out1 = no_init(o_r_len); // 7 statuses for each
   IntegerVector out2(days_to_sim * NSTATES * 7); // preallocate
-
-
 
 
   for (int day = 0; day < days_to_sim; ++day) {
 
     // Start with basic calendar information, needed for
     // opening hours, especially of schools
-    int yday = yday_start + day;
+    const int yday = yday_start + day;
 
     assert_is_weekday(day);
     assert_is_monday(day);
     // i.e yday 1 was a Wednesday, make the week start on Monday
-    int wday = wday_2020[((yday - 1) % 7)];
-    bool is_weekday = yday2weekday(yday);
-    bool is_monday = yday2monday(yday);
+    const int wday = wday_2020[((yday - 1) % 7)];
+    const bool is_weekday = yday2weekday(yday);
+    const bool is_monday = yday2monday(yday);
 
 
 
@@ -1829,16 +1823,17 @@ List do_au_simulate(IntegerVector StatusOriginal,
     // we can (a) exit early if there are no infections and (b) potentially
     // supply these aggregates to other functions to provide early returns.
     int n_infected_today = 0;
-    if (returner == 0) {
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread) reduction(+:n_infected_today)
 #endif
-      for (int i = 0; i < N; ++i) {
-        int statusi = Status[i];
-        if (statusi > 0) {
-          n_infected_today += ((statusi - ISOLATED_PLUS) != 0);
-        }
+    for (int i = 0; i < N; ++i) {
+      int statusi = Status[i];
+      if (is_infected(statusi)) {
+        n_infected_today += 1;
       }
+    }
+    if (returner == 0) {
+
       nInfected[day] = n_infected_today;
     }
     // prepare returner 1
@@ -1875,8 +1870,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
       out1[7 * day + 4] = n_insymp;
       out1[7 * day + 5] = n_critic;
       out1[7 * day + 6] = n_isolat;
-
-      n_infected_today = n_nosymp + n_insymp + n_critic + n_isolat;
     }
 
     if (returner == 2) {
@@ -1890,7 +1883,8 @@ List do_au_simulate(IntegerVector StatusOriginal,
         int first = State_firsts[state];
         int final = State_finals[state];
         for (int i = first; i < final; ++i) {
-          if (Status[i] > 0) {
+          int statusi0 = Status[i];
+          if (is_infected(statusi0)) {
             n_infected_today += 1;
           }
           int statusi = Status[i] + 2;
@@ -1902,6 +1896,38 @@ List do_au_simulate(IntegerVector StatusOriginal,
           out2[oi2] += 1;
         }
       }
+    }
+
+    if (returner == 3) {
+      //  column          Day   x   state x status x isolated
+      // uniquen  days_to_sim     NSTATES        6          2
+      int tot_status[12 * 2 * NSTATES] = {};
+#if defined _OPENMP && _OPENMP >= 201511
+#pragma omp parallel for num_threads(nThread) reduction (+ : tot_status)
+#endif
+      for (int sa2i = 0; sa2i < NSA2; ++sa2i) {
+        int state = stateShortSA2[sa2i] - 1;
+        int first = SA2_firsts[sa2i];
+        int final = SA2_finals[sa2i];
+        for (int i = first; i < final; ++i) {
+          int statusi = Status[i];
+          int statusi2 = statusi + 2;
+          int j = state * (6 * 2) + statusi2 * 2 + is_isolated(statusi);
+          tot_status[j] += 1;
+        }
+      }
+
+      int o_r_j = 0;
+      for (int s = 0; s < NSTATES; ++s) {
+        for (int status = 0; status < 6; ++status) {
+          out1[o_r++] = tot_status[o_r_j++];
+          out1[o_r++] = tot_status[o_r_j++];
+        }
+
+      }
+
+
+
     }
 
 
@@ -2014,7 +2040,8 @@ List do_au_simulate(IntegerVector StatusOriginal,
 #pragma omp parallel for num_threads(nThread)
       for (int i = 0; i < N; ++i) {
         int agei = Age[i];
-        if (AgesLockdown[agei]) {
+        int statusi = Status[i];
+        if (AgesLockdown[agei] && !is_isolated(statusi)) {
           Status[i] += ISOLATED_PLUS;
         }
       }
@@ -2123,6 +2150,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
     // infect cafes
     if (cafes_open) {
+      // perhaps do for (int p = 0; p < 105; ++p) but not yet
       infect_place(15 - 1, // 15 is place id for cafe -1 for 0-index
                    Status,
                    InfectedOn,
@@ -2274,6 +2302,10 @@ List do_au_simulate(IntegerVector StatusOriginal,
   if (returner == 2) {
     return List::create(Named("Status7") = out2);
   }
+  if (returner == 3) {
+    return List::create(Named("Status12") = out1);
+  }
+
 
   return Statuses;
 }

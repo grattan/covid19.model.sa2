@@ -373,7 +373,6 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
   on_terminal <- identical(.Platform$GUI, "RTerm")
 
-  hh_ss("pre-Incubation")
   Incubation <-
     with(EpiPars, {
       m <- incubation_mean
@@ -461,6 +460,9 @@ simulate_sa2 <- function(days_to_simulate = 5,
       }
       DT[, "N" := NN]
       return(DT)
+    }
+    if (returner == 3) {
+      return(out[[1]])
     }
   }
 
