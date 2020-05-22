@@ -1909,9 +1909,10 @@ List do_au_simulate(IntegerVector StatusOriginal,
     if (returner == 3) {
       //  column          Day   x   state x status x isolated
       // uniquen  days_to_sim     NSTATES        6          2
-      int tot_status[12 * 2 * NSTATES] = {};
+      constexpr int buffn = NSTATES * 6 * 2;
+      int tot_status[buffn] = {};
 #if defined _OPENMP && _OPENMP >= 201511
-#pragma omp parallel for num_threads(nThread) reduction (+ : tot_status)
+#pragma omp parallel for num_threads(nThread) reduction (+ : tot_status[:buffn])
 #endif
       for (int sa2i = 0; sa2i < NSA2; ++sa2i) {
         int state = stateShortSA2[sa2i] - 1;
@@ -1919,7 +1920,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
         int final = SA2_finals[sa2i];
         for (int i = first; i < final; ++i) {
           int statusi = Status[i];
-          int statusi2 = statusi + 2;
+          int statusi2 = (statusi + 2) % 16;
           int j = state * (6 * 2) + statusi2 * 2 + is_isolated(statusi);
           tot_status[j] += 1;
         }
