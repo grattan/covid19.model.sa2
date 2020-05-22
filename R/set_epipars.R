@@ -10,7 +10,7 @@
 #' whether the incubation period is Poisson, log-normal, or constant.
 #'
 #' @param incubation_mean The intended average of the distribution, must be
-#' positive, and a whole number for `"pois"` and `"diract"`.
+#' positive, and a whole number for `"pois"` and `"dirac"`.
 #' @param incubation_sigma A measure of the spread of the distribution.
 #'
 #' @param illness_distribution,illness_mean,illness_sigma As for \code{incubation} above.
