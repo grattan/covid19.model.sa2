@@ -140,7 +140,11 @@ end_progress <- function(start.time, fst2_progress, file.fst) {
 }
 
 fst_columns <- function(file.fst) {
-  fst::metadata_fst(file.fst)[["columnNames"]]
+  fst::metadata_fst(file_fst(file.fst))[["columnNames"]]
+}
+
+fst_rows <- function(file.fst) {
+  fst::metadata_fst(file_fst(file.fst))[["nrOfRows", exact = TRUE]]
 }
 
 read_business <- function(maxmax = 500L) {

@@ -52,7 +52,7 @@ List sa2_firsts_finals(IntegerVector SA2, int nsa2 = 2310, bool is_state = false
   int s = 0;
   int N = SA2.length();
   SA2_firsts[s] = 0;
-  SA2_finals[nsa2 - 1] = N - 1;
+  SA2_finals[nsa2 - 1] = N;
 
   for (int i = 1; i < N; ++i) {
     int SA2i = SA2[i];
@@ -74,8 +74,8 @@ List sa2_firsts_finals(IntegerVector SA2, int nsa2 = 2310, bool is_state = false
     }
   }
   while (++s < nsa2) {
-    SA2_firsts[s] = N - 1;
-    SA2_finals[s - 1] = N - 1;
+    SA2_firsts[s] = N;
+    SA2_finals[s - 1] = N;
   }
   return List::create(SA2_firsts, SA2_finals);
 }
