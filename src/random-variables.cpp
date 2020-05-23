@@ -379,6 +379,9 @@ LogicalVector lemire_char(int N, double p, int return_early = 0,
 
 #else
 
+void update_seed(int s64) {
+  ++s64;
+}
 
 IntegerVector do_lemire_rand(int n) {
   warning("Unable.");
@@ -469,6 +472,22 @@ IntegerVector RCauchy(IntegerVector U, double location, double scale, int nThrea
 
 }
 
+// [[Rcpp::export]]
+IntegerVector updateLemireSeedFromR(IntegerVector S) {
+  if (S.length() <= 42) {
+    stop("S.length() <= 42.");
+  }
+  // Seed lemire rng
+  uint64_t s64 = 0;
+  for (int t = 0; t < 20; ++t) {
+    s64 += S[t];
+    s64 <<= 32;
+    s64 += S[t + 1];
+    s64 <<= 32;
+  }
+  update_seed(s64);
 
+  return S;
+}
 
 

@@ -36,14 +36,14 @@ test_that("openmp reduces with count_by", {
 
 
 
-
-  cat("\n\n",
-      DT[and3s(x == 0, y == 0, z == 0), .N],
-      DT[and3s(x == 0, y == 0, z == 1), .N],
-      DT[and3s(x == 0, y == 0, z == 2), .N],
-      DT[and3s(x == 0, y == 0, z == 3), .N],
-      DT[and3s(x == 0, y == 0, z == 4), .N], "\n\n")
-  cat("\n\n", head(counts), "\n\n")
+#
+#   cat("\n\n",
+#       DT[and3s(x == 0, y == 0, z == 0), .N],
+#       DT[and3s(x == 0, y == 0, z == 1), .N],
+#       DT[and3s(x == 0, y == 0, z == 2), .N],
+#       DT[and3s(x == 0, y == 0, z == 3), .N],
+#       DT[and3s(x == 0, y == 0, z == 4), .N], "\n\n")
+#   cat("\n\n", head(counts), "\n\n")
 
   expect_true(TRUE)
 

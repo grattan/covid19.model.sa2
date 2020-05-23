@@ -129,6 +129,10 @@ RCauchy <- function(U, location, scale, nThread = 1L) {
     .Call(`_covid19_model_sa2_RCauchy`, U, location, scale, nThread)
 }
 
+updateLemireSeedFromR <- function(S) {
+    .Call(`_covid19_model_sa2_updateLemireSeedFromR`, S)
+}
+
 short_sa2 <- function(sa2) {
     .Call(`_covid19_model_sa2_short_sa2`, sa2)
 }

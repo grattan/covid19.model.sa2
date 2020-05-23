@@ -2,9 +2,15 @@ test_that("lemire works", {
   skip_on_cran()
   a <- do_lemire_rand(10)
   expect_equal(length(a), 10)
-
+  library(data.table)
+  S1 <- copy(unlist(dqrng::generateSeedVectors(42L)))
+  S2 <- copy(S1)
+  updateLemireSeedFromR(S1)
   b1 <- do_lemire_rand(10)
+
+  updateLemireSeedFromR(S2)
   b2 <- do_lemire_rand(10)
+
   expect_identical(b1, b2)
 
   skip_on_travis()

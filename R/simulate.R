@@ -387,6 +387,8 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
   on_terminal <- identical(.Platform$GUI, "RTerm")
 
+  updateLemireSeedFromR(unlist(dqrng::generateSeedVectors(42)))
+
   Incubation <-
     with(EpiPars, {
       m <- incubation_mean
@@ -395,7 +397,8 @@ simulate_sa2 <- function(days_to_simulate = 5,
              "pois" = rep_len(rpois(131059, m), nrow(aus)),
              "lnorm" = rep_len(as.integer(rlnorm(131059, m, s), nrow(aus))),
              "dirac" = rep_len(as.integer(m, s), nrow(aus)),
-             "cauchy" = RCauchy(do_lemire_rand_par(nrow(aus), nThread = pmin.int(20L, nThread)),
+             "cauchy" = RCauchy(do_lemire_rand_par(nrow(aus),
+                                                   nThread = pmin.int(20L, nThread)),
                                 location = m,
                                 scale = s,
                                 nThread = pmin.int(20L, nThread)),

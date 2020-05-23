@@ -749,7 +749,12 @@ IntegerVector modulo(IntegerVector x, int m, int d, int nThread);
 IntegerVector prlnorm_int(int n, double a, double b, int nThread);
 IntegerVector RCauchy(IntegerVector U, double location, double scale, int nThread);
 IntegerVector do_lemire_rand_par(int n, int nThread);
+#if INTPTR_MAX == INT64_MAX
 void update_seed(uint64_t s64);
+#else
+void update_seed(int s64);
+#endif
+
 int lehmer32();
 std::vector<unsigned char> do_lemire_char_par(int n, double p, int nThread, bool return_char);
 

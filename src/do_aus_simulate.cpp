@@ -1266,7 +1266,7 @@ void infect_school(IntegerVector Status,
     // first.  We could randomize this, but I don't think it matters.
 
     // TODO: make students of the same age more likely/first to be infected
-    if (i_visits[schooli] && Q_School[i]) {
+    if (i_visits[schooli] && Q_School[k]) {
       Status[i] = STATUS_NOSYMP;
       InfectedOn[i] = yday;
       newInfectionsBySchool[schooli] += 1;
