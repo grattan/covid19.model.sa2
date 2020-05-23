@@ -1705,10 +1705,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
   const double q_school = Epi["q_school"];
   const double q_supermarket = Epi["q_supermarket"];
 
-  std::vector<unsigned char> Q_Workplace = do_lemire_char_par(N, q_workplace, nThread, false);
-  std::vector<unsigned char> Q_School    = do_lemire_char_par(N, q_school, nThread, false);
-  std::vector<unsigned char> Q_Supermarket = do_lemire_char_par(N, q_supermarket, nThread, false);
-
 
 
   IntegerVector nInfected = no_init(days_to_sim);
