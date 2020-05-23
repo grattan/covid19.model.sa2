@@ -147,6 +147,13 @@ fst_rows <- function(file.fst) {
   fst::metadata_fst(file_fst(file.fst))[["nrOfRows", exact = TRUE]]
 }
 
+read_last <- function(file.fst, column) {
+  last_row <- fst_rows(file.fst)
+  read_sys(file.fst, column = column, from = last_row, to = last_row)[[1]]
+}
+
+
+
 read_business <- function(maxmax = 500L) {
   business <- read_sys("inst/extdata/businesses.fst")
 

@@ -29,6 +29,11 @@ update_pappubahry <- function() {
       setkey(Date) %>%
       write_fst(extdata.fst, compress = 100)
 
+    if (dir.exists("inst/extdata") &&
+        Sys.getenv("USERNAME") == "hughp") {
+      file.copy(extdata.fst, paste0("inst/extdata/", nom, ".fst"), overwrite = TRUE)
+    }
+
     TRUE
   }
 

@@ -123,14 +123,28 @@ simulate_sa2 <- function(days_to_simulate = 5,
   }
 
   Policy  <- PolicyPars
-  if (!isTRUE(use_dataEnv) ||
-      !identical(by_state, get0("_by_state_", envir = dataEnv)) ||
-      !identical(InitialStatus, get0("_InitialStatus_", envir = dataEnv)) ||
-      is.null(aus <- get0("aus_", envir = dataEnv)) ||
-      is.null(nPlacesByDestType <- get0("nPlacesByDestType_", envir = dataEnv)) ||
-      # is.null(FreqsByDestType <- get0("FreqsByDestType_", envir = dataEnv)) ||
-      XOR(is.null(.first_day), is.null(..first_day <- get0(".first_day_", envir = dataEnv)))) {
+  dataEnvOK <-
+    isTRUE(use_dataEnv) &&
+    identical(by_state, get0("_by_state_", envir = dataEnv)) &&
+    identical(InitialStatus, get0("_InitialStatus_", envir = dataEnv)) &&
+    !is.null(aus <- get0("aus_", envir = dataEnv)) &&
+    !is.null(nPlacesByDestType <- get0("nPlacesByDestType_", envir = dataEnv))
 
+  if (dataEnvOK) {
+    # Check .first_day matches previous run
+    # If .first_day is NULL then we need to know it now
+    # to compare with the eventual output of first_day
+    if (is.null(.first_day)) {
+      ..first_day <- yday(read_last("time_series_deaths.fst", "Date"))
+    } else {
+      ..first_day <- .first_day
+    }
+
+
+    dataEnvOK <- identical(..first_day, get0(".first_day_", envir = dataEnv))
+  }
+
+  if (!dataEnvOK) {
     # CRAN NOTE AVOIDANCE
     Date <- VIC <- i.VIC <- VicCases <-
       VicRecovered <- Concluded <-
