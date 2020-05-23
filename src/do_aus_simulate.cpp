@@ -861,7 +861,7 @@ void infect_dzn(IntegerVector Status,
 
   for (unsigned int k = 0; k < widIndexSize; ++k) {
     int i = widIndex[k];
-    if (Status[i] != STATUS_INSYMP) {
+    if (Status[i] != STATUS_NOSYMP) {
       continue;
     }
 
