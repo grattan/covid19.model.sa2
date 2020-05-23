@@ -877,6 +877,9 @@ void infect_dzn(IntegerVector Status,
     InfectionsByWorkplace[widi0] += 1;
   }
 
+  // A_Workplace = % chance of a workplace being infected
+  // Q_Workplace = % chance of a person coming in to contact with an infected
+  //               person given the infected person attends the same workplace
   std::vector<unsigned char> A_Workplace = do_lemire_char_par(n_workplaces, a_workplace_rate, nThread, false);
   std::vector<unsigned char> Q_Workplace = do_lemire_char_par(N, q_workplace, nThread, false);
 
@@ -1672,7 +1675,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
   ++n_workplaces; // 0-indexing
 
 
-  // Now we can attach Epipars and infer vectors that
+  // Now we can attach Epipars and create vectors that
   // supply the stochasticity in the model.
 
   double resistance_threshold = Epi["resistance_threshold"];
@@ -1683,22 +1686,18 @@ List do_au_simulate(IntegerVector StatusOriginal,
   const double a_household_rate = Epi["a_household_rate"];
   const double a_schools_rate = Epi["a_schools_rate"];
 
-  std::vector<unsigned char> A_Workplace = do_lemire_char_par(n_workplaces, a_workplace_rate, nThread, false);
-  std::vector<unsigned char> A_Household = do_lemire_char_par(n_households, a_household_rate, nThread, false);
-  std::vector<unsigned char> A_School = do_lemire_char_par(NSCHOOLS, a_schools_rate, nThread, false);
-
 
   // Personal epidemiological parameters
-  std::vector<unsigned char> Resistant = do_lemire_char_par(N, resistance_threshold, nThread, false);
+  const std::vector<unsigned char> Resistant = do_lemire_char_par(N, resistance_threshold, nThread, false);
 
 
   const double p_asympto = Epi["p_asympto"];
   const double p_critical = Epi["p_critical"];
   const double p_death = Epi["p_death"];
 
-  std::vector<unsigned char> ProgInSymp = do_lemire_char_par(N, 1 - p_asympto, nThread, false);
-  std::vector<unsigned char> ProgCritic = do_lemire_char_par(N, p_critical, nThread, false);
-  std::vector<unsigned char> ProgKilled = do_lemire_char_par(N, p_death, nThread, false);
+  const std::vector<unsigned char> ProgInSymp = do_lemire_char_par(N, 1 - p_asympto, nThread, false);
+  const std::vector<unsigned char> ProgCritic = do_lemire_char_par(N, p_critical, nThread, false);
+  const std::vector<unsigned char> ProgKilled = do_lemire_char_par(N, p_death, nThread, false);
 
 
   const double q_workplace = Epi["q_workplace"];
