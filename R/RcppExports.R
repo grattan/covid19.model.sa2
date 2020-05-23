@@ -5,29 +5,6 @@ distr2status <- function(N, dead, healed, active, critical) {
     .Call(`_covid19_model_sa2_distr2status`, N, dead, healed, active, critical)
 }
 
-#' @name do_1day_supermarket
-#' @description Simulate the experience of everyone's interactions
-#' at supermarkets in a single day
-#' @param Status \code{integer(N)}: Whether each individual is infected or not etc.
-#' @param InfectedOn The day on which the individual was infected.
-#' @param SA2 The 2016 SA2 code of each individual. Must be sorted.
-#' @param Age The age of every individual.
-#' @param Employment Information about employment of each individual.
-#' @param SupermarketTarget The supermarket that the person visits,
-#' equal to zero for each individual who doesn't visit a supermarket.
-#' @param Resistance For each individual, inherent resistance to being infected.
-#' @param N \code{int} Population of Australia.
-#' @param check_sa2_key \code{bool} Whether to check SA2 is sorted, defaults to \code{true}.
-#' @param returner Used to return other elements. By default 0, i.e. just return Status.
-#' @param r0_supermarket The reproduction rate of infection in each supermarket, without
-#' including resistance.
-#' @param resistance1 Resistance parameter 1: the threshold below which
-#' an infection takes place.
-#' @param resistance2 Reistance parameter 2: used with Age to increase
-#' the likelihood of both critical and active cases among the elderly.
-#' @noRd
-NULL
-
 status_killed <- function() {
     .Call(`_covid19_model_sa2_status_killed`)
 }

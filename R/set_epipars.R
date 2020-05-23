@@ -123,6 +123,7 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac", "c
   checkmate::assert_number(resistance_threshold,
                            lower = 0,
                            upper = 1000)
+  resistance_threshold <- resistance_threshold / 1000
 
   CHECKED <- TRUE
 

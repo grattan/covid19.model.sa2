@@ -386,30 +386,6 @@ void contact_tracing(IntegerVector Status,
   // void
 }
 
-
-
-//' @name do_1day_supermarket
-//' @description Simulate the experience of everyone's interactions
-//' at supermarkets in a single day
-//' @param Status \code{integer(N)}: Whether each individual is infected or not etc.
-//' @param InfectedOn The day on which the individual was infected.
-//' @param SA2 The 2016 SA2 code of each individual. Must be sorted.
-//' @param Age The age of every individual.
-//' @param Employment Information about employment of each individual.
-//' @param SupermarketTarget The supermarket that the person visits,
-//' equal to zero for each individual who doesn't visit a supermarket.
-//' @param Resistance For each individual, inherent resistance to being infected.
-//' @param N \code{int} Population of Australia.
-//' @param check_sa2_key \code{bool} Whether to check SA2 is sorted, defaults to \code{true}.
-//' @param returner Used to return other elements. By default 0, i.e. just return Status.
-//' @param r0_supermarket The reproduction rate of infection in each supermarket, without
-//' including resistance.
-//' @param resistance1 Resistance parameter 1: the threshold below which
-//' an infection takes place.
-//' @param resistance2 Reistance parameter 2: used with Age to increase
-//' the likelihood of both critical and active cases among the elderly.
-//' @noRd
-
 void infect_supermarkets(IntegerVector Status,
                          IntegerVector InfectedOn,
                          IntegerVector shortSA2,
@@ -420,7 +396,7 @@ void infect_supermarkets(IntegerVector Status,
                          IntegerVector Employment,
                          IntegerVector nSupermarketsBySA2,
                          IntegerVector nSupermarketsAvbl,
-                         const std::vector<unsigned char> &Resistance,
+                         const std::vector<unsigned char> &Resistant,
                          const int day,
                          const int wday,
                          const int yday,
@@ -428,7 +404,6 @@ void infect_supermarkets(IntegerVector Status,
                          IntegerVector SupermarketTypical,
                          const double q_supermarket,
                          IntegerVector TodaysHz,
-                         const unsigned char resistance1,
                          const int max_persons_per_supermarket,
                          const bool verbose = false) {
   if (day < 0) {
@@ -502,7 +477,7 @@ void infect_supermarkets(IntegerVector Status,
   }
 
   bool check_max_persons = max_persons_per_supermarket < 255;
-  std::vector<unsigned char> SuperRand = do_lemire_char_par(N, q_supermarket, nThread, false);
+  std::vector<unsigned char> Q_Supermarket = do_lemire_char_par(N, q_supermarket, nThread, false);
 
 #pragma omp parallel for num_threads(nThread)
   for (int sa2i = 0; sa2i < NSA2; ++sa2i) {
@@ -515,12 +490,14 @@ void infect_supermarkets(IntegerVector Status,
       if (!i_supermarkets[sa2i][supermarketi][hr]) {
         continue;
       }
-      if (Status[i] || !nSupermarketsAvbl[i] || TodaysHz[(i * 11 + yday) % NTODAY] > SupermarketFreq[i % nFreqs]) {
+      if (Status[i] ||
+          !nSupermarketsAvbl[i] ||
+          TodaysHz[(i * 11 + yday) % NTODAY] > SupermarketFreq[i % nFreqs]) {
         continue;
       }
 
       // not transmitted
-      if (!SuperRand[i]) {
+      if (!Q_Supermarket[i]) {
         continue;
       }
 
@@ -533,7 +510,7 @@ void infect_supermarkets(IntegerVector Status,
         s_supermarket[supermarketi][hr] += 1;
       }
 
-      if (Resistance[i] < resistance1) {
+      if (Resistant[i]) {
         // i_supermarkets[sa2i][supermarketi][hr] -= 1;
         Status[i] = STATUS_NOSYMP;
         InfectedOn[i] = yday;
@@ -555,8 +532,7 @@ void infect_place(int place_id,
                   const int wday,
                   const int yday,
                   const int N,
-                  const std::vector<unsigned char> &Resistance,
-                  const unsigned char resistance1,
+                  const std::vector<unsigned char> &Resistant,
                   IntegerVector TodaysHz,
                   const int max_persons_per_place,
                   IntegerVector TodaysK) {
@@ -766,8 +742,7 @@ void infect_place(int place_id,
 
       if (n_infections_here) {
         // increase resistance asymptotically for more and more infections
-        unsigned char resistance_ = 255 - (255 - resistance1) / n_infections_here;
-        if (Resistance[i] < resistance_) {
+        if (Resistant[i]) {
           Status[i] = STATUS_NOSYMP;
           InfectedOn[i] = yday;
         }
@@ -814,12 +789,12 @@ void infect_dzn(IntegerVector Status,
                 const int wday,
                 const int yday,
                 const int N,
-                const unsigned char resistance1,
-                const std::vector<unsigned char> &Wrand,
+                const double a_workplace_rate,
+                const double q_workplace,
                 const int workplaces_open,
                 const int workplace_size_max,
                 IntegerVector TodaysK,
-                const std::vector<unsigned char> &Resistance,
+                const std::vector<unsigned char> &Resistant,
                 const int zero,
                 const int optionz,
                 const int nThread) {
@@ -838,7 +813,6 @@ void infect_dzn(IntegerVector Status,
       Rcout << TodaysK.length() << " ";
 
       Rcout << N << " ";
-      Rcout << resistance1 << " ";
       Rcout << workplaces_open << " ";
       Rcout << workplace_size_max << " ";
       Rcout << "\n";
@@ -903,19 +877,23 @@ void infect_dzn(IntegerVector Status,
     InfectionsByWorkplace[widi0] += 1;
   }
 
+  std::vector<unsigned char> A_Workplace = do_lemire_char_par(n_workplaces, a_workplace_rate, nThread, false);
+  std::vector<unsigned char> Q_Workplace = do_lemire_char_par(N, q_workplace, nThread, false);
+
   // reinfection
   for (unsigned int k = 0; k < widIndexSize; ++k) {
     int i = widIndex[k];
     int widi0 = wid[i] - 1;
-    if (!Wrand[widi0]) {
+    if (InfectionsByWorkplace[widi0] == 0) {
+      continue;
+    }
+    if (!A_Workplace[widi0]) {
       continue;
     }
     if (nColleagues[i] <= 1) {
       continue;
     }
-    if (InfectionsByWorkplace[widi0] == 0) {
-      continue;
-    }
+
     int infected_workers = (int)(InfectionsByWorkplace[widi0]);
     int excess_workers = nColleagues[i] - workplace_size_max;
     bool no_further_infections = false; // due to the infectious not being allowed in (back of the queue)
@@ -936,8 +914,7 @@ void infect_dzn(IntegerVector Status,
     if (Status[i] || no_further_infections) {
       continue;
     }
-    unsigned char resistance_ = 255 - (255 - resistance1) / infected_workers;
-    if (Resistance[i] < resistance_) {
+    if (Q_Workplace[i] && Resistant[i]) {
       Status[i] = STATUS_NOSYMP;
       InfectedOn[i] = yday;
     }
@@ -1010,8 +987,8 @@ void infect_school(IntegerVector Status,
                    int lockdown_trigger_schools_any_critical,
                    int lockdown_trigger_schools_any_critical_duration_of_lockdown,
                    const std::vector<int> &schoolsIndex,
-                   const std::vector<unsigned char> &Erand,
                    IntegerVector Srand,
+                   double a_schools_rate,
                    double q_school_dbl,
                    bool only_Year12,
                    List school_days_per_wk,
@@ -1214,6 +1191,8 @@ void infect_school(IntegerVector Status,
     }
   }
 
+  std::vector<unsigned char> A_School = do_lemire_char_par(NSCHOOLS, a_schools_rate, nThread, false);
+
   int i_visits[NSCHOOLS] = {};
   bool lockdownTriggeredByCritic[NSTATES1] = {};
 
@@ -1243,7 +1222,7 @@ void infect_school(IntegerVector Status,
     }
 
     int schooli = School[i] - 1;
-    if (!Erand[schooli]) {
+    if (!A_School[schooli]) {
       continue;
     }
     if (statusi == STATUS_NOSYMP) {
@@ -1255,7 +1234,7 @@ void infect_school(IntegerVector Status,
 
   int newInfectionsBySchool[NSCHOOLS] = {};
 
-  std::vector<unsigned char> Prand = do_lemire_char_par(NPUPILS, q_school_dbl, nThread, false);
+  std::vector<unsigned char> Q_School = do_lemire_char_par(NPUPILS, q_school_dbl, nThread, false);
 
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread) reduction(+ :newInfectionsBySchool[:NSCHOOLS])
@@ -1279,7 +1258,7 @@ void infect_school(IntegerVector Status,
     }
 
     int schooli = School[i] - 1;
-    if (!Erand[schooli]) {
+    if (!A_School[schooli]) {
       continue;
     }
 
@@ -1287,7 +1266,7 @@ void infect_school(IntegerVector Status,
     // first.  We could randomize this, but I don't think it matters.
 
     // TODO: make students of the same age more likely/first to be infected
-    if (i_visits[schooli] && Prand[k]) {
+    if (i_visits[schooli] && Q_School[i]) {
       Status[i] = STATUS_NOSYMP;
       InfectedOn[i] = yday;
       newInfectionsBySchool[schooli] += 1;
@@ -1326,28 +1305,24 @@ void infect_household(IntegerVector Status,
                       IntegerVector hid,
                       const std::vector<unsigned char> &HouseholdSize,
                       const std::vector<int> &hhIndex,
-                      const std::vector<unsigned char> &Resistance,
+                      const std::vector<unsigned char> &Resistant,
                       IntegerVector Age,
                       const int n_households,
-                      const std::vector<unsigned char> &Hrand,
-                      IntegerVector Srand,
+                      double a_household_rate,
                       const int yday,
                       const int N,
                       IntegerVector HouseholdInfectedToday,
-                      const unsigned char resistance1,
-                      const int q_household,
+                      const double q_household,
                       const int nThread) {
-  // resistance_penalty = penalty against Resistance[i]
-  // that makes infection more likely. Higher penalties
-  // make infection more likely among otherwise resistant
-  // individuals
 
+  std::vector<unsigned char> A_Household = do_lemire_char_par(n_households, a_household_rate, nThread, false);
+  std::vector<unsigned char> Q_Household = do_lemire_char_par(N, q_household, nThread, false);
 
 #pragma omp parallel for num_threads(nThread)
   for (int k = 0; k < n_households; ++k) {
     // if the household is not infectible
     // skip immediately
-    if (!Hrand[k]) {
+    if (!A_Household[k]) {
       continue;
     }
     int i = hhIndex[k];
@@ -1368,14 +1343,13 @@ void infect_household(IntegerVector Status,
       // we have skipped anyone who has Status[i] != 0 so the only way
       // the following assignment can occur is if the other thread is
       // skipping
-      if (household_infected && Srand[i] < q_household) {
-        unsigned char r = resistance1;
-        if (Status[i] == 0 && Resistance[i] < r) {
+      if (household_infected && Q_Household[i]) {
+        if (Status[i] == 0 && Resistant[i]) {
           Status[i] = STATUS_NOSYMP;
           InfectedOn[i] = yday + 1;
         }
 
-        if (Status[i + 1] == 0 && Resistance[i + 1] < r) {
+        if (Status[i + 1] == 0 && Resistant[i + 1]) {
           Status[i + 1] = STATUS_NOSYMP;
           InfectedOn[i + 1] = yday + 1;
         }
@@ -1400,12 +1374,8 @@ void infect_household(IntegerVector Status,
       // return to first person and infect as appropriate
       // (don't infect already infected)
       for (int j = 0; j < nh; ++j) {
-        if (Srand[i] >= q_household) {
-          continue;
-        }
-        unsigned char r = resistance1;
         int ij = i + j;
-        if (Status[ij] == 0 && Resistance[ij] < r) {
+        if (Q_Household[ij] && Status[ij] == 0 && Resistant[ij]) {
           Status[ij] = STATUS_NOSYMP;
           InfectedOn[ij] = yday + 1;
         }
@@ -1458,6 +1428,8 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
   Progress p(days_to_sim, display_progress && console_width <= 1);
   IntegerVector S = clone(SeedOriginal);
+
+  // Seed lemire rng
   uint64_t s64 = 0;
   for (int t = 0; t < 20; ++t) {
     s64 += S[t];
@@ -1466,6 +1438,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
     s64 <<= 32;
   }
   update_seed(s64);
+
 
   IntegerVector Status = no_init(N);
   IntegerVector InfectedOn = no_init(N);
@@ -1511,7 +1484,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 
   const bool cafes_open = Policy["cafes_open"];
-  const int max_persons_per_cafe = 10; // TODO: all this needs to be IntegerVectors!
+  const int max_persons_per_cafe = 10;
   // school policies
   const bool schools_open = Policy["schools_open"];
   const bool only_Year12  = Policy["only_Year12"];
@@ -1563,23 +1536,9 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 
 
-  int workplaces_open = 0;
-  int workplace_size_max = 10;
-  double a_workplace_rate = 1;
-  if (Policy.containsElementNamed("workplaces_open")) {
-    workplaces_open = Policy["workplaces_open"];
-    if (Policy.containsElementNamed("workplace_size_max")) {
-      workplace_size_max = Policy["workplace_size_max"];
-    }
-    if (Epi.containsElementNamed("a_workplace_rate")) {
-      a_workplace_rate = Epi["a_workplace_rate"];
-    }
-  }
+  const double workplaces_open = Policy["workplaces_open"];
+  const int workplace_size_max = Policy["workplace_size_max"];
 
-  const double a_household_rate = Epi["a_household_rate"];
-  const double a_schools_rate = Epi["a_schools_rate"];
-  // int a_household_rate = 1000;
-  // int a_schools_rate = 1000;
 
 
 
@@ -1605,30 +1564,9 @@ List do_au_simulate(IntegerVector StatusOriginal,
   }
 
 
-
-
-
-
-  // attach epipars
-
-  int resistance1000 = Epi["resistance_threshold"];
-
-
-  const double p_asympto = Epi["p_asympto"];
-  const double p_critical = Epi["p_critical"];
-  const double p_death = Epi["p_death"];
-
-  std::vector<unsigned char> ProgInSymp = do_lemire_char_par(N, 1 - p_asympto, nThread, false);
-  std::vector<unsigned char> ProgCritic = do_lemire_char_par(N, p_critical, nThread, false);
-  std::vector<unsigned char> ProgKilled = do_lemire_char_par(N, p_death, nThread, false);
-
-
-  const double q_workplace = Epi["q_workplace"];
-  const double q_household = Epi["q_household"];
-  const double q_school = Epi["q_school"];
-  const double q_supermarket = Epi["q_supermarket"];
-
   IntegerVector Srand = do_lemire_rand_par(N, nThread);
+
+
 
 
   std::vector<unsigned char> seqN(N, 0);
@@ -1638,7 +1576,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
   // going down - +1 each time the hid stays the same
   // hid  1  1  1  2  2  3  4  4  4  4
-  // 1st  1  2  3  1  2  1  1  2  3  4
+  // 1st  1  2  3  1  2  1  1  2  3  4  (seqN)
   for (int i = 1; i < N; ++i) {
     seqN[i] = (hid[i] == hid[i - 1]) ? seqN[i - 1] + 1 : 1;
   }
@@ -1650,9 +1588,9 @@ List do_au_simulate(IntegerVector StatusOriginal,
     // by induction must have recorded the household size too)
 
     // hid  1  1  1  2  2  3  4  4  4  4
-    // 1st  1  2  3  1  2  1  1  2  3  4
-    // 2nd                          4<-4  (first iter)
-    //                           4<-4  4
+    // 1st  1  2  3  1  2  1  1  2  3  4  (seqN)
+    // 2nd                          4<-4  (HouseholdSize, 1st iter)
+    //                           4<-4  4  (HouseholdSize, 2nd iter)
     if (hid[i] == hid[i + 1]) {
       HouseholdSize[i] = HouseholdSize[i + 1];
     } else {
@@ -1667,7 +1605,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
   for (int i = 0; i < N; ++i) {
     n_households += seqN[i] == 1;
   }
-  std::vector<int> hhIndex; // head of household index
+  std::vector<int> hhIndex; // head of household index (i.e. seqN = 1)
   hhIndex.reserve(n_households);
   {
     int i = 0;
@@ -1681,12 +1619,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
     }
   }
 
-  std::vector<unsigned char> Resistance = do_lemire_char_par(N, 1, nThread, true);
-  int r255 = 255 * resistance1000;
-  unsigned char resistance_threshold = static_cast<unsigned char>(r255 / 1000);
 
-  // Hrand is the probability of infecting 100% of your household
-  std::vector<unsigned char> Hrand = do_lemire_char_par(n_households, a_household_rate, nThread, false);
 
 
 
@@ -1705,7 +1638,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
       }
     }
   }
-  std::vector<unsigned char> Erand = do_lemire_char_par(NSCHOOLS, a_schools_rate, nThread, false);
+
 
 
   if (n_pupils != NPUPILS) {
@@ -1739,10 +1672,45 @@ List do_au_simulate(IntegerVector StatusOriginal,
   ++n_workplaces; // 0-indexing
 
 
-  std::vector<unsigned char> Wrand = do_lemire_char_par(WID_SUPREMUM, a_workplace_rate, nThread, false);
+  // Now we can attach Epipars and infer vectors that
+  // supply the stochasticity in the model.
 
-  // variables which will be updated on day = 0
-  // int n_schools = -1;
+  double resistance_threshold = Epi["resistance_threshold"];
+
+  // Unlike the p_ and q_ values below, these apply to the workplace/house/school
+  // as a whole
+  const double a_workplace_rate = Epi["a_workplace_rate"];
+  const double a_household_rate = Epi["a_household_rate"];
+  const double a_schools_rate = Epi["a_schools_rate"];
+
+  std::vector<unsigned char> A_Workplace = do_lemire_char_par(n_workplaces, a_workplace_rate, nThread, false);
+  std::vector<unsigned char> A_Household = do_lemire_char_par(n_households, a_household_rate, nThread, false);
+  std::vector<unsigned char> A_School = do_lemire_char_par(NSCHOOLS, a_schools_rate, nThread, false);
+
+
+  // Personal epidemiological parameters
+  std::vector<unsigned char> Resistant = do_lemire_char_par(N, resistance_threshold, nThread, false);
+
+
+  const double p_asympto = Epi["p_asympto"];
+  const double p_critical = Epi["p_critical"];
+  const double p_death = Epi["p_death"];
+
+  std::vector<unsigned char> ProgInSymp = do_lemire_char_par(N, 1 - p_asympto, nThread, false);
+  std::vector<unsigned char> ProgCritic = do_lemire_char_par(N, p_critical, nThread, false);
+  std::vector<unsigned char> ProgKilled = do_lemire_char_par(N, p_death, nThread, false);
+
+
+  const double q_workplace = Epi["q_workplace"];
+  const double q_household = Epi["q_household"];
+  const double q_school = Epi["q_school"];
+  const double q_supermarket = Epi["q_supermarket"];
+
+  std::vector<unsigned char> Q_Workplace = do_lemire_char_par(N, q_workplace, nThread, false);
+  std::vector<unsigned char> Q_School    = do_lemire_char_par(N, q_school, nThread, false);
+  std::vector<unsigned char> Q_Supermarket = do_lemire_char_par(N, q_supermarket, nThread, false);
+
+
 
   IntegerVector nInfected = no_init(days_to_sim);
   IntegerVector SupermarketTarget = no_init(N);
@@ -2143,7 +2111,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
                           LabourForceStatus,
                           nSupermarketsBySA2,
                           nSupermarketsAvbl,
-                          Resistance,
+                          Resistant,
                           day,
                           wday,
                           yday,
@@ -2151,7 +2119,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
                           SupermarketTypical,
                           q_supermarket,
                           TodayHz,
-                          resistance_threshold,
                           max_persons_per_supermarket,
                           false);
     }
@@ -2172,8 +2139,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
                    wday,
                    yday,
                    N,
-                   Resistance,
-                   resistance_threshold,
+                   Resistant,
                    TodayHz,
                    max_persons_per_cafe,
                    TodaysK);
@@ -2223,8 +2189,8 @@ List do_au_simulate(IntegerVector StatusOriginal,
                     lockdown_trigger_schools_with_any_critical,
                     lockdown_trigger_schools_with_any_critical_duration_of_lockdown,
                     schoolsIndex,
-                    Erand,
                     Srand,
+                    a_schools_rate,
                     q_school,
                     only_Year12,
                     school_days_per_wk,
@@ -2239,11 +2205,11 @@ List do_au_simulate(IntegerVector StatusOriginal,
                  widIndex,
                  LabourForceStatus, nColleagues,
                  day, wday, yday, N,
-                 resistance_threshold,
-                 Wrand,
+                 a_workplace_rate,
+                 q_workplace,
                  workplaces_open,
                  workplace_size_max,
-                 TodaysK, Resistance, 0, optionz, nThread);
+                 TodaysK, Resistant, 0, optionz, nThread);
       if (day < 2 && optionz) {
         Rcout << "infected_dzn = " << day << "\n";
       }
@@ -2257,11 +2223,10 @@ List do_au_simulate(IntegerVector StatusOriginal,
                      shortSA2,
                      hid, HouseholdSize,
                      hhIndex,
-                     Resistance, Age,
+                     Resistant, Age,
                      n_households,
-                     Hrand, Srand,
+                     a_household_rate,
                      yday, N, HouseholdInfectedToday,
-                     resistance_threshold,
                      q_household,
                      nThread);
     if (day < 2 && optionz) {

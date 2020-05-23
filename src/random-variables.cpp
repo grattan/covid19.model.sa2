@@ -292,7 +292,7 @@ IntegerVector do_lemire_rand_par(int n,
 
 std::vector<unsigned char> do_lemire_char_par(int nn,
                                               double p,
-                                              int maxThread = 1,
+                                              int nThread = 1,
                                               bool return_char = false) {
   if (p > 1 || p < 0) {
     stop("Internal error p must be in [0, 1]");
@@ -319,7 +319,7 @@ std::vector<unsigned char> do_lemire_char_par(int nn,
     n += 1;
   }
 
-  int nThread = (maxThread > 20) ? 20 : maxThread;
+  nThread = (nThread > 20) ? 20 : nThread;
 
   // Hugh: this is trivial performance
   std::vector<unsigned char> out;

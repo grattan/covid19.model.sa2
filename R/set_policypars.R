@@ -138,8 +138,6 @@ set_policypars <- function(supermarkets_open = TRUE,
   checkmate::assert_number(workplace_size_lmu, finite = TRUE)
   checkmate::assert_number(workplace_size_lsi, finite = TRUE)
 
-  workplaces_open <- as.integer(workplaces_open * 1000)
-
   age_based_lockdown <- .fix_age_based_lockdown(age_based_lockdown)
 
 
