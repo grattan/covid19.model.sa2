@@ -692,7 +692,25 @@ if (!requireNamespace("ASGS", quietly = TRUE)) {
     cbind(data.table(SA2 = ASGS::SA2_2016@data$SA2_MAIN16),
           as.data.table(as.data.frame(rgeos::gCentroid(ASGS::SA2_2016, byid = TRUE)))) %>%
     setnames(c("x", "y"), c("lon", "lat")) %>%
+    .[, SA2 := as.integer(as.character(SA2))] %>%
     .[]
+  CJ(SA2_orig = SA2_2016_centroids$SA2,
+     SA2_dest = SA2_2016_centroids$SA2) %>%
+    .[SA2_2016_centroids, on = "SA2_orig==SA2"] %>%
+    setnames("lon", "lon_orig") %>%
+    setnames("lat", "lat_orig") %>%
+    .[SA2_2016_centroids, on = "SA2_dest==SA2"] %>%
+    setnames("lon", "lon_dest") %>%
+    setnames("lat", "lat_dest") %>%
+    # Only need one distance for each combo
+    .[SA2_orig < SA2_dest] %>%
+    .[, distance := haversine_distance(lat_orig,
+                                       lon_orig,
+                                       lat_dest,
+                                       lon_dest)] %>%
+
+    .[]
+
 }
 
 

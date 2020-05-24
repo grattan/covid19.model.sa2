@@ -717,6 +717,7 @@ bool do_is_unsorted_pint(IntegerVector x, int nThread);
 
 
 IntegerVector shorten_sa2s_ordered(IntegerVector SA2);
+double haversine_distance(double olat1, double olon1, double olat2, double olon2);
 
 double m2mu(double m, double s);
 

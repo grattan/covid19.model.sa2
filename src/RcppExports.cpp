@@ -438,6 +438,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// haversine_distance_sa2
+double haversine_distance_sa2(int sa2_orig, int sa2_dest);
+RcppExport SEXP _covid19_model_sa2_haversine_distance_sa2(SEXP sa2_origSEXP, SEXP sa2_destSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type sa2_orig(sa2_origSEXP);
+    Rcpp::traits::input_parameter< int >::type sa2_dest(sa2_destSEXP);
+    rcpp_result_gen = Rcpp::wrap(haversine_distance_sa2(sa2_orig, sa2_dest));
+    return rcpp_result_gen;
+END_RCPP
+}
 // short_sa2
 int short_sa2(int sa2);
 RcppExport SEXP _covid19_model_sa2_short_sa2(SEXP sa2SEXP) {
@@ -593,6 +605,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_cf_mod_lemire", (DL_FUNC) &_covid19_model_sa2_cf_mod_lemire, 4},
     {"_covid19_model_sa2_RCauchy", (DL_FUNC) &_covid19_model_sa2_RCauchy, 4},
     {"_covid19_model_sa2_updateLemireSeedFromR", (DL_FUNC) &_covid19_model_sa2_updateLemireSeedFromR, 1},
+    {"_covid19_model_sa2_haversine_distance_sa2", (DL_FUNC) &_covid19_model_sa2_haversine_distance_sa2, 2},
     {"_covid19_model_sa2_short_sa2", (DL_FUNC) &_covid19_model_sa2_short_sa2, 1},
     {"_covid19_model_sa2_shorten_sa2s_ordered", (DL_FUNC) &_covid19_model_sa2_shorten_sa2s_ordered, 1},
     {"_covid19_model_sa2_sa2_firsts_finals", (DL_FUNC) &_covid19_model_sa2_sa2_firsts_finals, 3},

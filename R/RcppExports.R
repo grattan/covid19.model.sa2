@@ -133,6 +133,10 @@ updateLemireSeedFromR <- function(S) {
     .Call(`_covid19_model_sa2_updateLemireSeedFromR`, S)
 }
 
+haversine_distance_sa2 <- function(sa2_orig, sa2_dest) {
+    .Call(`_covid19_model_sa2_haversine_distance_sa2`, sa2_orig, sa2_dest)
+}
+
 short_sa2 <- function(sa2) {
     .Call(`_covid19_model_sa2_short_sa2`, sa2)
 }

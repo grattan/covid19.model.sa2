@@ -84,5 +84,36 @@ int sa2_to_state(int sa2) {
   return sa2 / 100000000;
 }
 
+// distances between sa2s
+
+double sinhalfsq (double x) {
+  const double o = sin(x / 2);
+  return o * o;
+}
+
+double haversine_distance(double olat1, double olon1, double olat2, double olon2) {
+  // double pi = 3.1415926535897;
+  const double lat1 = olat1 * (M_PI / 180) ;
+  const double lat2 = olat2 * (M_PI / 180) ;
+  const double lon1 = olon1 * (M_PI / 180) ;
+  const double lon2 = olon2 * (M_PI / 180) ;
+
+  const double delta_lat = std::fabs(lat1 - lat2);
+  const double delta_lon = std::fabs(lon1 - lon2);
+
+  double out = 0;
+  double den = cos(lat1) * cos(lat2) * sinhalfsq(delta_lon);
+  out = sinhalfsq(delta_lat);
+  out += den;
+  out = sqrt(out);
+  out = asin(out);
+  out *= 6371;
+  out *= 2;
+  return out;
+}
+
+
+
+
 
 
