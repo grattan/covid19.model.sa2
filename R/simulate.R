@@ -479,7 +479,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
       return(DT)
     }
     if (returner == 3) {
-      return(out[[1]])
+      return(out)
     }
   }
 

@@ -1832,6 +1832,9 @@ List do_au_simulate(IntegerVector StatusOriginal,
   IntegerVector out1 = no_init(o_r_len); // 7 statuses for each
   IntegerVector out2(days_to_sim * NSTATES * 7); // preallocate
 
+  IntegerVector NewInfections(days_to_sim);
+  IntegerVector NewInfectionsByState(days_to_sim * NSTATES);
+
 
   for (int day = 0; day < days_to_sim; ++day) {
     update_seed(s64);
@@ -1958,6 +1961,23 @@ List do_au_simulate(IntegerVector StatusOriginal,
           out1[o_r++] = tot_status[o_r_j++];
         }
 
+      }
+
+      int new_infections = 0;
+      int new_infections_by_state[NSTATES] = {};
+#pragma omp parallel for num_threads(nThread)
+      for (int i = 0; i < N; ++i) {
+        int statusi = Status[i];
+        int infected_on = InfectedOn[i];
+        int statei = sa2_to_state(SA2[i]) - 1;
+        if (is_infected(statusi) && infected_on == yday - 1) {
+          new_infections += 1;
+          new_infections_by_state[statei] += 1;
+        }
+      }
+      NewInfections[day] = new_infections;
+      for (int s = 0; s < NSTATES; ++s) {
+        NewInfectionsByState[day * NSTATES + s] = new_infections_by_state[s];
       }
 
 
@@ -2330,7 +2350,9 @@ List do_au_simulate(IntegerVector StatusOriginal,
     return List::create(Named("Status7") = out2);
   }
   if (returner == 3) {
-    return List::create(Named("Status12") = out1);
+    return List::create(Named("Status12") = out1,
+                        Named("NewInfections") = NewInfections,
+                        Named("NewInfectionsByState") = NewInfectionsByState);
   }
 
 

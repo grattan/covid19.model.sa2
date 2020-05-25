@@ -483,20 +483,27 @@ inline double u2exp(uint64_t x, double k) {
 std::vector<double> Rexp(int N, double k, int nThread) {
   nThread = (nThread > 20) ? 20 : nThread;
 
+
   std::vector<double> out;
   out.reserve(N);
   std::fill(out.begin(), out.end(), 0);
-
+#if INTPTR_MAX == INT64_MAX
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; i += 1) {
     int s = 0;
 #ifdef _OPENMP
     s = omp_get_thread_num();
 #endif
+
     uint64_t ux0 = lehmer64_states(s);
     double rx0 = u2exp(ux0, k);
     out[i] = rx0;
   }
+#else
+  for (int i = 0; i < N; ++i) {
+    out[i] = R::rexp(k);
+  }
+#endif
 
   return out;
 }
