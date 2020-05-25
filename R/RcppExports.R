@@ -129,8 +129,16 @@ RCauchy <- function(U, location, scale, nThread = 1L) {
     .Call(`_covid19_model_sa2_RCauchy`, U, location, scale, nThread)
 }
 
-updateLemireSeedFromR <- function(S) {
-    .Call(`_covid19_model_sa2_updateLemireSeedFromR`, S)
+do_updateLemireSeedFromR <- function(S) {
+    .Call(`_covid19_model_sa2_do_updateLemireSeedFromR`, S)
+}
+
+percentage_to_int <- function(p) {
+    .Call(`_covid19_model_sa2_percentage_to_int`, p)
+}
+
+test_q_lemire_32 <- function(N, p, nThread = 1L) {
+    .Call(`_covid19_model_sa2_test_q_lemire_32`, N, p, nThread)
 }
 
 haversine_distance_sa2 <- function(sa2_orig, sa2_dest) {

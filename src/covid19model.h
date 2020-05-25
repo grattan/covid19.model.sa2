@@ -760,6 +760,7 @@ void update_seed(int s64);
 int lehmer32();
 std::vector<unsigned char> do_lemire_char_par(int n, double p, int nThread, bool return_char);
 std::vector<double> Rexp(int N, double k, int nThread);
+std::vector<unsigned char> q_lemire_32(int N, double p, int nThread);
 
 IntegerVector get_nColleagues(int nr, int N,
                               IntegerVector LabourForceStatus,

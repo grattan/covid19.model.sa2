@@ -269,9 +269,6 @@ IntegerVector do_lemire_rand_par(int n,
                                  int nThread = 1) {
 
   nThread = (nThread > 20) ? 20 : nThread;
-
-
-
   IntegerVector out = no_init(n);
 
 #pragma omp parallel for num_threads(nThread)
@@ -305,6 +302,13 @@ std::vector<unsigned char> do_lemire_char_par(int nn,
     threshold = static_cast<unsigned char>(pint);
   }
 
+  int resolution = 1;
+  while (p > 0 && threshold == 0 && resolution < 1024) {
+    resolution *= 2;
+    pint = (p * resolution) * 255;
+    threshold = static_cast<unsigned char>(pint);
+  }
+
   if (nn < 8) {
     std::vector<char> early_out;
     early_out.reserve(8);
@@ -326,8 +330,14 @@ std::vector<unsigned char> do_lemire_char_par(int nn,
   out.reserve(n);
   std::fill(out.begin(), out.end(), 0);
 
+  if (p == 0) {
+    return out;
+  }
+
+  const int increment = 8 * resolution;
+
 #pragma omp parallel for num_threads(nThread)
-  for (int i = 7; i < n; i += 8) {
+  for (int i = 7; i < n; i += increment) {
     int s = 0;
 #ifdef _OPENMP
     s = omp_get_thread_num();
@@ -352,13 +362,16 @@ std::vector<unsigned char> do_lemire_char_par(int nn,
     } else {
 #pragma omp simd
       for (int b = 0; b < 8; ++b) {
-        out[i - b] = (bytes[b] < threshold) ? 1 : 0;
+        out[i - b] = (bytes[b] <= threshold) ? 1 : 0;
       }
     }
   }
 
   return out;
 }
+
+
+
 
 // [[Rcpp::export]]
 LogicalVector lemire_char(int N, double p, int return_early = 0,
@@ -511,7 +524,7 @@ std::vector<double> Rexp(int N, double k, int nThread) {
 
 
 // [[Rcpp::export]]
-IntegerVector updateLemireSeedFromR(IntegerVector S) {
+IntegerVector do_updateLemireSeedFromR(IntegerVector S) {
   if (S.length() <= 42) {
     stop("S.length() <= 42.");
   }
@@ -527,5 +540,53 @@ IntegerVector updateLemireSeedFromR(IntegerVector S) {
 
   return S;
 }
+
+// [[Rcpp::export(rng = false)]]
+int percentage_to_int(double p) {
+  int64_t o = (p * 2147483647) * 2 - 2147483647;
+  return (int)o;
+}
+
+std::vector<unsigned char> q_lemire_32(int N, double p, int nThread) {
+
+  const int pint = percentage_to_int(p);
+
+  std::vector<unsigned char> o;
+  o.reserve(N);
+  std::fill(o.begin(), o.end(), 0);
+
+  nThread = (nThread > 20) ? 20 : nThread;
+
+#pragma omp parallel for num_threads(nThread)
+  for (int i = 0; i < N; i += 2) {
+    int s = 0;
+#ifdef _OPENMP
+    s = omp_get_thread_num();
+#endif
+    uint64_t L = lehmer64_states(s);
+    unsigned int ux0 = L & 0xFFFFFFFF;
+    unsigned int ux1 = static_cast<int32_t>((L & 0xFFFFFFFF00000000LL) >> 32);
+    o[i] = ensign(ux0) < pint;
+    o[i + 1] = ensign(ux1) < pint;
+  }
+  return o;
+}
+
+// [[Rcpp::export]]
+LogicalVector test_q_lemire_32(int N, double p, int nThread = 1) {
+  std::vector<unsigned char> o = q_lemire_32(N, p, nThread);
+  LogicalVector out = no_init(N);
+#pragma omp parallel for num_threads(nThread)
+  for (int i = 0; i < N; ++i) {
+    bool oi = o[i] != 0;
+    out[i] = oi;
+  }
+  return out;
+}
+
+
+
+
+
 
 

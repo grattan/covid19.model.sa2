@@ -308,7 +308,7 @@ void contact_tracing(IntegerVector Status,
   // for a power of two sized vector we can efficiently assign i to a cell
 
   // successfully contacts
-  std::vector<unsigned char> CRand = do_lemire_char_par(t_perf0_binary_ceil, ct_success, nThread, false);
+  std::vector<unsigned char> CRand = q_lemire_32(t_perf0_binary_ceil, ct_success, nThread);
 
 
 
@@ -477,7 +477,8 @@ void infect_supermarkets(IntegerVector Status,
   }
 
   bool check_max_persons = max_persons_per_supermarket < 255;
-  std::vector<unsigned char> Q_Supermarket = do_lemire_char_par(N, q_supermarket, nThread, false);
+  std::vector<unsigned char> Q_Supermarket = q_lemire_32(N, q_supermarket, nThread);
+
 
 #pragma omp parallel for num_threads(nThread)
   for (int sa2i = 0; sa2i < NSA2; ++sa2i) {
@@ -880,8 +881,8 @@ void infect_dzn(IntegerVector Status,
   // A_Workplace = % chance of a workplace being infected
   // Q_Workplace = % chance of a person coming in to contact with an infected
   //               person given the infected person attends the same workplace
-  std::vector<unsigned char> A_Workplace = do_lemire_char_par(n_workplaces, a_workplace_rate, nThread, false);
-  std::vector<unsigned char> Q_Workplace = do_lemire_char_par(N, q_workplace, nThread, false);
+  std::vector<unsigned char> A_Workplace = q_lemire_32(n_workplaces, a_workplace_rate, nThread);
+  std::vector<unsigned char> Q_Workplace = q_lemire_32(N, q_workplace, nThread);
 
   // reinfection
   for (unsigned int k = 0; k < widIndexSize; ++k) {
@@ -1237,7 +1238,7 @@ void infect_school(IntegerVector Status,
 
   int newInfectionsBySchool[NSCHOOLS] = {};
 
-  std::vector<unsigned char> Q_School = do_lemire_char_par(NPUPILS, q_school_dbl, nThread, false);
+  std::vector<unsigned char> Q_School = q_lemire_32(NPUPILS, q_school_dbl, nThread);
 
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread) reduction(+ :newInfectionsBySchool[:NSCHOOLS])
