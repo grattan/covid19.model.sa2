@@ -718,6 +718,7 @@ bool do_is_unsorted_pint(IntegerVector x, int nThread);
 
 IntegerVector shorten_sa2s_ordered(IntegerVector SA2);
 double haversine_distance(double olat1, double olon1, double olat2, double olon2);
+double haversine_distance_sa2(int sa2_orig, int sa2_dest);
 
 double m2mu(double m, double s);
 
@@ -758,6 +759,7 @@ void update_seed(int s64);
 
 int lehmer32();
 std::vector<unsigned char> do_lemire_char_par(int n, double p, int nThread, bool return_char);
+std::vector<double> Rexp(int N, double k, int nThread);
 
 IntegerVector get_nColleagues(int nr, int N,
                               IntegerVector LabourForceStatus,

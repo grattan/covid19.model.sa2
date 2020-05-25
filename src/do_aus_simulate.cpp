@@ -1390,6 +1390,68 @@ void infect_household(IntegerVector Status,
 }
 
 
+void infect_other_sa2(IntegerVector Status,
+                      IntegerVector InfectedOn,
+                      IntegerVector shortSA2,
+                      unsigned char stateShortSA2[],
+                      int day,
+                      int wday,
+                      int yday,
+                      int nThread,
+                      int N,
+                      double p_goes_outside = 0.01,
+                      double rate = 1) {
+  if (p_goes_outside < 0 || p_goes_outside > 1) {
+    stop("wrong range.");
+  }
+  if (p_goes_outside == 0) {
+    return;
+  }
+
+  int i_visitors[NSA2] = {};
+
+  std::vector<double> MaxTravelDist = Rexp(N, rate, nThread);
+
+#pragma omp parallel for num_threads(nThread) reduction(+ : i_visitors[:NSA2])
+  for (int i = 0; i < N; ++i) {
+    if (Status[i] != STATUS_NOSYMP && InfectedOn[i] < yday) {
+      continue;
+    }
+    int sa2i = shortSA2[i];
+    int statei = stateShortSA2[sa2i];
+    int dd = 0;
+    double dist_allowed = MaxTravelDist[i];
+    // check the next sa2 if it's further away that this,
+    // we conclude that no travel occurs
+    int dest_sa2i = sa2i + 1;
+    double dist2sa2 = haversine_distance_sa2(sa2i, dest_sa2i % NSA2);
+    if (dist2sa2 >= dist_allowed) {
+      continue;
+    }
+    // else the person visits
+
+    for (int d = 2; d < NSA2; ++d) {
+      dd += (d % 2) ? -d : d;
+      dest_sa2i = (sa2i + dd) % NSA2;
+      double dist = haversine_distance_sa2(sa2i, dest_sa2i);
+      double dist_allowed = MaxTravelDist[i];
+      if (dist_allowed < dist) {
+        break;
+      }
+    }
+    i_visitors[dest_sa2i] += 1;
+  }
+
+  for (int sa2i = 0; sa2i < NSA2; ++sa2i) {
+    int infected_visitors = i_visitors[sa2i];
+    if (!infected_visitors) {
+      continue;
+    }
+
+  }
+
+}
+
 
 // [[Rcpp::export]]
 List do_au_simulate(IntegerVector StatusOriginal,

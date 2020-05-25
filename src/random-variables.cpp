@@ -472,6 +472,37 @@ IntegerVector RCauchy(IntegerVector U, double location, double scale, int nThrea
 
 }
 
+inline double u2exp(uint64_t x, double k) {
+  if (x == 0) return 0;
+  double antilog = ((double)x) / (double(UINT64_MAX));
+  double logarithm = std::log(antilog);
+  return (-1 / k) * logarithm;
+}
+
+
+std::vector<double> Rexp(int N, double k, int nThread) {
+  nThread = (nThread > 20) ? 20 : nThread;
+
+  std::vector<double> out;
+  out.reserve(N);
+  std::fill(out.begin(), out.end(), 0);
+
+#pragma omp parallel for num_threads(nThread)
+  for (int i = 0; i < N; i += 1) {
+    int s = 0;
+#ifdef _OPENMP
+    s = omp_get_thread_num();
+#endif
+    uint64_t ux0 = lehmer64_states(s);
+    double rx0 = u2exp(ux0, k);
+    out[i] = rx0;
+  }
+
+  return out;
+}
+
+
+
 // [[Rcpp::export]]
 IntegerVector updateLemireSeedFromR(IntegerVector S) {
   if (S.length() <= 42) {
