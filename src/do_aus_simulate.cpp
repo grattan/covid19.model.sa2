@@ -51,7 +51,7 @@ inline bool is_isolated(const int & statusi) {
 }
 
 inline bool is_infected(const int & statusi) {
-  return statusi > 0 && statusi < MIN_ISOL;
+  return statusi > 0 && (statusi % 32) >= STATUS_NOSYMP && (statusi % 32) <= STATUS_CRITIC;
 }
 
 
