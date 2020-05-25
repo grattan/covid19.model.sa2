@@ -2031,10 +2031,8 @@ List do_au_simulate(IntegerVector StatusOriginal,
 #pragma omp parallel for num_threads(nThread)
 #endif
     for (int i = first_infected_i; i < final_infected_i; ++i) {
-
-
-      if (Status[i] > 0) {
-        int statusi = Status[i];
+      int statusi = Status[i];
+      if (is_infected(statusi)) {
         // So the person is either
         //   1  Incubation period
         //   2  Illness period
