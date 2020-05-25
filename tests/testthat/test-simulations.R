@@ -176,8 +176,8 @@ test_that("returner 3 no race condition", {
   skip_on_cran()
   skip_on_travis()
   library(data.table)
-  S3 <- simulate_sa2(10, nThread = parallel::detectCores(), returner = 3)
-  pop <- data.table(S3)[, Day := rep_each(1:10, .N)][, .(N3 = sum(S3)), by = .(Day)]
+  S <- simulate_sa2(10, nThread = parallel::detectCores(), returner = 3)
+  pop <- data.table(S3 = S$Status12)[, Day := rep_each(1:10, .N)][, .(N3 = sum(S3)), by = .(Day)]
   expect_true(is_constant(pop[["N3"]]))
   expect_equal(pop[["N3"]][1], fst_rows("australia.fst"))
 
