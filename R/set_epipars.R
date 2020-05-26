@@ -111,6 +111,7 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac", "c
   checkmate::assert_number(q_school, lower = 0, upper = 1)
   checkmate::assert_number(q_school_grade, lower = 0, upper = 1)
   checkmate::assert_number(q_supermarket, lower = 0, upper = 1)
+  checkmate::assert_number(q_workplace, lower = 0, upper = 1)
 
 
   checkmate::assert_number(p_asympto, finite = TRUE, lower = 0, upper = 1)
@@ -125,6 +126,12 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac", "c
                            lower = 0,
                            upper = 1000)
   resistance_threshold <- resistance_threshold / 1000
+
+  lapply(ls(), function(x) {
+    if (is.null(get(x))) {
+      stop(x, " was NULL.")
+    }
+  })
 
   CHECKED <- TRUE
 
