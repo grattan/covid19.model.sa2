@@ -260,7 +260,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
     } else if (by_state) {
       aus[, Status := set_initial_by_state(state)]
     } else  {
-      asympto <- EpiPars$p_asympto / 1000
+      asympto <- EpiPars$p_asympto
       sympto <- 1 - asympto
 
       # For text width

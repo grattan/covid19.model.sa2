@@ -3,6 +3,9 @@
 #'
 #' @name set_policypars
 #'
+#' @param do_school_lockdown If \code{FALSE}, no lockdown occurs and
+#' other arguments will be ignored.
+#'
 #' @param default_schools_with_infections The number of schools with
 #' at least `default_schools_with_infections_geq` infections
 #' to trigger a lockdown.
@@ -18,7 +21,8 @@
 #' day of the lockdown so triggered.
 #'
 #' @export set_lockdown_triggers__schools
-set_lockdown_triggers__schools <- function(default_schools_with_infections = 4L,
+set_lockdown_triggers__schools <- function(do_school_lockdown = TRUE,
+                                           default_schools_with_infections = 4L,
                                            default_schools_with_infections_geq = 3L,
                                            default_schools_with_infections_duration_of_lockdown = 28L,
                                            default_schools_with_any_critical = 1L,

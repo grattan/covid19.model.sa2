@@ -4,9 +4,11 @@
 \name{set_policypars}
 \alias{set_policypars}
 \alias{set_lockdown_triggers__schools}
+\alias{set_policy_no_restrictions}
 \title{Set triggers for changes in school policy}
 \usage{
 set_lockdown_triggers__schools(
+  do_school_lockdown = TRUE,
   default_schools_with_infections = 4L,
   default_schools_with_infections_geq = 3L,
   default_schools_with_infections_duration_of_lockdown = 28L,
@@ -36,8 +38,13 @@ set_policypars(
   workplace_size_lsi = -1,
   lockdown_triggers__schools = set_lockdown_triggers__schools()
 )
+
+set_policy_no_restrictions()
 }
 \arguments{
+\item{do_school_lockdown}{If \code{FALSE}, no lockdown occurs and
+other arguments will be ignored.}
+
 \item{default_schools_with_infections}{The number of schools with
 at least `default_schools_with_infections_geq` infections
 to trigger a lockdown.}

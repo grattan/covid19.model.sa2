@@ -71,6 +71,7 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac", "c
                         q_school = 1/3000,
                         q_school_grade = 1/500,
                         q_supermarket = 1/500,
+                        q_places = 1/500,
                         resistance_threshold = 400L,
                         p_asympto = 0.48,
                         p_critical = 0.02,

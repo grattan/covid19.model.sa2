@@ -55,6 +55,14 @@ const int STATUS_CRITIC =  3;
 
 const int ISOLATED_PLUS = 32;
 
+const int SOURCE_SUPERM = 17;
+const int SOURCE_PLACES = 18;
+const int SOURCE_WORKPL = 19;
+const int SOURCE_SCHOOL = 20;
+const int SOURCE_HOUSEH = 21;
+const int SOURCE_OTHSA2 = 22;
+
+
 const int NSTATUSES = 12;
 
 // We want to avoid branching and prefer + or - to if statements
@@ -751,6 +759,7 @@ IntegerVector modulo(IntegerVector x, int m, int d, int nThread);
 IntegerVector prlnorm_int(int n, double a, double b, int nThread);
 IntegerVector RCauchy(IntegerVector U, double location, double scale, int nThread);
 IntegerVector do_lemire_rand_par(int n, int nThread);
+IntegerVector do_lemire_rand(int n);
 #if INTPTR_MAX == INT64_MAX
 void update_seed(uint64_t s64);
 #else

@@ -1,4 +1,7 @@
 #' Set policy parameters
+#'
+#' @name set_policypars
+#'
 #' @description Used to supply policy parameters to the main
 #' \code{\link{simulate_sa2}} function,
 #' with defaults.
@@ -140,12 +143,34 @@ set_policypars <- function(supermarkets_open = TRUE,
 
   age_based_lockdown <- .fix_age_based_lockdown(age_based_lockdown)
 
+  school_lockdown_triggers_exist <-
+    !is.null(lockdown_triggers__schools) &&
+    !isFALSE(lockdown_triggers__schools[["do_school_lockdown"]])
 
 
   out <- mget(ls())
   attr(out, "original_call") <- match.call()
   out
 }
+
+#' @rdname set_policypars
+#' @export
+set_policy_no_restrictions <- function() {
+  set_policypars(supermarkets_open = TRUE,
+                 schools_open = TRUE,
+                 only_Year12 = FALSE,
+                 school_days_per_wk = 5L,
+                 do_contact_tracing = FALSE,
+                 # max_persons_per_event = .Machine$integer.max,
+                 max_persons_per_supermarket = .Machine$integer.max %/% 2L,
+                 cafes_open = TRUE,
+                 age_based_lockdown = integer(100),
+                 workplaces_open = TRUE,
+                 workplace_size_max = .Machine$integer.max %/% 2L,
+                 lockdown_triggers__schools = NULL)
+}
+
+
 
 
 .fix_tests_by_state <- function(tests_by_state) {

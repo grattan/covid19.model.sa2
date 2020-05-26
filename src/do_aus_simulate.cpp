@@ -388,6 +388,7 @@ void contact_tracing(IntegerVector Status,
 
 void infect_supermarkets(IntegerVector Status,
                          IntegerVector InfectedOn,
+                         IntegerVector Source,
                          IntegerVector shortSA2,
                          IntegerVector SA2_starts,
                          IntegerVector SA2_finals,
@@ -515,6 +516,7 @@ void infect_supermarkets(IntegerVector Status,
         // i_supermarkets[sa2i][supermarketi][hr] -= 1;
         Status[i] = STATUS_NOSYMP;
         InfectedOn[i] = yday;
+        Source[i] = SOURCE_SUPERM;
       }
     }
   }
@@ -523,6 +525,7 @@ void infect_supermarkets(IntegerVector Status,
 void infect_place(int place_id,
                   IntegerVector Status,
                   IntegerVector InfectedOn,
+                  IntegerVector Source,
                   IntegerVector shortSA2,
                   IntegerVector SA2_firsts,
                   IntegerVector SA2_finals,
@@ -534,6 +537,7 @@ void infect_place(int place_id,
                   const int yday,
                   const int N,
                   const std::vector<unsigned char> &Resistant,
+                  const double q_places,
                   IntegerVector TodaysHz,
                   const int max_persons_per_place,
                   IntegerVector TodaysK) {
@@ -627,6 +631,7 @@ void infect_place(int place_id,
   unsigned char max_persons = max_persons_per_place & 255;
 
 
+
   unsigned char i_places[MAX_N_PLACES_TOTAL][PLACES_HRS_OPEN] = {};
   int n_infections_per_sa2[NSA2] = {};
 
@@ -682,7 +687,7 @@ void infect_place(int place_id,
     }
   }
 
-
+  std::vector<unsigned char> Q_Place = q_lemire_32(N, q_places, nThread);
 
 #pragma omp parallel for num_threads(nThread)
   for (int sa2i = 0; sa2i < NSA2; ++sa2i) {
@@ -741,11 +746,12 @@ void infect_place(int place_id,
 
       int n_infections_here = (int)(i_places[placei][hri]);
 
-      if (n_infections_here) {
+      if (n_infections_here && Q_Place[i]) {
         // increase resistance asymptotically for more and more infections
         if (Resistant[i]) {
           Status[i] = STATUS_NOSYMP;
           InfectedOn[i] = yday;
+          Source[i] = SOURCE_PLACES;
         }
       }
     }
@@ -780,6 +786,7 @@ IntegerVector do_rep(IntegerVector r, int nThread = 1) {
 
 void infect_dzn(IntegerVector Status,
                 IntegerVector InfectedOn,
+                IntegerVector Source,
                 IntegerVector DZN,
                 IntegerVector wid,
                 const int n_workplaces,
@@ -921,6 +928,7 @@ void infect_dzn(IntegerVector Status,
     if (Q_Workplace[i] && Resistant[i]) {
       Status[i] = STATUS_NOSYMP;
       InfectedOn[i] = yday;
+      Source[i] = SOURCE_WORKPL;
     }
 
   }
@@ -974,6 +982,7 @@ bool during_school_term(const int & state, const int & yday) {
 
 void infect_school(IntegerVector Status,
                    IntegerVector InfectedOn,
+                   IntegerVector Source,
                    IntegerVector School,
                    IntegerVector Age,
                    IntegerVector AttendsWday,
@@ -1273,6 +1282,7 @@ void infect_school(IntegerVector Status,
     if (i_visits[schooli] && Q_School[k]) {
       Status[i] = STATUS_NOSYMP;
       InfectedOn[i] = yday;
+      Source[i] = SOURCE_SCHOOL;
       newInfectionsBySchool[schooli] += 1;
     }
   }
@@ -1305,6 +1315,7 @@ void infect_school(IntegerVector Status,
 
 void infect_household(IntegerVector Status,
                       IntegerVector InfectedOn,
+                      IntegerVector Source,
                       IntegerVector shortSA2,
                       IntegerVector hid,
                       const std::vector<unsigned char> &HouseholdSize,
@@ -1351,11 +1362,13 @@ void infect_household(IntegerVector Status,
         if (Status[i] == 0 && Resistant[i]) {
           Status[i] = STATUS_NOSYMP;
           InfectedOn[i] = yday + 1;
+          Source[i] = SOURCE_HOUSEH;
         }
 
         if (Status[i + 1] == 0 && Resistant[i + 1]) {
           Status[i + 1] = STATUS_NOSYMP;
           InfectedOn[i + 1] = yday + 1;
+          Source[i + 1] = SOURCE_HOUSEH;
         }
       }
       continue;
@@ -1381,6 +1394,7 @@ void infect_household(IntegerVector Status,
         int ij = i + j;
         if (Q_Household[ij] && Status[ij] == 0 && Resistant[ij]) {
           Status[ij] = STATUS_NOSYMP;
+          Source[ij] = SOURCE_HOUSEH;
           InfectedOn[ij] = yday + 1;
         }
       }
@@ -1393,7 +1407,10 @@ void infect_household(IntegerVector Status,
 
 void infect_other_sa2(IntegerVector Status,
                       IntegerVector InfectedOn,
+                      IntegerVector Source,
                       IntegerVector shortSA2,
+                      IntegerVector SA2_firsts,
+                      IntegerVector SA2_finals,
                       unsigned char stateShortSA2[],
                       int day,
                       int wday,
@@ -1410,10 +1427,11 @@ void infect_other_sa2(IntegerVector Status,
   }
 
   int i_visitors[NSA2] = {};
+  int tot_i_visitors = 0;
 
   std::vector<double> MaxTravelDist = Rexp(N, rate, nThread);
 
-#pragma omp parallel for num_threads(nThread) reduction(+ : i_visitors[:NSA2])
+#pragma omp parallel for num_threads(nThread) reduction(+ : i_visitors[:NSA2]) reduction(+:tot_i_visitors)
   for (int i = 0; i < N; ++i) {
     if (Status[i] != STATUS_NOSYMP && InfectedOn[i] < yday) {
       continue;
@@ -1441,16 +1459,35 @@ void infect_other_sa2(IntegerVector Status,
       }
     }
     i_visitors[dest_sa2i] += 1;
+    tot_i_visitors += 1;
   }
+
+  if (!tot_i_visitors) {
+    return;
+  }
+  IntegerVector v = do_lemire_rand(tot_i_visitors);
 
   for (int sa2i = 0; sa2i < NSA2; ++sa2i) {
     int infected_visitors = i_visitors[sa2i];
     if (!infected_visitors) {
       continue;
     }
+    int sa2_first = SA2_firsts[sa2i];
+    int sa2_final = SA2_finals[sa2i];
+    int d = sa2_final - sa2_first;
+    IntegerVector v = do_lemire_rand(infected_visitors);
+    for (int j = 0; j < infected_visitors; ++j) {
 
+      int vi = v[j];
+      double p = ((double) vi) / ((double) infected_visitors);
+      int ii = sa2_first + d * p;
+      if (Status[ii] == STATUS_SUSCEP) {
+        Status[ii] = STATUS_NOSYMP;
+        InfectedOn[ii] = yday;
+        Source[ii] = SOURCE_OTHSA2;
+      }
+    }
   }
-
 }
 
 
@@ -1508,12 +1545,14 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
   IntegerVector Status = no_init(N);
   IntegerVector InfectedOn = no_init(N);
+  IntegerVector Source = no_init(N);
   // Status.reserve(N);
   // std::fill(Status.begin(), Status.end(), 0);
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
     Status[i] = StatusOriginal[i];
     InfectedOn[i] = InfectedOnOriginal[i];
+    Source[i] = 0;
   }
 
 
@@ -1561,12 +1600,16 @@ List do_au_simulate(IntegerVector StatusOriginal,
   List school_days_per_wk = Policy["school_days_per_wk"];
 
   // Dynamic modelling relating to schools
-  int lockdown_trigger_schools_with_infections = 4;
-  int lockdown_trigger_schools_with_infections_geq = 3;
-  int lockdown_trigger_schools_with_infections_duration_of_lockdown = 28;
-  int lockdown_trigger_schools_with_any_critical = 1;
-  int lockdown_trigger_schools_with_any_critical_duration_of_lockdown = 91;
-  if (Policy.containsElementNamed("lockdown_triggers__schools")) {
+  const bool school_lockdown_triggers_exist =
+    Policy.containsElementNamed("school_lockdown_triggers_exist") &&
+    Policy["school_lockdown_triggers_exist"];
+  int lockdown_trigger_schools_with_infections = NSCHOOLS;
+  int lockdown_trigger_schools_with_infections_geq = NPUPILS;
+  int lockdown_trigger_schools_with_infections_duration_of_lockdown = days_to_sim;
+  int lockdown_trigger_schools_with_any_critical = NSCHOOLS;
+  int lockdown_trigger_schools_with_any_critical_duration_of_lockdown = NPUPILS;
+  if (school_lockdown_triggers_exist &&
+      Policy.containsElementNamed("lockdown_triggers__schools")) {
     List lockdown_triggers__schools = Policy["lockdown_triggers__schools"];
     List lockdown_triggers__schools_AUS = lockdown_triggers__schools[0];
     lockdown_trigger_schools_with_infections = lockdown_triggers__schools_AUS["default_schools_with_infections"];
@@ -1767,6 +1810,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
   const double q_household = Epi["q_household"];
   const double q_school = Epi["q_school"];
   const double q_supermarket = Epi["q_supermarket"];
+  const double q_places = Epi["q_places"];
 
 
 
@@ -2110,6 +2154,11 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
     // First, examine all individuals infected last night
     // and move them accordingly.
+    if (optionz == 11) {
+
+    }
+
+
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread)
 #endif
@@ -2179,6 +2228,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
     if (supermarkets_open) {
       infect_supermarkets(Status,
                           InfectedOn,
+                          Source,
                           shortSA2,
                           SA2_firsts,
                           SA2_finals,
@@ -2205,6 +2255,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
       infect_place(15 - 1, // 15 is place id for cafe -1 for 0-index
                    Status,
                    InfectedOn,
+                   Source,
                    shortSA2,
                    SA2_firsts,
                    SA2_finals,
@@ -2216,6 +2267,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
                    yday,
                    N,
                    Resistant,
+                   q_places,
                    TodayHz,
                    max_persons_per_cafe,
                    TodaysK);
@@ -2251,7 +2303,8 @@ List do_au_simulate(IntegerVector StatusOriginal,
           }
         }
 
-      infect_school(Status, InfectedOn, School, Age,
+      infect_school(Status, InfectedOn, Source,
+                    School, Age,
                     AttendsWday,
                     day, wday, yday,
                     N,
@@ -2275,7 +2328,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
                     -99);
     }
     if (workplaces_open) {
-      infect_dzn(Status, InfectedOn,
+      infect_dzn(Status, InfectedOn, Source,
                  DZN, wid,
                  n_workplaces,
                  widIndex,
@@ -2295,7 +2348,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
     // finally
 
-    infect_household(Status, InfectedOn,
+    infect_household(Status, InfectedOn, Source,
                      shortSA2,
                      hid, HouseholdSize,
                      hhIndex,
@@ -2342,7 +2395,8 @@ List do_au_simulate(IntegerVector StatusOriginal,
   if (returner == 0) {
     return Rcpp::List::create(Named("nInfected") = nInfected,
                               Named("Statuses") = Statuses,
-                              Named("TestedOn") = TestedOn);
+                              Named("TestedOn") = TestedOn,
+                              Named("InfectionSource") = Source);
   }
   if (returner == 1) {
     return List::create(Named("Status7") = out1);
@@ -2354,6 +2408,12 @@ List do_au_simulate(IntegerVector StatusOriginal,
     return List::create(Named("Status12") = out1,
                         Named("NewInfections") = NewInfections,
                         Named("NewInfectionsByState") = NewInfectionsByState);
+  }
+  if (returner == 4) {
+    return List::create(Named("Status12") = out1,
+                        Named("NewInfections") = NewInfections,
+                        Named("NewInfectionsByState") = NewInfectionsByState,
+                        Named("InfectionSource") = Source);
   }
 
 
