@@ -2407,11 +2407,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
   if (returner == 3) {
     return List::create(Named("Status12") = out1,
                         Named("NewInfections") = NewInfections,
-                        Named("NewInfectionsByState") = NewInfectionsByState);
-  }
-  if (returner == 4) {
-    return List::create(Named("Status12") = out1,
-                        Named("NewInfections") = NewInfections,
                         Named("NewInfectionsByState") = NewInfectionsByState,
                         Named("InfectionSource") = Source);
   }
