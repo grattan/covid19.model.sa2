@@ -478,9 +478,8 @@ simulate_sa2 <- function(days_to_simulate = 5,
       DT[, "N" := NN]
       return(DT)
     }
-    if (returner == 3) {
-      return(out)
-    }
+
+    return(out)
   }
 
 
