@@ -149,7 +149,7 @@ fst_rows <- function(file.fst) {
 
 read_last <- function(file.fst, column) {
   last_row <- fst_rows(file.fst)
-  read_sys(file.fst, column = column, from = last_row, to = last_row)[[1]]
+  read_sys(file.fst, columns = column, from = last_row, to = last_row)[[1]]
 }
 
 

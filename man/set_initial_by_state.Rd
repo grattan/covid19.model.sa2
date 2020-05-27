@@ -16,6 +16,7 @@ set_initial_by_state(
   recovered_by_state = "time_series_recovered.fst",
   asympto = 0.48,
   p_critical = 0.03,
+  first_yday = NULL,
   .population = length(state_id)
 )
 }
@@ -49,6 +50,9 @@ if the number of active cases is 100 and }\code{asympto = 0.75}
 \strong{ the number of total cases is 400.}}
 
 \item{p_critical}{The proportion of symptomatic cases who are critical.}
+
+\item{first_yday}{An integer, the \code{\link[data.table]{yday}} to set
+as the initial day.}
 
 \item{.population}{The size of the output, the population. By default,
 set to the length of \code{state_id}.}

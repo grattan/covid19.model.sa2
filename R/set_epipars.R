@@ -27,11 +27,11 @@
 #' @param q_household,q_school,q_school_grade,q_workplace Daily transmission probability among household members / students of the same school / students of the same school and same same
 #' grade / workers of the same workplace.
 #'
+#' @param q_supermarket,q_places As above, for supermarket and places.
+#'
 #' @param resistance_threshold An integer in \code{[0, 1000]}, the resistance
 #' required to not be infected. A value of 0
 #' means no-one will be infected; a value of 1000 means everyone will.
-#'
-#' @param r_work_location Parameters for work infection distribution.
 #'
 #' @param p_asympto A number in \code{[0, 1]}, the proportion of cases that
 #' are asymptomatic.

@@ -59,6 +59,8 @@ schools in which tranmission between students is possible.}
 \item{q_household, q_school, q_school_grade, q_workplace}{Daily transmission probability among household members / students of the same school / students of the same school and same same
 grade / workers of the same workplace.}
 
+\item{q_supermarket, q_places}{As above, for supermarket and places.}
+
 \item{resistance_threshold}{An integer in \code{[0, 1000]}, the resistance
 required to not be infected. A value of 0
 means no-one will be infected; a value of 1000 means everyone will.}
@@ -71,8 +73,6 @@ are asymptomatic.}
 
 \item{p_death}{A number in \code{[0, 1]}, the proportion of
 \strong{critical cases} that die.}
-
-\item{r_work_location}{Parameters for work infection distribution.}
 }
 \value{
 A list of the components, plus an entry \code{CHECKED} having the

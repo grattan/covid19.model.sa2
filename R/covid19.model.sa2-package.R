@@ -21,6 +21,7 @@
 #' @importFrom fastmatch fmatch
 #' @importFrom magrittr %>%
 #' @importFrom magrittr %T>%
+#' @importFrom stats complete.cases
 #' @importFrom stats rbeta
 #' @importFrom stats setNames
 #' @importFrom utils packageName

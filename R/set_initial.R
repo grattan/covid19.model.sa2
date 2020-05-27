@@ -21,6 +21,8 @@
 #' if the number of active cases is 100 and }\code{asympto = 0.75}
 #' \strong{ the number of total cases is 400.}
 #' @param p_critical The proportion of symptomatic cases who are critical.
+#' @param first_yday An integer, the \code{\link[data.table]{yday}} to set
+#' as the initial day.
 #' @param .population The size of the output, the population. By default,
 #' set to the length of \code{state_id}.
 #'

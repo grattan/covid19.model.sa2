@@ -346,6 +346,16 @@ write_yaml_config <- function(Epi, Policies) {
   # convert it back for yaml
   ki2dbl <- function(x) if (is.integer(x)) x / 1000 else x
 
+  illness_distribution <-
+    illness_mean <-
+    illness_sigma <-
+    incubation_distribution <-
+    incubation_mean <-
+    incubation_sigma <-
+    p_critical <-
+    p_death <-
+    r_distribution <- r_location <- r_supermarket_location <-
+    r_scale <- r_supermarket_scale <- resistance_threshold <-  NULL
 
   config <- list(
     epidemiology = list(
@@ -449,6 +459,8 @@ unpack_multipolicy <- function(MultiPolicy) {
       }
 
 
+    # workplace_size_max <- resistance_threshold <- NULL
+    workplace_size_max <- resistance_threshold <- NULL
 
     # assume
     list(start_date = "2020-01-01",
