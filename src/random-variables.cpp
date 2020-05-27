@@ -556,6 +556,7 @@ std::vector<unsigned char> q_lemire_32(int N, double p, int nThread) {
   std::vector<unsigned char> o;
   o.reserve(N);
   std::fill(o.begin(), o.end(), 0);
+#if INTPTR_MAX == INT64_MAX
 
   nThread = (nThread > 20) ? 20 : nThread;
 
@@ -571,6 +572,9 @@ std::vector<unsigned char> q_lemire_32(int N, double p, int nThread) {
     o[i] = ensign(ux0) < pint;
     o[i + 1] = ensign(ux1) < pint;
   }
+#else
+  warning("q_lemire_32 not available for 32-bit.");
+#endif
   return o;
 }
 

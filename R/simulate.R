@@ -258,7 +258,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
     if (is.data.table(myaus)) {
       aus <- copy(myaus)
     } else if (by_state) {
-      aus[, Status := set_initial_by_state(state)]
+      aus[, Status := set_initial_by_state(state, first_yday = .first_day)]
     } else  {
       asympto <- EpiPars$p_asympto
       sympto <- 1 - asympto

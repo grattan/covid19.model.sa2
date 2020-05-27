@@ -43,6 +43,7 @@ set_initial_by_state <- function(state_id,
                                  recovered_by_state = "time_series_recovered.fst",
                                  asympto = 0.48,
                                  p_critical = 0.03,
+                                 first_yday = NULL,
                                  .population = length(state_id)) {
   if (missing(state_id)) {
     stop("'state_id' is missing, with no default.")
@@ -75,12 +76,58 @@ set_initial_by_state <- function(state_id,
     cases_by_state <- read_sys(cases_by_state, fst2_progress = FALSE)
     deaths_by_state <- read_sys(deaths_by_state, fst2_progress = FALSE)
     recovered_by_state <- read_sys(recovered_by_state, fst2_progress = FALSE)
+    impute_time_series(cases_by_state, deaths_by_state, recovered_by_state)
   }
 
+
+
+
   if (nrow(cases_by_state) > 1) {
-    cases_by_state <- last(cases_by_state)
-    deaths_by_state <- last(deaths_by_state)
-    recovered_by_state <- last(recovered_by_state)
+    if (is.null(first_yday)) {
+      cases_by_state <- last(cases_by_state)
+      deaths_by_state <- last(deaths_by_state)
+      recovered_by_state <- last(recovered_by_state)
+    } else {
+      earliest_allowed_date <-
+        recovered_by_state[complete.cases(recovered_by_state), min(Date)]
+
+      earliest_allowed_yday <- yday(earliest_allowed_date)
+      max_allowed_date <- recovered_by_state[, max(Date)]
+      max_allowed_yday <- yday(max_allowed_date)
+
+      orig_first_yday <- first_yday
+      if (is.character(first_yday) || inherits(first_yday, "Date")) {
+        first_yday <- yday(first_yday)
+      }
+      if (!is.atomic(first_yday)) {
+        stop(g("`first_yday` was class {toString(yday)}, but must be atomic."))
+      }
+      if (length(first_yday) != 1) {
+        stop(g("`first_yday` had length {length(first_yday)}, but must be length-one."))
+      }
+      if (anyNA(first_yday)) {
+        stop(g("`first_yday` was NA, which is not permitted."))
+      }
+      if (is.double(first_yday)) {
+        if (first_yday != as.integer(first_yday)) {
+          stop(g("`first_yday = {orig_first_yday}`, but must be a whole number."))
+        }
+        first_yday <- as.integer(first_yday)
+      }
+      if (first_yday < earliest_allowed_yday) {
+        stop(g("`first_yday = {orig_first_yday}`, but the earliest allowed yday, ",
+               "given available data, is {earliest_allowed_yday}."))
+      }
+      if (first_yday > max_allowed_yday) {
+        stop(g("`first_yday = {orig_first_yday}`, but the earliest allowed yday, ",
+               "given available data, is {earliest_allowed_yday}."))
+      }
+
+
+      cases_by_state <- cases_by_state[yday(Date) == first_yday]
+      deaths_by_state <- deaths_by_state[yday(Date) == first_yday]
+      recovered_by_state <- recovered_by_state[yday(Date) == first_yday]
+    }
   }
 
   if (length(state_id) != 1L) {
@@ -96,6 +143,7 @@ set_initial_by_state <- function(state_id,
                                        deaths_by_state = deaths_by_state,
                                        recovered_by_state = recovered_by_state,
                                        asympto = asympto,
+                                       first_yday = first_yday,
                                        .population = .N),
        by = "x"]
     return(DT[["out"]])
@@ -125,11 +173,47 @@ set_initial_by_state <- function(state_id,
     tot_cases <- dead + healed + active + critical
     stop(glue::glue("`.population = {.population}`, yet ",
                     "(dead + healed + active + critical) = {tot_cases}. ",
-                    "state_id = {state_id}"),
+                    "state_id = {state_id}."), "\n",
          "Ensure the population at least the number of total cases.")
   }
   dqsamp_status(dead, healed, nosymp, insymp, critical, .population, asympto)
 }
+
+
+impute_time_series <- function(time_series_cases, time_series_deaths, time_series_healed) {
+  #
+  # time_series_deaths <- read_sys("time_series_deaths.fst", fst2_progress = FALSE)
+  # time_series_healed <- read_sys("time_series_recovered.fst", fst2_progress = FALSE)
+  # time_series_cases <- read_sys("time_series_cases.fst", fst2_progress = FALSE)
+
+  # Victoria is the most comprehensive
+  NSW_r_VIC <- time_series_healed[complete.cases(NSW), mean(NSW / VIC)]
+
+  state_r_VIC <- function(s) {
+    eval.parent(substitute(time_series_healed[complete.cases(get(s)), mean(get(s) / VIC)]))
+  }
+  state_r_TAS <- function(s) {
+    eval.parent(substitute(time_series_healed[complete.cases(get(s)), mean(get(s) / TAS)]))
+  }
+
+  for (DT in list(time_series_cases, time_series_deaths, time_series_healed)) {
+    for (j in names(DT)) {
+      if (j %in% c("Date", "VIC", "Total")) {
+        next
+      }
+      r_vic <- state_r_VIC(j)
+      r_tas <- state_r_TAS(j)
+      vic <- .subset2(DT, "VIC")
+      tas <- .subset2(DT, "TAS")
+      v <- .subset2(DT, j)
+      DT[, (j) := coalesce(v, as.integer(vic * r_vic), as.integer(tas * r_tas))]
+    }
+  }
+
+  list(time_series_cases, time_series_deaths, time_series_healed)
+}
+
+
 
 dqsamp_status <- function(dead, healed, nosymp, insymp, critical, .population, asympto) {
   n_status0 <- .population - (dead + healed + nosymp + insymp + critical)
