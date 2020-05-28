@@ -349,13 +349,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // do_lemire_rand
-IntegerVector do_lemire_rand(int n);
-RcppExport SEXP _covid19_model_sa2_do_lemire_rand(SEXP nSEXP) {
+IntegerVector do_lemire_rand(int n, bool fill_if_odd);
+RcppExport SEXP _covid19_model_sa2_do_lemire_rand(SEXP nSEXP, SEXP fill_if_oddSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type n(nSEXP);
-    rcpp_result_gen = Rcpp::wrap(do_lemire_rand(n));
+    Rcpp::traits::input_parameter< bool >::type fill_if_odd(fill_if_oddSEXP);
+    rcpp_result_gen = Rcpp::wrap(do_lemire_rand(n, fill_if_odd));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -458,6 +459,20 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type p(pSEXP);
     Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
     rcpp_result_gen = Rcpp::wrap(test_q_lemire_32(N, p, nThread));
+    return rcpp_result_gen;
+END_RCPP
+}
+// do_one_unif
+int do_one_unif(int a, int b, bool odd, int s);
+RcppExport SEXP _covid19_model_sa2_do_one_unif(SEXP aSEXP, SEXP bSEXP, SEXP oddSEXP, SEXP sSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type a(aSEXP);
+    Rcpp::traits::input_parameter< int >::type b(bSEXP);
+    Rcpp::traits::input_parameter< bool >::type odd(oddSEXP);
+    Rcpp::traits::input_parameter< int >::type s(sSEXP);
+    rcpp_result_gen = Rcpp::wrap(do_one_unif(a, b, odd, s));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -621,7 +636,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_prlnorm_dbl", (DL_FUNC) &_covid19_model_sa2_prlnorm_dbl, 4},
     {"_covid19_model_sa2_prlnorm_int", (DL_FUNC) &_covid19_model_sa2_prlnorm_int, 4},
     {"_covid19_model_sa2_prcauchy", (DL_FUNC) &_covid19_model_sa2_prcauchy, 4},
-    {"_covid19_model_sa2_do_lemire_rand", (DL_FUNC) &_covid19_model_sa2_do_lemire_rand, 1},
+    {"_covid19_model_sa2_do_lemire_rand", (DL_FUNC) &_covid19_model_sa2_do_lemire_rand, 2},
     {"_covid19_model_sa2_do_lemire_rand_par", (DL_FUNC) &_covid19_model_sa2_do_lemire_rand_par, 2},
     {"_covid19_model_sa2_lemire_char", (DL_FUNC) &_covid19_model_sa2_lemire_char, 4},
     {"_covid19_model_sa2_cf_sample", (DL_FUNC) &_covid19_model_sa2_cf_sample, 4},
@@ -630,6 +645,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_do_updateLemireSeedFromR", (DL_FUNC) &_covid19_model_sa2_do_updateLemireSeedFromR, 1},
     {"_covid19_model_sa2_percentage_to_int", (DL_FUNC) &_covid19_model_sa2_percentage_to_int, 1},
     {"_covid19_model_sa2_test_q_lemire_32", (DL_FUNC) &_covid19_model_sa2_test_q_lemire_32, 3},
+    {"_covid19_model_sa2_do_one_unif", (DL_FUNC) &_covid19_model_sa2_do_one_unif, 4},
     {"_covid19_model_sa2_haversine_distance_sa2", (DL_FUNC) &_covid19_model_sa2_haversine_distance_sa2, 2},
     {"_covid19_model_sa2_short_sa2", (DL_FUNC) &_covid19_model_sa2_short_sa2, 1},
     {"_covid19_model_sa2_shorten_sa2s_ordered", (DL_FUNC) &_covid19_model_sa2_shorten_sa2s_ordered, 1},

@@ -34,9 +34,11 @@ test_that("lemire works", {
 test_that("lemire_char", {
   skip_on_cran()
   skip_if(is32bit())
+
   p25 <- lemire_char(8000, 0.25)
   expect_true(mean(p25) >= 0.2 && mean(p25) <= 0.3)
   withr::with_seed(37, {
+    updateLemireSeedFromR()
     p74 <- lemire_char(1024, 0.037)
     expect_true(mean(p74) >= 0.026 && mean(p74) <= 0.048)
     # expect_true(sum(p74) %in% c(37L, 42L))

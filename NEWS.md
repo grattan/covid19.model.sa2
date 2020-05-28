@@ -1,3 +1,8 @@
+# 0.19.0
+
+* Simulation now infects other SA2s internally.
+
+
 # 0.18.0
 
 * `.first_yday` is now fussier and is passed to `set_initial_by_state` for

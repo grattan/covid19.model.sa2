@@ -1465,22 +1465,24 @@ void infect_other_sa2(IntegerVector Status,
   if (!tot_i_visitors) {
     return;
   }
-  IntegerVector v = do_lemire_rand(tot_i_visitors);
+
 
   for (int sa2i = 0; sa2i < NSA2; ++sa2i) {
+
     int infected_visitors = i_visitors[sa2i];
     if (!infected_visitors) {
       continue;
     }
+
     int sa2_first = SA2_firsts[sa2i];
     int sa2_final = SA2_finals[sa2i];
     int d = sa2_final - sa2_first;
-    IntegerVector v = do_lemire_rand(infected_visitors);
     for (int j = 0; j < infected_visitors; ++j) {
-
-      int vi = v[j];
-      double p = ((double) vi) / ((double) infected_visitors);
-      int ii = sa2_first + d * p;
+      int s = 0;
+#ifdef _OPENMP
+      s = omp_get_thread_num();
+#endif
+      int ii = do_one_unif(0, infected_visitors - 1, true, s);
       if (Status[ii] == STATUS_SUSCEP) {
         Status[ii] = STATUS_NOSYMP;
         InfectedOn[ii] = yday;
@@ -1583,6 +1585,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
   // attach policy changes
 
+  const bool travel_outside_sa2 = Policy["travel_outside_sa2"];
   const bool supermarkets_open = Policy["supermarkets_open"];
   const bool use_mpps = Policy.length() && Policy.containsElementNamed("max_persons_per_supermarket");
   const int max_persons_per_supermarket = use_mpps ? Policy["max_persons_per_supermarket"] : 2e9;
@@ -2222,7 +2225,23 @@ List do_au_simulate(IntegerVector StatusOriginal,
       }
     }
 
-    // This function actually performs the interactions and infections
+    // Now actually performs the interactions and infections
+
+    // Infect other sa2 (then return instantly -- i.e. continue to infect)
+    if (travel_outside_sa2) {
+      infect_other_sa2(Status,
+                       InfectedOn,
+                       Source,
+                       shortSA2,
+                       SA2_firsts,
+                       SA2_finals,
+                       stateShortSA2,
+                       day,
+                       wday,
+                       yday,
+                       nThread,
+                       N);
+    }
 
 
     if (supermarkets_open) {
@@ -2408,6 +2427,11 @@ List do_au_simulate(IntegerVector StatusOriginal,
     return List::create(Named("Status12") = out1,
                         Named("NewInfections") = NewInfections,
                         Named("NewInfectionsByState") = NewInfectionsByState,
+                        Named("InfectionSource") = Source);
+  }
+  if (returner == 4) {
+    return List::create(Named("Status") = Status,
+                        Named("InfectedOn") = InfectedOn,
                         Named("InfectionSource") = Source);
   }
 

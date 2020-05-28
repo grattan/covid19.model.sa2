@@ -249,9 +249,14 @@ void update_seed(uint64_t s64) {
 
 
 // [[Rcpp::export]]
-IntegerVector do_lemire_rand(int n) {
+IntegerVector do_lemire_rand(int n, bool fill_if_odd = false) {
   if (n <= 0 || (n % 2)) {
-    stop("n must be positive and even.");
+    if (n > 0 && fill_if_odd) {
+      ++n;
+    } else {
+      stop("Internal error: (do_lemire_rand): n must be positive and even.");
+    }
+
   }
 
   IntegerVector out = no_init(n);
@@ -588,6 +593,27 @@ LogicalVector test_q_lemire_32(int N, double p, int nThread = 1) {
     out[i] = oi;
   }
   return out;
+}
+
+// [[Rcpp::export]]
+int do_one_unif(int a, int b, bool odd = false, int s = 0) {
+  // threadsafe random variable in [a, b]
+  // like unifRand but effectively inheriting R's .Random.seed for reproducibility
+  uint64_t L = lehmer64_states(s); // s is the thread number if available
+  const double range_ab = b - a + 1;
+  const double range_int = 4294967294;
+  const double r = range_ab / range_int;
+
+  if (odd) {
+    unsigned int ux0 = L & 0xFFFFFFFF;
+    unsigned int ix0 = ux0 * r;
+    return ensign(ix0) + a;
+  } else {
+    unsigned int ux1 = static_cast<int32_t>((L & 0xFFFFFFFF00000000LL) >> 32);
+    unsigned int ix1 = ux1 * r;
+    return ensign(ix1) + a;
+  }
+
 }
 
 

@@ -70,6 +70,8 @@
 #' rate distribution for the geometric distribution; \code{_lmu} and
 #' \code{_lsi} are the parameters for the lognormal distribution.
 #'
+#' @param travel_outside_sa2 Should travel outside a person's SA2 be modelled?
+#'
 #' @param lockdown_triggers__schools
 #' A list constructed by \code{\link{set_lockdown_triggers__schools}}.
 #'
@@ -105,6 +107,7 @@ set_policypars <- function(supermarkets_open = TRUE,
                            workplace_size_beta = 13,
                            workplace_size_lmu = -1,
                            workplace_size_lsi = -1,
+                           travel_outside_sa2 = FALSE,
                            lockdown_triggers__schools = set_lockdown_triggers__schools()) {
 
   checkmate::assert_logical(supermarkets_open,
@@ -142,6 +145,8 @@ set_policypars <- function(supermarkets_open = TRUE,
   checkmate::assert_number(workplace_size_lsi, finite = TRUE)
 
   age_based_lockdown <- .fix_age_based_lockdown(age_based_lockdown)
+
+  travel_outside_sa2 <- checkmate::assert_logical(travel_outside_sa2, len = 1L)
 
   school_lockdown_triggers_exist <-
     !is.null(lockdown_triggers__schools) &&

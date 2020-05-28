@@ -759,7 +759,8 @@ IntegerVector modulo(IntegerVector x, int m, int d, int nThread);
 IntegerVector prlnorm_int(int n, double a, double b, int nThread);
 IntegerVector RCauchy(IntegerVector U, double location, double scale, int nThread);
 IntegerVector do_lemire_rand_par(int n, int nThread);
-IntegerVector do_lemire_rand(int n);
+IntegerVector do_lemire_rand(int n, bool fill_if_odd);
+int do_one_unif(int a, int b, bool odd, int s);
 #if INTPTR_MAX == INT64_MAX
 void update_seed(uint64_t s64);
 #else

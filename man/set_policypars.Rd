@@ -36,6 +36,7 @@ set_policypars(
   workplace_size_beta = 13,
   workplace_size_lmu = -1,
   workplace_size_lsi = -1,
+  travel_outside_sa2 = FALSE,
   lockdown_triggers__schools = set_lockdown_triggers__schools()
 )
 
@@ -130,6 +131,8 @@ that everyone interacts on a single day).}
 \item{workplace_size_beta, workplace_size_lmu, workplace_size_lsi}{Parameters for the distribution of workplace sizes. \code{_beta} is the
 rate distribution for the geometric distribution; \code{_lmu} and
 \code{_lsi} are the parameters for the lognormal distribution.}
+
+\item{travel_outside_sa2}{Should travel outside a person's SA2 be modelled?}
 
 \item{lockdown_triggers__schools}{A list constructed by \code{\link{set_lockdown_triggers__schools}}.}
 }

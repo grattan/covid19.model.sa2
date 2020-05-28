@@ -105,8 +105,8 @@ prcauchy <- function(n, a, b, nThread = 1L) {
     .Call(`_covid19_model_sa2_prcauchy`, n, a, b, nThread)
 }
 
-do_lemire_rand <- function(n) {
-    .Call(`_covid19_model_sa2_do_lemire_rand`, n)
+do_lemire_rand <- function(n, fill_if_odd = FALSE) {
+    .Call(`_covid19_model_sa2_do_lemire_rand`, n, fill_if_odd)
 }
 
 do_lemire_rand_par <- function(n, nThread = 1L) {
@@ -139,6 +139,10 @@ percentage_to_int <- function(p) {
 
 test_q_lemire_32 <- function(N, p, nThread = 1L) {
     .Call(`_covid19_model_sa2_test_q_lemire_32`, N, p, nThread)
+}
+
+do_one_unif <- function(a, b, odd = FALSE, s = 0L) {
+    .Call(`_covid19_model_sa2_do_one_unif`, a, b, odd, s)
 }
 
 haversine_distance_sa2 <- function(sa2_orig, sa2_dest) {

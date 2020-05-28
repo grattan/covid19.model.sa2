@@ -36,6 +36,10 @@
     options(covid19.model.sa2_useDataEnv = FALSE)
   }
 
+  if (is64bit()) {
+    updateLemireSeedFromR()
+  }
+
 
   invisible(NULL)
 }
