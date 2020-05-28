@@ -1492,6 +1492,75 @@ void infect_other_sa2(IntegerVector Status,
   }
 }
 
+void progress_bar(int console_width,
+                  int days_to_sim,
+                  int day,
+                  int yday_start,
+                  bool on_terminal,
+                  int n_infected_today) {
+  int pbar_w = console_width - 20 - 8;
+
+  // daily increment
+  double di = ((double)pbar_w)  / ((double)(days_to_sim));
+  double b_d = ((double)day + 1) * di;
+
+  double w_d = 0;
+  double r_d = 0; // remainder
+
+  Rcout << "| ";
+  int w = 2;
+
+  // w < 1024 in case of very large console width
+  while (w < pbar_w && w < 1024) {
+    Rcpp::checkUserInterrupt();
+    int w_yday = w_d + yday_start + 1 + 0.5;
+    int w_wday = wday_2020[((w_yday - 1) % 7)];
+    w_d += di;
+    r_d += di;
+    int max_reds = (on_terminal) ? 0 : 2;
+    while (r_d > 1 && w < 1024) {
+      ++w;
+      r_d -= 1;
+      if ((w_d + 0.5) < b_d) {
+        if (w_wday < 6 || max_reds <= 0) {
+          if (max_reds && !during_school_term(1, w_yday)) {
+            Rcout << "\033[34m" << "=" << "\033[39m";
+          } else {
+            Rcout << "=";
+          }
+        } else {
+          --max_reds;
+          Rcout << "\033[31m" << "=" << "\033[39m";
+        }
+      } else {
+        // Rcout << w_yday << " ";
+        Rcout << "_";
+      }
+    }
+  }
+  Rcout << " | ";
+
+  // int last_yday = (days_to_sim + yday_start);
+
+  Rcout << "day = " << day + 1 << "/" << days_to_sim << " ";
+
+  // asking for log(0) = -Inf number of console outputs will do exactly
+  // what is asked
+
+  // number of digits in n_infected_today (-1)
+  int ndig_nit = (n_infected_today > 9) ? floor(log10(n_infected_today)) : 0;
+  for (int w = ndig_nit; w < 8; ++w) {
+    Rcout << " ";
+  }
+
+
+  Rcout << n_infected_today << "\r";
+  if (day == days_to_sim - 1) {
+    Rcout << "\n";
+  }
+}
+
+
 
 // [[Rcpp::export]]
 List do_au_simulate(IntegerVector StatusOriginal,
@@ -1531,7 +1600,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
   }
 #endif
 
-  Progress p(days_to_sim, display_progress && console_width <= 1);
   IntegerVector S = clone(SeedOriginal);
 
   // Seed lemire rng
@@ -2037,75 +2105,15 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 
 
-
-
     if (display_progress) {
-      if (console_width <= 1) {
-        p.increment();
-      } else {
-
-        int pbar_w = console_width - 20 - 8;
-
-        // daily increment
-        double di = ((double)pbar_w)  / ((double)(days_to_sim));
-        double b_d = ((double)day + 1) * di;
-
-        double w_d = 0;
-        double r_d = 0; // remainder
-
-        Rcout << "| ";
-        int w = 2;
-
-        // w < 1024 in case of very large console width
-        while (w < pbar_w && w < 1024) {
-          Rcpp::checkUserInterrupt();
-          int w_yday = w_d + yday_start + 1 + 0.5;
-          int w_wday = wday_2020[((w_yday - 1) % 7)];
-          w_d += di;
-          r_d += di;
-          int max_reds = (on_terminal) ? 0 : 2;
-          while (r_d > 1 && w < 1024) {
-            ++w;
-            r_d -= 1;
-            if ((w_d + 0.5) < b_d) {
-              if (w_wday < 6 || max_reds <= 0) {
-                if (max_reds && !during_school_term(1, w_yday)) {
-                  Rcout << "\033[34m" << "=" << "\033[39m";
-                } else {
-                  Rcout << "=";
-                }
-              } else {
-                --max_reds;
-                Rcout << "\033[31m" << "=" << "\033[39m";
-              }
-            } else {
-              // Rcout << w_yday << " ";
-              Rcout << "_";
-            }
-          }
-        }
-        Rcout << " | ";
-
-        // int last_yday = (days_to_sim + yday_start);
-
-        Rcout << "day = " << day + 1 << "/" << days_to_sim << " ";
-
-        // asking for log(0) = -Inf number of console outputs will do exactly
-        // what is asked
-
-        // number of digits in n_infected_today (-1)
-        int ndig_nit = (n_infected_today > 9) ? floor(log10(n_infected_today)) : 0;
-        for (int w = ndig_nit; w < 8; ++w) {
-          Rcout << " ";
-        }
-
-
-        Rcout << n_infected_today << "\r";
-        if (day == days_to_sim - 1) {
-          Rcout << "\n";
-        }
-      }
+      progress_bar(console_width,
+                   days_to_sim,
+                   day,
+                   yday_start,
+                   on_terminal,
+                   n_infected_today);
     }
+
 
 
 
