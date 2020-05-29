@@ -121,7 +121,7 @@ set_policypars <- function(yday_start = 0L,
                            lockdown_triggers__schools = set_lockdown_triggers__schools()) {
 
   if (!is.integer(yday_start)) {
-    yday <- yday(yday_start)
+    yday_start <- yday(yday_start)
   }
   checkmate::check_int(yday, lower = 0L)
 
