@@ -46,7 +46,7 @@ set_initial_by_state <- function(state_id,
                                  asympto = 0.48,
                                  p_critical = 0.03,
                                  first_yday = NULL,
-                                 .population = length(state_id)) {
+                                 .population = NULL) {
   if (missing(state_id)) {
     stop("'state_id' is missing, with no default.")
   }
@@ -55,9 +55,15 @@ set_initial_by_state <- function(state_id,
     state_id <- match(state_id, .states)
   }
 
+  if (is.null(.population) && length(state_id) == 1L) {
+    .population <- state_population(state_id)
+  }
+
   if (length(state_id) == 1L && (anyNA(state_id) || state_id > length(.states))) {
     return(integer(.population))
   }
+
+
 
   # Must be all NULL or none NULL
   n_nulls <- is.null(dead) + is.null(healed) + is.null(active) + is.null(critical)
@@ -169,6 +175,8 @@ set_initial_by_state <- function(state_id,
   insymp <- active
 
   critical %<=% (as.integer(p_critical * insymp))
+
+
 
 
   if (.population < (dead + healed + active + critical)) {

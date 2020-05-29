@@ -20,8 +20,20 @@
 
   }
 
+  # Clear the dataEnv if the install time is different
+  if (!is.null(getOption("covid19.model.sa2_dataEnv"))) {
+    prevInstallTime <- read_dataEnv("__TIME__")
+    if (!identical(InstallTime(), prevInstallTime)) {
+      e <- new.env()
+      options("covid19.model.sa2_dataEnv" = e)
+      assign("__TIME__", InstallTime(), envir = e)
+    }
+  }
+
   if (is.null(getOption("covid19.model.sa2_dataEnv"))) {
-    options("covid19.model.sa2_dataEnv" = new.env())
+    e <- new.env()
+    options("covid19.model.sa2_dataEnv" = e)
+    assign("__TIME__", InstallTime(), envir = e)
   }
 
   if (is.null(getOption("covid19.model.sa2_nThread"))) {
@@ -45,6 +57,7 @@
 }
 
 .onUnload <- function(libpath) {
+  clear_dataEnv()
   library.dynam.unload("covid19.model.sa2", libpath)
 }
 

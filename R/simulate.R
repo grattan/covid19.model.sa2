@@ -9,8 +9,11 @@
 #' \item{\code{integer(1)}}{The number of days to simulate.}
 #' }
 #' @param InitialStatus \describe{
-#' \item{\code{list(4)}}{A list of four named components giving the
-#' number of dead, healed, active, and critical on the day zero.}
+#' \item{\code{list()}}{If \code{NULL}, the default, the initial status
+#' is set by the most recent data.
+#'
+#' Otherwise,
+#' .}
 #' }
 #' @param PolicyPars \describe{
 #' \item{\code{list()}}{A list describing the policy parameters.
@@ -35,7 +38,6 @@
 #' in non-interactive sessions). Set to 0 to never display; 2 to always
 #' display. Set to 3 to also show internal data access.
 #'
-#' @param by_state Set the initial status by state.
 #'
 #' @param dataEnv An environment into which the data will be saved and
 #' retrieved. Used to save time reading after the first time.
@@ -87,13 +89,9 @@ simulate_sa2 <- function(days_to_simulate = 5,
                          PolicyPars = set_policypars(),
                          MultiPolicy = NULL,
                          EpiPars = set_epipars(),
-                         InitialStatus = list(dead = 71,
-                                              healed = 4685,
-                                              active = 1840,
-                                              critical = 49),
+                         InitialStatus = NULL,
                          .first_day = NULL,
                          showProgress = 1L,
-                         by_state = TRUE,
                          dataEnv = getOption("covid19.model.sa2_dataEnv", new.env()),
                          use_dataEnv = getOption("covid19.model.sa2_useDataEnv", FALSE),
                          nThread = getOption("covid19.model.sa2_nThread", 1L),
@@ -125,277 +123,22 @@ simulate_sa2 <- function(days_to_simulate = 5,
       invisible(NULL)
     }
   }
+  hh_ss("Start\t")
 
-  Policy  <- PolicyPars
-  dataEnvOK <-
-    isTRUE(use_dataEnv) &&
-    identical(by_state, get0("_by_state_", envir = dataEnv)) &&
-    identical(InitialStatus, get0("_InitialStatus_", envir = dataEnv)) &&
-    !is.null(aus <- get0("aus_", envir = dataEnv)) &&
-    !is.null(nPlacesByDestType <- get0("nPlacesByDestType_", envir = dataEnv))
-
-  if (dataEnvOK) {
-    # Check .first_day matches previous run
-    # If .first_day is NULL then we need to know it now
-    # to compare with the eventual output of first_day
-    if (is.null(.first_day)) {
-      ..first_day <- yday(read_last("time_series_deaths.fst", "Date"))
-    } else {
-      ..first_day <- .first_day
-    }
-
-
-    dataEnvOK <- identical(..first_day, get0(".first_day_", envir = dataEnv))
+  Policy <- PolicyPars
+  if (length(.first_day) > 1) {
+    stop(g("`.first_day` had length {length(.first_day)}, but must be length-one."))
   }
 
-  if (!dataEnvOK) {
-    # CRAN NOTE AVOIDANCE
-    Date <- VIC <- i.VIC <- VicCases <-
-      VicRecovered <- Concluded <-
-      VicDeaths <- NewCases <- dConcluded <-
-      VicActive <- Yday <- Duration <-
-      YdayOut <- YdayIn <- Status <- NULL
-
-    ## Each day a person can
-    ## stay in the household
-    ## journey outside
-    ## be admitted to hospital etsq
-
-    ## if a person journeys out they do so for a purpose
-    ## they can move to a different SA2
-    ## or they can move for a daily activity
-
-    ## if they go out for work
-    ## their destination is their dzn of work
-    ## unless they are work in a hospital, school, or aged care
-
-    ## if they go out for school as a pupil
-    ## (only occurs if they are a child)
-    ## they go to a school in their SA2
-
-    ## if they go out to purchase groceries
-    ## the destination is stochastic
-    ## Other places by predefined times
-    ## per year
-
-    ## Only interested in magnitude of interactions
-    ## (above a certain limit?)
-
-    ## Process is
-    ## Loop over each day
-    ### Loop over each person
-    #### identify their places that day
-    ### add up all the interactions
-    ### sleep!
-    ### next day
-
-
-
-    hh_ss("Start\t")
-
-    aus <- read_sys("australia.fst")
-
-    nSupermarkets_by_sa2 <- read_sys("nSupermarkets_by_sa2.fst")
-
-    demo_by_person <- read_sys("person_demography.fst")
-    demo_by_person[, lfsi := ematch(as.character(lfs),
-                                    c("Not applicable",
-                                      "Not working",
-                                      "Employed, worked full-time",
-                                      "Employed, worked part-time"))]
-    demo_by_person[, lfsi := lfsi - 2L]
-    demo_by_person[, lfs := NULL]
-
-    Cases.csv <- read_sys("time_series_cases.fst")
-    Recovered.csv <- read_sys("time_series_recovered.fst")
-    Deaths.csv <- read_sys("time_series_deaths.fst")
-
-    if (is.null(.first_day)) {
-      .first_day <- Deaths.csv[, yday(last(Date))]
-    } else {
-      if (!is.integer(.first_day)) {
-        .first_day <- yday(.first_day)
-      }
-
-      Cases.csv <- Cases.csv[yday(Date) <= .first_day]
-      Recovered.csv <- Recovered.csv[yday(Date) <= .first_day]
-      Deaths.csv <- Deaths.csv[yday(Date) <= .first_day]
-    }
-
-    hh_ss("post-read")
-
-    diff_along <- function(x) c(NA, diff(x))
-
-    # Use Victoria to get good idea about the duration of current cases
-    Victoria <-
-      Cases.csv %>%
-      .[Recovered.csv] %>%
-      .[, .(Date, VicCases = VIC, VicRecovered = coalesce(i.VIC, 0L))] %>%
-      .[Deaths.csv] %>%
-      .[, .(Date, VicCases, VicRecovered, VicDeaths = coalesce(VIC, 0L))] %>%
-      .[, Date := as.Date(Date)] %>%
-      .[, Concluded := VicRecovered + VicDeaths] %>%
-      .[, Concluded := cummax(Concluded)] %>%  # protect against falls in reports
-      .[, NewCases := diff_along(VicCases)] %>%
-      .[, dConcluded := diff_along(Concluded)] %>%
-      .[-1] %>%
-      .[, VicActive := cumsum(NewCases) - cumsum(dConcluded)] %>%
-      .[, Yday := yday(Date)]
-
-    n_concluded_cases <- Victoria[, last(VicRecovered)]
-    # One row for every (concluded) cases
-    # Note it's not clear whether the very early cases' recovery
-    # was recorded, so we exclude the first cases under the assumption
-    # that their recovery was not recorded (else we get ~50 day
-    # spells of illness).
-
-    N_by_Duration <-
-      data.table(YdayIn  = weight2rows(Victoria, "NewCases")[["Yday"]][seq_len(n_concluded_cases)],
-                 YdayOut = weight2rows(Victoria, "dConcluded")[["Yday"]][seq_len(n_concluded_cases)]) %>%
-      .[, Duration := YdayOut - YdayIn] %>%
-      # Exclude Jan/early Feb cases
-      .[YdayIn > 33] %>%
-      .[, .N, keyby = .(Duration)]
-
-
-
-    if (is.data.table(myaus)) {
-      aus <- copy(myaus)
-    } else if (by_state) {
-      aus[, Status := set_initial_by_state(state, first_yday = .first_day)]
-    } else  {
-      asympto <- EpiPars$p_asympto
-      sympto <- 1 - asympto
-
-      # For text width
-      IS <- InitialStatus
-      n_status0 <- nrow(aus) - sum(unlist(IS))
-      samp_status <-
-        wsamp(c(-2L, -1L, 0L, 1L, 2L, 3L),
-              size = nrow(aus),
-              w = c(IS$dead, IS$healed, n_status0, IS$active * c(asympto, sympto), IS$critical))
-      aus[, Status := samp_status]
-    }
-
-    if (!hasName(aus, "InfectedOn")) {
-      InfectedOn <- NULL
-      # If infected, they are infected days ago
-      # according to N_by_Duration
-      aus[Status > 0L,
-          InfectedOn := .first_day - wsamp(N_by_Duration$Duration,
-                                           size = .N,
-                                           w = N_by_Duration$N)]
-    }
-
-
-    if (!hasName(aus, "Age") || !hasName(aus, "LabourForceStatus")) {
-      Age <- i.age <- LabourForceStatus <- lfsi <- i.lfsi <- NULL
-      if (identical(aus$pid, demo_by_person$pid)) {
-        # save a couple a seconds
-        set(aus, j = "Age", value = .subset2(demo_by_person, "age"))
-        set(aus, j = "LabourForceStatus", value = .subset2(demo_by_person, "lfsi"))
-      } else {
-        aus[demo_by_person, Age := i.age, on = "pid"]
-        aus[demo_by_person, LabourForceStatus := i.lfsi, on = "pid"]
-      }
-    }
-
-    nPlacesByDestType <-
-      lapply(1:106, function(i) {
-        if (i == 98L) {
-          read_sys("nSupermarkets_by_sa2.fst",
-                   columns = "nSupermarkets")[[1L]]
-        } else {
-          integer(0)
-        }
-      })
-    #
-    # # Times per year each person visits the matching type
-    # weekly <- rep_len(52L, nrow(aus))
-    #
-    # FreqsByDestType <-
-    #   lapply(1:106, function(i) {
-    #     if (i == 15L) {
-    #       # cafes
-    #       # assume uniformly n/week
-    #       cafe <- 52L * (0:7)
-    #       return(dqrng::dqsample(cafe, size = 1e6, replace = TRUE))
-    #     }
-    #     if (i == 98L) {
-    #       ## Assume supermarket visits are beta distributed
-    #       rep_len(as.integer(360 * rbeta(1e6, 3, 1)), nrow(aus))
-    #     } else {
-    #       weekly
-    #     }
-    #   })
-    #
-    # FreqsByDestType <-
-    #   lapply(FreqsByDestType, function(x) rep_len(as.integer(x), nrow(aus)))
-
-
-
-    i.nSupermarkets <- nSupermarketsAvbl <- SupermarketTypical <- SupermarketHour <- NULL
-    # Quicker to do it this way(!)
-    aus[nSupermarkets_by_sa2, nSupermarketsAvbl := pmin.int(8L, i.nSupermarkets), on = "sa2"]
-
-    # Choose a default supermarket for each person
-    aus[, SupermarketTypical := if (.BY[[1]]) samp(seq_len(.BY[[1]]) - 1L, size = .N) else 0L,
-        by = "nSupermarketsAvbl"]
-
-    short_school_id <- short_dzn <- NULL
-    # Turn School Id into short id to use for school id
-    # Crucially, must be dense (no gaps) so can't prepare unique
-    aus[!is.na(school_id), short_school_id := frank(school_id, ties.method = "dense")]
-    aus[!is.na(work_dzn) , short_dzn := frank(work_dzn, ties.method = "dense")]
-
-    # Add colleagues and wid (work id)
-    wid <- nColleagues <- i.nColleagues <- i.wid <- NULL
-    AusByDZN <- aus[!is.na(short_dzn), .(NDz = .N, pid, LabourForceStatus), keyby = .(dzn = short_dzn)]
-    AusByDZN[, c("wid", "nColleagues") := do_workplaces(.SD, nThread = nThread)]
-
-    # check against compile-time constant wid_supremum to allow
-    # static allocation of array.
-    wid_supremum_repeat_limit <- 5L
-    while (wid_supremum_repeat_limit >= 0L &&
-           max(.subset2(AusByDZN, "wid"), na.rm = TRUE) >= wid_supremum()) {
-      AusByDZN[, c("wid", "nColleagues") := do_workplaces(.SD, nThread = nThread)]
-      wid_supremum_repeat_limit <- wid_supremum_repeat_limit - 1L
-    }
-    if (max(.subset2(AusByDZN, "wid"), na.rm = TRUE) >= wid_supremum()) {
-      stop("`wid_supremum_repeat_limit` exceeded\n\t",
-           'max(.subset2(AusByDZN, "wid"), na.rm = TRUE) = ',
-           max(.subset2(AusByDZN, "wid"), na.rm = TRUE))
-    }
-
-
-    setkeyv(AusByDZN, "pid")
-    aus[AusByDZN, wid := i.wid, on = "pid"]
-    aus[AusByDZN, nColleagues := i.nColleagues, on = "pid"]
-
-    # from Stevenson-Lancet-COVID19.md
-    # aus[, Incubation := dq_rnlorm(.N, m = EpiPars[["incubation_m"]], s = 0.44)]
-    # aus[, Illness := dq_rnlorm(.N, m = EpiPars[["illness_m"]], s = 0.99)]
-
-    if (isTRUE(use_dataEnv)) {
-      assign("_by_state_", value = copy(by_state), envir = dataEnv)
-      assign("_InitialStatus_", value = copy(InitialStatus), envir = dataEnv)
-      assign("aus_", value = copy(aus), envir = dataEnv)
-      assign("nPlacesByDestType_", value = nPlacesByDestType, envir = dataEnv)
-      # assign("FreqsByDestType_", value = FreqsByDestType, envir = dataEnv)
-      assign(".first_day_", value = .first_day, envir = dataEnv)
-    }
-    ..first_day <- .first_day
+  if (is.null(.first_day)) {
+    .first_day <- yday(read_last("time_series_cases.fst", "Date"))
+  } else if (!is.integer(.first_day)) {
+    .first_day <- yday(.first_day)
   }
-
-
-
-  copied_Status <- (.subset2(aus, "Status"))
-  copied_InfectedOn <- (.subset2(aus, "InfectedOn"))
-
-
-  on_terminal <- identical(.Platform$GUI, "RTerm")
 
   updateLemireSeedFromR(unlist(dqrng::generateSeedVectors(42)))
+
+  aus <- generate_static_aus(use_dataEnv, nThread)
 
   Incubation <-
     with(EpiPars, {
@@ -430,6 +173,13 @@ simulate_sa2 <- function(days_to_simulate = 5,
                   " was unexpected at this time."))
     })
 
+
+  mutate_Status_InfectedOn(aus,
+                           Incubation = Incubation,
+                           Illness = Illness,
+                           InitialStatus = InitialStatus,
+                           yday_initial = .first_day)
+
   if (length(MultiPolicy) >= 255) {
     stop(g("`length(MultiPolicy) = {length(MultiPolicy)}`, which exceeds 255, ",
            "the largest supported number of policies."))
@@ -438,6 +188,11 @@ simulate_sa2 <- function(days_to_simulate = 5,
     MultiPolicy <- set_multipolicy()
   }
 
+  copied_Status <- (.subset2(aus, "Status"))
+  copied_InfectedOn <- (.subset2(aus, "InfectedOn"))
+
+
+  on_terminal <- identical(.Platform$GUI, "RTerm")
 
 
   hh_ss("pre-C++")
@@ -462,12 +217,11 @@ simulate_sa2 <- function(days_to_simulate = 5,
                         Illness = Illness,
                         nSupermarketsAvbl = nSupermarketsAvbl,
                         SupermarketTypical = SupermarketTypical,
-                        nPlacesByDestType = nPlacesByDestType,
+                        nPlacesByDestType = get_nPlacesByDestType(),
                         minPlaceID_nPlacesByDestType = copy(minPlaceID_nPlacesByDestType),
-                        yday_start = ..first_day,
+                        yday_start = .first_day,
                         days_to_sim = days_to_simulate,
                         N = nrow(aus),
-                        by_state = by_state,
                         returner = returner,
                         display_progress = .showProgress,
                         on_terminal = on_terminal,
@@ -514,5 +268,198 @@ simulate_sa2 <- function(days_to_simulate = 5,
   hutils::set_cols_first(out[[2]], names(aus))
   out
 }
+
+
+
+
+
+
+
+
+generate_static_aus <- function(use_dataEnv = TRUE, nThread = 1L) {
+  if (isTRUE(use_dataEnv) &&
+      exists("aus", envir = getOption("covid19.model.sa2_dataEnv"))) {
+    return(read_dataEnv("aus"))
+  }
+
+
+  aus <- read_sys("australia.fst")
+
+  nSupermarkets_by_sa2 <- read_sys("nSupermarkets_by_sa2.fst")
+
+  demo_by_person <- read_sys("person_demography.fst")
+  demo_by_person[, lfsi := ematch(as.character(lfs),
+                                  c("Not applicable",
+                                    "Not working",
+                                    "Employed, worked full-time",
+                                    "Employed, worked part-time"))]
+  demo_by_person[, lfsi := lfsi - 2L]
+  demo_by_person[, lfs := NULL]
+
+  if (!hasName(aus, "Age") || !hasName(aus, "LabourForceStatus")) {
+    Age <- i.age <- LabourForceStatus <- lfsi <- i.lfsi <- NULL
+    if (identical(aus$pid, demo_by_person$pid)) {
+      # save a couple a seconds
+      set(aus, j = "Age", value = .subset2(demo_by_person, "age"))
+      set(aus, j = "LabourForceStatus", value = .subset2(demo_by_person, "lfsi"))
+    } else {
+      aus[demo_by_person, Age := i.age, on = "pid"]
+      aus[demo_by_person, LabourForceStatus := i.lfsi, on = "pid"]
+    }
+  }
+
+
+  i.nSupermarkets <- nSupermarketsAvbl <- SupermarketTypical <- SupermarketHour <- NULL
+  # Quicker to do it this way(!)
+  aus[nSupermarkets_by_sa2, nSupermarketsAvbl := pmin.int(8L, i.nSupermarkets), on = "sa2"]
+
+  # Choose a default supermarket for each person
+  aus[, SupermarketTypical := if (.BY[[1]]) samp(seq_len(.BY[[1]]) - 1L, size = .N) else 0L,
+      by = "nSupermarketsAvbl"]
+
+  short_school_id <- short_dzn <- NULL
+  # Turn School Id into short id to use for school id
+  # Crucially, must be dense (no gaps) so can't prepare unique
+  aus[!is.na(school_id), short_school_id := frank(school_id, ties.method = "dense")]
+  aus[!is.na(work_dzn) , short_dzn := frank(work_dzn, ties.method = "dense")]
+
+  # Add colleagues and wid (work id)
+  wid <- nColleagues <- i.nColleagues <- i.wid <- NULL
+  AusByDZN <- aus[!is.na(short_dzn), .(NDz = .N, pid, LabourForceStatus), keyby = .(dzn = short_dzn)]
+  AusByDZN[, c("wid", "nColleagues") := do_workplaces(.SD, nThread = nThread)]
+
+  # check against compile-time constant wid_supremum to allow
+  # static allocation of array.
+  wid_supremum_repeat_limit <- 5L
+  while (wid_supremum_repeat_limit >= 0L &&
+         max(.subset2(AusByDZN, "wid"), na.rm = TRUE) >= wid_supremum()) {
+    AusByDZN[, c("wid", "nColleagues") := do_workplaces(.SD, nThread = nThread)]
+    wid_supremum_repeat_limit <- wid_supremum_repeat_limit - 1L
+  }
+  if (max(.subset2(AusByDZN, "wid"), na.rm = TRUE) >= wid_supremum()) {
+    stop("`wid_supremum_repeat_limit` exceeded\n\t",
+         'max(.subset2(AusByDZN, "wid"), na.rm = TRUE) = ',
+         max(.subset2(AusByDZN, "wid"), na.rm = TRUE))
+  }
+
+
+  setkeyv(AusByDZN, "pid")
+  aus[AusByDZN, wid := i.wid, on = "pid"]
+  aus[AusByDZN, nColleagues := i.nColleagues, on = "pid"]
+
+  assign("aus", value = aus, envir = getOption("covid19.model.sa2_dataEnv"))
+
+
+  aus
+}
+
+mutate_Status_InfectedOn <- function(aus,
+                                     Incubation,
+                                     Illness,
+                                     InitialStatus = NULL,
+                                     yday_initial = NULL,
+                                     asympto = 0.48,
+                                     p_critical = 0.03) {
+
+  stopifnot(hasName(aus, "state"),
+            is.integer(aus[["state"]]),
+            !hutilscpp::anyOutside(aus[["state"]], 1L, 9L))
+
+  if (is.null(InitialStatus)) {
+    Cases <- read_sys("time_series_cases.fst")
+    Healed <- read_sys("time_series_recovered.fst")
+    Killed <- read_sys("time_series_deaths.fst")
+    aus[, Status := set_initial_by_state(state)]
+    yday_initial <- Killed[, last(yday(Date))]
+
+  } else {
+    if (!is.integer(yday_initial)) {
+      stop("`InitialStatus` is used, but `yday_initial` is not set.")
+    }
+
+    if (!is.data.table(InitialStatus)) {
+      InitialStatus <- as.data.table(InitialStatus)
+    }
+    stopifnot(all(c("state", "active", "dead", "healed", "critical") %in% names(InitialStatus)),
+              InitialStatus[, !anyDuplicated(state)],
+              InitialStatus[, !anyNA(state)])
+
+
+    switch(InitialStatus[, typeof(state)],
+           "double" = {
+             if (InitialStatus[, !all(state == as.integer(state))] ||
+                 InitialStatus[, hutilscpp::anyOutside(state, 1, 9, nas_absent = TRUE)]) {
+               stop("InitialStatus$state was type double but not all entries were whole numbers ",
+                    " between 1 and 9.")
+             }
+             InitialStatus[, state := as.integer(state)]
+           },
+           "character" = {
+             InitialStatus[, state := match(state, states()[-1])]
+             InitialStatus[, stopifnot(!anyNA(state), !hutilscpp::anyOutside(state, 1L, 9L, nas_absent = TRUE))]
+           })
+
+    # Expand (omitted states are allowed)
+    InitialStatus <- InitialStatus[CJ(state = 1:9), on = "state"][, lapply(.SD, as.integer)]
+    InitialStatus <- InitialStatus[, lapply(.SD, coalesce, 0L), keyby = "state"]
+
+
+    StatusByState <-
+      InitialStatus[, .(Status = set_initial_by_state(.BY[[1]],
+                                                      dead = first(dead),
+                                                      healed = first(healed),
+                                                      active = first(active),
+                                                      critical = first(critical))),
+                    keyby = .(state)]
+    StatusByState <- StatusByState[CJ(state = 1:9), on = "state"]
+
+    # At this point we should be able to just plonk the status in
+    stopifnot(haskey(aus), identical(key(aus)[1], "state"),
+              nrow(aus) == nrow(StatusByState))
+
+
+    aus[, Status := .subset2(StatusByState, "Status")]
+
+
+
+  }
+
+
+  # Now set the yday when each individual was infected
+
+  aus[, InfectedOn := NA_integer_]
+  aus[, InfectedOn := fifelse(Status == status_nosymp(),
+
+                              # Assume those we observe represnt half
+                              # of those infected concurrently
+                              yday_initial - (Incubation %/% 2L),
+                              InfectedOn)]
+  aus[, InfectedOn := fifelse(Status %in% c(status_insymp(), status_critic()),
+                              yday_initial - Incubation - (Illness %/% 2L),
+                              InfectedOn)]
+
+  aus
+}
+
+get_nPlacesByDestType <- function() {
+  if (exists("nPlacesByDestType", envir = getOption("covid19.model.sa2_dataEnv"))) {
+    return(read_dataEnv("nPlacesByDestType"))
+  }
+
+  nPlacesByDestType <-
+    lapply(1:106, function(i) {
+      if (i == 98L) {
+        read_sys("nSupermarkets_by_sa2.fst",
+                 columns = "nSupermarkets")[[1L]]
+      } else {
+        integer(0)
+      }
+    })
+  assign("nPlacesByDestType", value = nPlacesByDestType, envir = getOption("covid19.model.sa2_dataEnv"))
+  nPlacesByDestType
+}
+
+
+
 
 

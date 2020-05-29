@@ -1,6 +1,8 @@
 #ifndef covid19model_H
 #define covid19model_H
 
+
+
 #include "covid19model.h"
 #include <vector>
 #include <array>
@@ -18,6 +20,7 @@
 #endif
 using namespace Rcpp;
 
+const std::string tempo = __TIME__;
 
 
 const int NSTATES = 9;

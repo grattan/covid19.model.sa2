@@ -108,7 +108,6 @@ void contact_tracing(IntegerVector Status,
                      const std::vector<unsigned char> &seqN,
                      const std::vector<unsigned char> &HouseholdSize,
                      IntegerVector TestsAvbl,
-                     bool by_state,
                      IntegerVector SA2,
                      IntegerVector hid,
                      IntegerVector HouseholdInfectedToday,
@@ -229,18 +228,18 @@ void contact_tracing(IntegerVector Status,
     // test_outcome = -1 (negative), 0 (no test), 1 (positive)
     if (TodaysK[todayi] < ptest_per_mille) {
       t_perf0 += 1;
-      int statei = sa2_to_state(SA2[i]);
-      if (by_state) {
-        if (statei == 1) t_perf1 += 1;
-        if (statei == 2) t_perf2 += 1;
-        if (statei == 3) t_perf3 += 1;
-        if (statei == 4) t_perf4 += 1;
-        if (statei == 5) t_perf5 += 1;
-        if (statei == 6) t_perf6 += 1;
-        if (statei == 7) t_perf7 += 1;
-        if (statei == 8) t_perf8 += 1;
-        if (statei == 9) t_perf9 += 1;
-      }
+      const int statei = sa2_to_state(SA2[i]);
+
+      if (statei == 1) t_perf1 += 1;
+      else if (statei == 2) t_perf2 += 1;
+      else if (statei == 3) t_perf3 += 1;
+      else if (statei == 4) t_perf4 += 1;
+      else if (statei == 5) t_perf5 += 1;
+      else if (statei == 6) t_perf6 += 1;
+      else if (statei == 7) t_perf7 += 1;
+      else if (statei == 8) t_perf8 += 1;
+      else if (statei == 9) t_perf9 += 1;
+
       if (todayi == NTODAY - 1) {
         todayi = 0;
       } else {
@@ -284,7 +283,7 @@ void contact_tracing(IntegerVector Status,
 
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i) {
-    int statei = by_state ? sa2_to_state(SA2[i]) : 0;
+    int statei = sa2_to_state(SA2[i]);
 
     // if no tests were ever available we can quickly discard tested
     if (tests_avbl[statei] == 0 &&
@@ -1792,7 +1791,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
                     const int N,
                     bool display_progress = true,
                     bool on_terminal = false,
-                    bool by_state = true,
                     int returner = 0,
                     int console_width = 80,
                     int optionz = 0,
@@ -2690,7 +2688,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
                       seqN,
                       HouseholdSize,
                       TestsAvbl,
-                      by_state,
                       SA2,
                       hid,
                       HouseholdInfectedToday,

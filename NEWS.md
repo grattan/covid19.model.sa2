@@ -1,3 +1,7 @@
+# 0.21.0
+
+* Initial status can be set by state
+
 # 0.20.0
 
 * Support for infection via major events

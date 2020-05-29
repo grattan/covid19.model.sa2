@@ -9,10 +9,9 @@ simulate_sa2(
   PolicyPars = set_policypars(),
   MultiPolicy = NULL,
   EpiPars = set_epipars(),
-  InitialStatus = list(dead = 71, healed = 4685, active = 1840, critical = 49),
+  InitialStatus = NULL,
   .first_day = NULL,
   showProgress = 1L,
-  by_state = TRUE,
   dataEnv = getOption("covid19.model.sa2_dataEnv", new.env()),
   use_dataEnv = getOption("covid19.model.sa2_useDataEnv", FALSE),
   nThread = getOption("covid19.model.sa2_nThread", 1L),
@@ -38,8 +37,11 @@ are supported but no others. An empty list corresponds to current settings.)}
 }}
 
 \item{InitialStatus}{\describe{
-\item{\code{list(4)}}{A list of four named components giving the
-number of dead, healed, active, and critical on the day zero.}
+\item{\code{list()}}{If \code{NULL}, the default, the initial status
+is set by the most recent data.
+
+Otherwise,
+.}
 }}
 
 \item{.first_day}{\describe{
@@ -54,8 +56,6 @@ By default, 1 which displays bars unless it is likely to not be
 desired (for example it won't be displayed when running tests or
 in non-interactive sessions). Set to 0 to never display; 2 to always
 display. Set to 3 to also show internal data access.}
-
-\item{by_state}{Set the initial status by state.}
 
 \item{dataEnv}{An environment into which the data will be saved and
 retrieved. Used to save time reading after the first time.}

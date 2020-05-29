@@ -15,3 +15,11 @@ void assert_is_monday(const int & day) {
     stop("yday2monday(139) not true.");
   }
 }
+
+// [[Rcpp::export]]
+CharacterVector InstallTime() {
+  CharacterVector out(1);
+  out[0] = tempo;
+  return out;
+}
+
