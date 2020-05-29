@@ -1714,20 +1714,20 @@ void progress_bar(int console_width,
 }
 
 void validate_policy(List Policy, int m) {
-  if (Policy.containsElementNamed("yday_start")) {
+  if (!Policy.containsElementNamed("yday_start")) {
     Rcerr << "(" << m << "): " << "Policy did not contain element 'yday_start'\n";
     stop("Policy invalidated.");
   }
 
-  if (Policy.containsElementNamed("travel_outside_sa2")) {
+  if (!Policy.containsElementNamed("travel_outside_sa2")) {
     Rcerr << "(" << m << "): " << "Policy did not contain element 'travel_outside_sa2'\n";
     stop("Policy invalidated.");
   }
-  if (Policy.containsElementNamed("schools_open")) {
+  if (!Policy.containsElementNamed("schools_open")) {
     Rcerr << "(" << m << "): " << "Policy did not contain element 'schools_open'\n";
     stop("Policy invalidated.");
   }
-  if (Policy.containsElementNamed("workplaces_open")) {
+  if (!Policy.containsElementNamed("workplaces_open")) {
     Rcerr << "(" << m << "): " << "Policy did not contain element 'workplaces_open'\n";
     stop("Policy invalidated.");
   }
