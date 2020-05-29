@@ -1,5 +1,7 @@
 test_that("simulate_cache validates and invalidates", {
   skip_on_cran()
+  skip_if(is32bit())
+  skip_if_not_installed("withr")
   withr::with_seed(430L, {
     SByState <- simulate_sa2(5L, returner = 1L, use_dataEnv = TRUE)
     SInitial <- simulate_sa2(5L, returner = 1L,

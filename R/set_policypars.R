@@ -6,6 +6,9 @@
 #' \code{\link{simulate_sa2}} function,
 #' with defaults.
 #'
+#' @param yday_start Optional. Specify the start date. Used in conjunction with
+#' \code{MultiPolicy} argument to \code{simulate_sa2}.
+#'
 #' @param supermarkets_open \code{TRUE|FALSE}. Should supermarkets remain open?
 #' @param schools_open \code{FALSE|TRUE}. Should schools remain open?
 #' @param only_Year12 \code{FALSE|TRUE}. If schools open, should they be
@@ -53,7 +56,9 @@
 #'
 #' @param max_persons_per_supermarket Maximum number of people allowed in a
 #' supermarket (within one hour i.e. concurrently).
-#' @param max_persons_per_event Not yet used.
+#' @param max_persons_per_event,n_major_events_weekday,n_major_events_weekend
+#' Policies around major events. Maximum of 255 major events per day and
+#' values of `max_persons_per_event` below 1000 are rounded to zero.
 #'
 #' @param cafes_open (TEMPORARY).
 #' @param age_based_lockdown Integer vector of ages to lockdown. Either a vector
@@ -75,6 +80,8 @@
 #' @param lockdown_triggers__schools
 #' A list constructed by \code{\link{set_lockdown_triggers__schools}}.
 #'
+#' @param ... Arguments passed to \code{set_policypars}.
+#'
 #'
 #'
 #' @return A list of the components.
@@ -88,7 +95,8 @@
 
 
 
-set_policypars <- function(supermarkets_open = TRUE,
+set_policypars <- function(yday_start = 0L,
+                           supermarkets_open = TRUE,
                            schools_open = FALSE,
                            only_Year12 = FALSE,
                            school_days_per_wk = NULL,
@@ -99,6 +107,8 @@ set_policypars <- function(supermarkets_open = TRUE,
                            contact_tracing_success = 0.9,
                            tests_by_state = NULL,
                            max_persons_per_event = 5L,
+                           n_major_events_weekday = 28L,
+                           n_major_events_weekend = 56L,
                            max_persons_per_supermarket = 200L,
                            cafes_open = TRUE,
                            age_based_lockdown = integer(100),
@@ -109,6 +119,12 @@ set_policypars <- function(supermarkets_open = TRUE,
                            workplace_size_lsi = -1,
                            travel_outside_sa2 = FALSE,
                            lockdown_triggers__schools = set_lockdown_triggers__schools()) {
+
+  if (!is.integer(yday_start)) {
+    yday <- yday(yday_start)
+  }
+  checkmate::check_int(yday, lower = 0L)
+
 
   checkmate::assert_logical(supermarkets_open,
                             any.missing = FALSE,
@@ -133,9 +149,8 @@ set_policypars <- function(supermarkets_open = TRUE,
 
   tests_by_state_was_null <- is.null(tests_by_state)
   tests_by_state <- .fix_tests_by_state(tests_by_state)
-  if (!missing(max_persons_per_event)) {
-    .NotYetUsed("max_persons_per_event")
-  }
+
+  checkmate::assert_int(max_persons_per_event, lower = 1L)
 
   workplaces_open <- as.double(workplaces_open)
   checkmate::assert_number(workplaces_open, lower = 0, upper = 1, finite = TRUE)
@@ -153,14 +168,14 @@ set_policypars <- function(supermarkets_open = TRUE,
     !isFALSE(lockdown_triggers__schools[["do_school_lockdown"]])
 
 
-  out <- mget(ls())
+  out <- mget(ls(sorted = FALSE))
   attr(out, "original_call") <- match.call()
   out
 }
 
 #' @rdname set_policypars
 #' @export
-set_policy_no_restrictions <- function() {
+set_policy_no_restrictions <- function(...) {
   set_policypars(supermarkets_open = TRUE,
                  schools_open = TRUE,
                  only_Year12 = FALSE,
@@ -172,9 +187,82 @@ set_policy_no_restrictions <- function() {
                  age_based_lockdown = integer(100),
                  workplaces_open = TRUE,
                  workplace_size_max = .Machine$integer.max %/% 2L,
-                 lockdown_triggers__schools = NULL)
+                 lockdown_triggers__schools = NULL,
+                 ...)
 }
 
+
+set_multipolicy <- function() {
+  list(set_policy_no_restrictions(yday_start = "2020-01-01"),
+       set_policypars(yday_start = "2020-03-22",
+                      max_persons_per_event = 5L,
+                      workplaces_open = 0.1,
+                      schools_open = FALSE,
+                      travel_outside_sa2 = FALSE),
+
+       # Tas quarantine,
+       # NT borders close on 21st,
+       # WA, SA 24th
+       set_policypars(yday_start = "2020-03-20",
+                      max_persons_per_event = 10L,
+                      schools_open = TRUE,
+                      school_days_per_wk = c("ACT" = 0L,
+                                             "VIC" = 1L)),
+
+       # VIC stage 3
+       set_policypars(yday_start = "2020-03-30",
+                      schools_open = FALSE),
+
+       # WA/QLD/NT easing of restriction
+       ## QLD: Recreation permitted, within 50km of home only
+
+       set_policypars(yday_start = "2020-04-26",
+                      schools_open = TRUE,
+                      school_days_per_wk = c("ACT" = 0L,
+                                             "NSW" = 5L,
+                                             "VIC" = 0L,
+                                             "QLD" = 5L,
+                                             "SA" = 5L,
+                                             "WA" = 5L,
+                                             "TAS" = 5L,
+                                             "NT" = 5L)),
+
+       # Easing
+       set_policypars(yday_start = "2020-05-15",
+                      max_persons_per_event = 100L))
+}
+
+
+update_policypars <- function(Policy,
+                              yday_start = NULL,
+                              supermarkets_open = NULL,
+                              schools_open = NULL,
+                              only_Year12 = NULL,
+                              school_days_per_wk = NULL,
+                              do_contact_tracing = NULL,
+                              contact_tracing_days_before_test = NULL,
+                              contact_tracing_days_until_result = NULL,
+                              contact_tracing_only_sympto = NULL,
+                              contact_tracing_success = NULL,
+                              tests_by_state = NULL,
+                              max_persons_per_event = NULL,
+                              max_persons_per_supermarket = NULL,
+                              cafes_open = NULL,
+                              age_based_lockdown = NULL,
+                              workplaces_open = NULL,
+                              workplace_size_max = NULL,
+                              workplace_size_beta = NULL,
+                              workplace_size_lmu = NULL,
+                              workplace_size_lsi = NULL,
+                              travel_outside_sa2 = NULL) {
+  args <- ls()
+  for (arg in args) {
+    if (!is.null(get(arg))) {
+      Policy[[arg]] <- get(arg)
+    }
+  }
+  Policy
+}
 
 
 

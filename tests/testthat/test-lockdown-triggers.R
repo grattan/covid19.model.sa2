@@ -3,6 +3,7 @@ test_that("lockdown triggers work", {
   skip_on_travis()
   skip_on_cran()
   skip_if_not_installed("data.table")
+  skip_if_not_installed("withr")
   library(data.table)
 
   aus <- read_typical()
@@ -89,6 +90,7 @@ test_that("lockdown triggers work", {
                    LabourForceStatus = dollars(aus, LabourForceStatus),
                    SeedOriginal = SeedOriginal,
                    Policy = Policy,
+                   MultiPolicy = list(),
                    nPlacesByDestType = nPlacesByDestType,
                    Epi = Epi,
                    Incubation = rep(14L, nrow(aus)),

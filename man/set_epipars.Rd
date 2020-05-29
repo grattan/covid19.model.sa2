@@ -30,10 +30,12 @@ set_epipars(
   q_school_grade = 1/500,
   q_supermarket = 1/500,
   q_places = 1/500,
+  q_major_event = 1/5000,
   resistance_threshold = 400L,
   p_asympto = 0.48,
   p_critical = 0.02,
-  p_death = 0.01
+  p_death = 0.01,
+  p_visit_major_event = 1/52
 )
 }
 \arguments{
@@ -59,7 +61,7 @@ schools in which tranmission between students is possible.}
 \item{q_household, q_school, q_school_grade, q_workplace}{Daily transmission probability among household members / students of the same school / students of the same school and same same
 grade / workers of the same workplace.}
 
-\item{q_supermarket, q_places}{As above, for supermarket and places.}
+\item{q_supermarket, q_places, q_major_event}{As above, for supermarket and places.}
 
 \item{resistance_threshold}{An integer in \code{[0, 1000]}, the resistance
 required to not be infected. A value of 0
@@ -73,6 +75,8 @@ are asymptomatic.}
 
 \item{p_death}{A number in \code{[0, 1]}, the proportion of
 \strong{critical cases} that die.}
+
+\item{p_visit_major_event}{Probability a person attends a major event on a given day.}
 }
 \value{
 A list of the components, plus an entry \code{CHECKED} having the

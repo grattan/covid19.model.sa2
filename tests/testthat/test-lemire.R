@@ -1,5 +1,7 @@
 test_that("lemire works", {
   skip_on_cran()
+  skip_if(is32bit())
+
   a <- do_lemire_rand(10)
   expect_equal(length(a), 10)
   library(data.table)
@@ -34,6 +36,7 @@ test_that("lemire works", {
 test_that("lemire_char", {
   skip_on_cran()
   skip_if(is32bit())
+  skip_if_not_installed("withr")
 
   p25 <- lemire_char(8000, 0.25)
   expect_true(mean(p25) >= 0.2 && mean(p25) <= 0.3)

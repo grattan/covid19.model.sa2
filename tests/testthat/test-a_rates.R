@@ -70,6 +70,7 @@ test_that("a_household_rate", {
                    LabourForceStatus = aus$LabourForceStatus,
                    Seed = integer(2048),
                    Policy = Policy,
+                   MultiPolicy = list(),
                    nPlacesByDestType = nPlacesByDestType,
                    # FreqsByDestType = FreqsByDestType,
                    Epi = epi,

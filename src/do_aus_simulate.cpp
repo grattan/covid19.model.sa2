@@ -54,6 +54,10 @@ inline bool is_infected(const int & statusi) {
   return statusi > 0 && (statusi % 32) >= STATUS_NOSYMP && (statusi % 32) <= STATUS_CRITIC;
 }
 
+inline bool is_infectious(const int & statusi) {
+  return statusi == STATUS_NOSYMP;
+}
+
 
 int array3k(int x, int y, int z, int ny, int nz) {
   return x * (ny * nz) + y * (nz) + z;
@@ -507,7 +511,7 @@ void infect_supermarkets(IntegerVector Status,
 
       if (check_max_persons) {
         if (s_supermarket[supermarketi][hr] >= max_persons_per_supermarket) {
-          continue;
+          break;
         }
         s_supermarket[supermarketi][hr] += 1;
       }
@@ -1492,6 +1496,156 @@ void infect_other_sa2(IntegerVector Status,
   }
 }
 
+
+void infect_major_event(IntegerVector Status,
+                        IntegerVector InfectedOn,
+                        IntegerVector Source,
+                        double p_visit_major_event,
+                        int n_major_events_today,
+                        double q_major_event,
+                        int max_persons_per_event,
+                        int day,
+                        int wday,
+                        int yday,
+                        const std::vector<unsigned char> &Resistant,
+                        int nThread,
+                        int N,
+                        int optionz = 0) {
+  IntegerVector Event = do_lemire_rand_par(N, nThread);
+  DoubleVector miniTypicalEvent = Rcpp::rbeta(262144, 1, 2.5);
+  IntegerVector TypicalEvent = no_init(N); // If a person attends an event, which one?
+#pragma omp parallel for num_threads(nThread)
+  for (int i = 0; i < N; ++i) {
+    TypicalEvent[i] = (int)(n_major_events_today * miniTypicalEvent[i & 262143]);
+  }
+
+
+
+  // use to avoid negative moduli
+  int pint = percentage_to_int(1 - p_visit_major_event);
+
+
+  int n_attendees[255] = {};  // number of attendees of event
+  int i_attendees[255] = {};  // number of infected attendees
+  if (n_major_events_today >= 255) {
+    Rcerr << "Internal error (infect_major_events): ";
+    Rcerr << "`n_major_events_today = " << n_major_events_today << "` >= 255";
+    stop("i_attendees exceeded array.");
+  }
+
+
+  // Used to reweight events
+  std::vector<int> Beta;
+  Beta.reserve(n_major_events_today);
+  for (int b = 0; b < n_major_events_today; ++b) {
+    double beta_b = R::qbeta((double)b / (double)n_major_events_today, 3, 1, true, false);
+    Beta.push_back((int)(n_major_events_today * beta_b));
+  }
+
+
+
+  // Beta[1] will be larger than B[10] generally
+
+
+#pragma omp parallel for num_threads(nThread) reduction(+:n_attendees) reduction(+:i_attendees)
+  for (int i = 0; i < N; ++i) {
+
+
+
+    int eventi = Event[i];
+
+    // pint is reversed (i.e. 1% -> 99%)
+    if (eventi < pint) {
+      Event[i] = -1;
+      continue;
+    }
+    int ei = TypicalEvent[i]; //Beta[eventi % 255];
+    n_attendees[ei] += 1;
+    int statusi = Status[i];
+    if (!is_infectious(statusi)) {
+      continue;
+    }
+    eventi = std::abs(eventi);
+    eventi = (eventi % n_major_events_today);
+    Event[i] = eventi;
+
+    i_attendees[ei] += (Status[i] == STATUS_NOSYMP) || (Status[i] == STATUS_INSYMP);
+
+  }
+
+
+  // Make larger proportions of infections slightly more likely
+  // to infect
+  int p_infected[255] = {};
+  for (int ei = 0; ei < 255; ++ei) {
+    if (!i_attendees[ei] || !n_attendees[ei]) {
+      p_infected[ei] = INT_MIN;
+      continue;
+    }
+    double infected = i_attendees[ei];
+    double attended = n_attendees[ei];
+    double q_i_a = q_major_event * (1 + sqrt(infected / attended));
+
+    p_infected[ei] = percentage_to_int(q_i_a);
+  }
+
+  if (optionz && day == 0) {
+    Rcout << "\t";
+    Rcout << std::right << std::setw(12) << "i_attendees";
+    Rcout << std::right << std::setw(14) << "n_attendees";
+    Rcout << std::right << std::setw(14) << "p_infected\n\t";
+
+    for (int ei = 0; ei < n_major_events_today; ++ei) {
+      Rcout << std::right << std::setw(12) << i_attendees[ei];
+      Rcout << std::right << std::setw(14) << n_attendees[ei];
+      Rcout << std::right << std::setw(14) << ((int) p_infected[ei]) << "\n\t";
+    }
+  }
+
+  IntegerVector Rand = do_lemire_rand_par(N, nThread);
+
+#pragma omp parallel for num_threads(nThread)
+  for (int i = 0; i < N; ++i) {
+    int ei = Event[i];
+    if (ei <= 0 || ei >= 255) {
+      continue;
+    }
+    ei = TypicalEvent[i];
+    if (!i_attendees[ei]) {
+      continue;
+    }
+    if (n_attendees[ei] > max_persons_per_event) {
+      continue;
+    }
+
+    if (Resistant[i]) {
+      continue;
+    }
+    if (Rand[i] >= p_infected[ei]) {
+      continue;
+    }
+    if (Status[i]) {
+      continue;
+    }
+    Status[i] = STATUS_NOSYMP;
+    InfectedOn[i] = yday;
+    Source[i] = SOURCE_STADIA;
+  }
+  // void
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 void progress_bar(int console_width,
                   int days_to_sim,
                   int day,
@@ -1560,6 +1714,55 @@ void progress_bar(int console_width,
   }
 }
 
+void validate_policy(List Policy, int m) {
+  if (Policy.containsElementNamed("yday_start")) {
+    Rcerr << "(" << m << "): " << "Policy did not contain element 'yday_start'\n";
+    stop("Policy invalidated.");
+  }
+
+  if (Policy.containsElementNamed("travel_outside_sa2")) {
+    Rcerr << "(" << m << "): " << "Policy did not contain element 'travel_outside_sa2'\n";
+    stop("Policy invalidated.");
+  }
+  if (Policy.containsElementNamed("schools_open")) {
+    Rcerr << "(" << m << "): " << "Policy did not contain element 'schools_open'\n";
+    stop("Policy invalidated.");
+  }
+  if (Policy.containsElementNamed("workplaces_open")) {
+    Rcerr << "(" << m << "): " << "Policy did not contain element 'workplaces_open'\n";
+    stop("Policy invalidated.");
+  }
+}
+
+
+void validate_multipolicy(List MultiPolicy) {
+  if (!MultiPolicy.length()) {
+    return;
+  }
+  if (MultiPolicy.length() >= 255) {
+    stop("MultiPolicy.length() >= 255.");
+  }
+  int n_multipolicies = MultiPolicy.length();
+  for (int m = 0; m < n_multipolicies; ++m) {
+    List PolicyM = MultiPolicy[m];
+    validate_policy(PolicyM, m);
+  }
+}
+
+
+//' @title do_au_simulate
+//' @name do_au_simulate
+//' @description The internal mechanism of the \code{\link{simulate_sa2}} function
+//'
+//' @section Vectors which are modified:
+//' @param Status An integer vector that is modified by the function.
+//' @param InfectedOn The \code{yday} when the individual was infected.
+//' @param Source The source of the infection. See the header file SOURCE.
+//'
+//'
+//'
+//'
+//' @noRd
 
 
 // [[Rcpp::export]]
@@ -1576,6 +1779,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
                     IntegerVector LabourForceStatus,
                     IntegerVector SeedOriginal,
                     List Policy,
+                    List MultiPolicy,
                     List nPlacesByDestType,
                     List Epi, /* Epidemiological parameters */
                     IntegerVector Incubation,
@@ -1648,6 +1852,33 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 
 
+  /*
+   *
+   school_lockdown_triggers_exist
+   tests_by_state_was_null
+   supermarkets_open
+   schools_open
+   only_Year12
+   school_days_per_wk
+   do_contact_tracing
+   contact_tracing_days_before_test
+   contact_tracing_days_until_result
+   contact_tracing_only_sympto
+   contact_tracing_success
+   tests_by_state
+   max_persons_per_event
+   max_persons_per_supermarket
+   cafes_open
+   age_based_lockdown
+   workplaces_open
+   workplace_size_max
+   workplace_size_beta
+   workplace_size_lmu
+   workplace_size_lsi
+   travel_outside_sa2
+   lockdown_triggers__schools
+   *
+   */
 
 
 
@@ -1662,7 +1893,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
   const bool cafes_open = Policy["cafes_open"];
   const int max_persons_per_cafe = 10;
   // school policies
-  const bool schools_open = Policy["schools_open"];
+  bool schools_open = Policy["schools_open"];
   const bool only_Year12  = Policy["only_Year12"];
 
   if (!Policy.containsElementNamed("school_days_per_wk")) {
@@ -1713,14 +1944,8 @@ List do_au_simulate(IntegerVector StatusOriginal,
   const int ct_days_until_result = Policy["contact_tracing_days_until_result"];
   const double ct_success = Policy["contact_tracing_success"];
 
-
-
-
-  const double workplaces_open = Policy["workplaces_open"];
-  const int workplace_size_max = Policy["workplace_size_max"];
-
-
-
+  double workplaces_open = Policy["workplaces_open"];
+  int workplace_size_max = Policy["workplace_size_max"];
 
   IntegerVector TestedOn = no_init(N);
 
@@ -1742,6 +1967,37 @@ List do_au_simulate(IntegerVector StatusOriginal,
       }
     }
   }
+
+  // Events (i.e. large scale events)
+  int max_persons_per_event = Policy["max_persons_per_event"];
+  int n_major_events_weekday = Policy["n_major_events_weekday"];
+  int n_major_events_weekend = Policy["n_major_events_weekend"];
+
+  double p_visit_major_event = Epi["p_visit_major_event"];
+  if (p_visit_major_event < 0 || p_visit_major_event > 1) {
+    stop("p_visit_major_event not (0, 1)");
+  }
+
+
+  // Multi policies
+  // These are designed to reflect multiple policies throught the simulation period
+  validate_multipolicy(MultiPolicy);
+  unsigned char n_multipolicies = MultiPolicy.length();
+  const bool use_multipolicy = MultiPolicy.length() > 0;
+  unsigned char multipolicy = 0; // the index of the multipolicy, increments on policy change
+  int multipolicy_changes_yday[255] = {};
+  for (unsigned char m = 0; m < n_multipolicies; ++m) {
+    if (use_multipolicy) {
+      List PolicyM = MultiPolicy[m];
+      multipolicy_changes_yday[m] = PolicyM["yday_start"];
+    } else {
+      multipolicy_changes_yday[m] = INT_MAX;
+    }
+  }
+//
+//   LogicalVector multi_schools_open =
+//     (use_multipolicy) ? MultiPolicy["schools_open"] : Policy["schools_open"];
+
 
 
   IntegerVector Srand = do_lemire_rand_par(N, nThread);
@@ -1882,6 +2138,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
   const double q_school = Epi["q_school"];
   const double q_supermarket = Epi["q_supermarket"];
   const double q_places = Epi["q_places"];
+  const double q_major_event = Epi["q_major_event"];
 
 
 
@@ -1950,6 +2207,14 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
   IntegerVector NewInfections(days_to_sim);
   IntegerVector NewInfectionsByState(days_to_sim * NSTATES);
+
+
+
+
+
+
+
+  // Start the simulation //
 
 
   for (int day = 0; day < days_to_sim; ++day) {
@@ -2104,7 +2369,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 
 
-
+    // Progress bar
     if (display_progress) {
       progress_bar(console_width,
                    days_to_sim,
@@ -2113,6 +2378,23 @@ List do_au_simulate(IntegerVector StatusOriginal,
                    on_terminal,
                    n_infected_today);
     }
+
+
+    // Multipolicy?
+    // Do we need to change our policy parameters?
+    //  1. Is a multipolicy in effect?
+    //  2. Is the first date past?
+    //  3. Apply changes as required
+    if (use_multipolicy && multipolicy_changes_yday[multipolicy] == yday) {
+      List NewPolicy = MultiPolicy[multipolicy];
+      if (NewPolicy.containsElementNamed("schools_open")) {
+        schools_open = NewPolicy["schools_open"];
+      }
+      workplaces_open = NewPolicy["workplaces_open"];
+      ++multipolicy;
+    }
+
+
 
 
 
@@ -2165,9 +2447,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
     // First, examine all individuals infected last night
     // and move them accordingly.
-    if (optionz == 11) {
 
-    }
 
 
 #if defined _OPENMP && _OPENMP >= 201511
@@ -2371,6 +2651,17 @@ List do_au_simulate(IntegerVector StatusOriginal,
       }
     }
 
+    int n_major_events_today =
+      (is_weekday) ? n_major_events_weekday : n_major_events_weekend;
+
+    if (max_persons_per_event > 1000) {
+      infect_major_event(Status, InfectedOn, Source,
+                         p_visit_major_event, n_major_events_today,
+                         q_major_event, max_persons_per_event,
+                         day,
+                         wday, yday, Resistant, nThread, N, optionz);
+    }
+
 
 
     // finally
@@ -2445,6 +2736,25 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 
   return Statuses;
+}
+
+
+// [[Rcpp::export]]
+IntegerVector Next(IntegerVector x, int k = 0) {
+  int o = 0;
+  int N = x.length();
+  std::vector<int> xo;
+  xo.reserve(N);
+#pragma omp parallel for reduction(+:o)
+  for (int i = 0; i < N; ++i) {
+    if (k) {
+      int j = (i + k) % N;
+      xo[i] = x[j];
+    } else {
+      xo[i] = x[i];
+    }
+  }
+  return o;
 }
 
 

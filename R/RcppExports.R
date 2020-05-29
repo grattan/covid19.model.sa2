@@ -5,6 +5,21 @@ distr2status <- function(N, dead, healed, active, critical) {
     .Call(`_covid19_model_sa2_distr2status`, N, dead, healed, active, critical)
 }
 
+#' @title do_au_simulate
+#' @name do_au_simulate
+#' @description The internal mechanism of the \code{\link{simulate_sa2}} function
+#'
+#' @section Vectors which are modified:
+#' @param Status An integer vector that is modified by the function.
+#' @param InfectedOn The \code{yday} when the individual was infected.
+#' @param Source The source of the infection. See the header file SOURCE.
+#'
+#'
+#'
+#'
+#' @noRd
+NULL
+
 status_killed <- function() {
     .Call(`_covid19_model_sa2_status_killed`)
 }
@@ -45,8 +60,12 @@ do_rep <- function(r, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_rep`, r, nThread)
 }
 
-do_au_simulate <- function(StatusOriginal, InfectedOnOriginal, SA2, hid, Age, School, DZN, wid, nColleagues, PlaceTypeBySA2, LabourForceStatus, SeedOriginal, Policy, nPlacesByDestType, Epi, Incubation, Illness, nSupermarketsAvbl, SupermarketTypical, minPlaceID_nPlacesByDestType, yday_start, days_to_sim, N, display_progress = TRUE, on_terminal = FALSE, by_state = TRUE, returner = 0L, console_width = 80L, optionz = 0L, nThread = 1L) {
-    .Call(`_covid19_model_sa2_do_au_simulate`, StatusOriginal, InfectedOnOriginal, SA2, hid, Age, School, DZN, wid, nColleagues, PlaceTypeBySA2, LabourForceStatus, SeedOriginal, Policy, nPlacesByDestType, Epi, Incubation, Illness, nSupermarketsAvbl, SupermarketTypical, minPlaceID_nPlacesByDestType, yday_start, days_to_sim, N, display_progress, on_terminal, by_state, returner, console_width, optionz, nThread)
+do_au_simulate <- function(StatusOriginal, InfectedOnOriginal, SA2, hid, Age, School, DZN, wid, nColleagues, PlaceTypeBySA2, LabourForceStatus, SeedOriginal, Policy, MultiPolicy, nPlacesByDestType, Epi, Incubation, Illness, nSupermarketsAvbl, SupermarketTypical, minPlaceID_nPlacesByDestType, yday_start, days_to_sim, N, display_progress = TRUE, on_terminal = FALSE, by_state = TRUE, returner = 0L, console_width = 80L, optionz = 0L, nThread = 1L) {
+    .Call(`_covid19_model_sa2_do_au_simulate`, StatusOriginal, InfectedOnOriginal, SA2, hid, Age, School, DZN, wid, nColleagues, PlaceTypeBySA2, LabourForceStatus, SeedOriginal, Policy, MultiPolicy, nPlacesByDestType, Epi, Incubation, Illness, nSupermarketsAvbl, SupermarketTypical, minPlaceID_nPlacesByDestType, yday_start, days_to_sim, N, display_progress, on_terminal, by_state, returner, console_width, optionz, nThread)
+}
+
+Next <- function(x, k = 0L) {
+    .Call(`_covid19_model_sa2_Next`, x, k)
 }
 
 do_exp_dbl2int <- function(x, nThread = 1L) {

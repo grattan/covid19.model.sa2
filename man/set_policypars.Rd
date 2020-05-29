@@ -17,6 +17,7 @@ set_lockdown_triggers__schools(
 )
 
 set_policypars(
+  yday_start = 0L,
   supermarkets_open = TRUE,
   schools_open = FALSE,
   only_Year12 = FALSE,
@@ -28,6 +29,8 @@ set_policypars(
   contact_tracing_success = 0.9,
   tests_by_state = NULL,
   max_persons_per_event = 5L,
+  n_major_events_weekday = 28L,
+  n_major_events_weekend = 56L,
   max_persons_per_supermarket = 200L,
   cafes_open = TRUE,
   age_based_lockdown = integer(100),
@@ -40,7 +43,7 @@ set_policypars(
   lockdown_triggers__schools = set_lockdown_triggers__schools()
 )
 
-set_policy_no_restrictions()
+set_policy_no_restrictions(...)
 }
 \arguments{
 \item{do_school_lockdown}{If \code{FALSE}, no lockdown occurs and
@@ -61,6 +64,9 @@ any critical status pupils.}
 
 \item{default_schools_with_any_critical_duration_of_lockdown}{The duration in
 day of the lockdown so triggered.}
+
+\item{yday_start}{Optional. Specify the start date. Used in conjunction with
+\code{MultiPolicy} argument to \code{simulate_sa2}.}
 
 \item{supermarkets_open}{\code{TRUE|FALSE}. Should supermarkets remain open?}
 
@@ -110,7 +116,8 @@ If any entry is negative,
 or \code{NA}, the most recent day's number of tests performed are
 used.}
 
-\item{max_persons_per_event}{Not yet used.}
+\item{max_persons_per_event, n_major_events_weekday, n_major_events_weekend}{Policies around major events. Maximum of 255 major events per day and
+values of `max_persons_per_event` below 1000 are rounded to zero.}
 
 \item{max_persons_per_supermarket}{Maximum number of people allowed in a
 supermarket (within one hour i.e. concurrently).}
@@ -135,6 +142,8 @@ rate distribution for the geometric distribution; \code{_lmu} and
 \item{travel_outside_sa2}{Should travel outside a person's SA2 be modelled?}
 
 \item{lockdown_triggers__schools}{A list constructed by \code{\link{set_lockdown_triggers__schools}}.}
+
+\item{...}{Arguments passed to \code{set_policypars}.}
 }
 \value{
 A list of the components.

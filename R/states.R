@@ -15,3 +15,12 @@ states <- function() {
   # ABS Catalogue numbers
   c("AUS", "NSW", "VIC", "QLD", "SA", "WA", "TAS", "NT", "ACT", "OTH")
 }
+
+
+state_population <- function(state) {
+  if (is.character(state)) {
+    state <- match(state, states()[-1])
+  }
+  c(6865690L, 5452864L, 4257348L, 1541787L, 2240063L, 460366L,
+    183938L, 359583L, 3246L)[state]
+}

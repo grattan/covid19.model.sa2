@@ -6,6 +6,8 @@
 #include <dqrng.h>
 using namespace Rcpp;
 
+#define IS64BIT (INTPTR_MAX == INT64_MAX)
+
 double m2mu(double m, double s) {
   return log(m) - s/2;
 }
@@ -403,7 +405,7 @@ void update_seed(int s64) {
   ++s64;
 }
 
-IntegerVector do_lemire_rand(int n) {
+IntegerVector do_lemire_rand(int n, bool fill_if_odd = false) {
   warning("Unable.");
   return IntegerVector(1);
 }
@@ -599,7 +601,11 @@ LogicalVector test_q_lemire_32(int N, double p, int nThread = 1) {
 int do_one_unif(int a, int b, bool odd = false, int s = 0) {
   // threadsafe random variable in [a, b]
   // like unifRand but effectively inheriting R's .Random.seed for reproducibility
+#if IS64BIT
   uint64_t L = lehmer64_states(s); // s is the thread number if available
+#else
+  unsigned int L = (unsigned int)lehmer32();
+#endif
   const double range_ab = b - a + 1;
   const double range_int = 4294967294;
   const double r = range_ab / range_int;

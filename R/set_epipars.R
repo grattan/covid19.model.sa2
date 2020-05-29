@@ -27,7 +27,7 @@
 #' @param q_household,q_school,q_school_grade,q_workplace Daily transmission probability among household members / students of the same school / students of the same school and same same
 #' grade / workers of the same workplace.
 #'
-#' @param q_supermarket,q_places As above, for supermarket and places.
+#' @param q_supermarket,q_places,q_major_event As above, for supermarket and places.
 #'
 #' @param resistance_threshold An integer in \code{[0, 1000]}, the resistance
 #' required to not be infected. A value of 0
@@ -39,6 +39,8 @@
 #' \strong{symptomatic} patients that require ICU.
 #' @param p_death A number in \code{[0, 1]}, the proportion of
 #' \strong{critical cases} that die.
+#'
+#' @param p_visit_major_event Probability a person attends a major event on a given day.
 #'
 #' @return A list of the components, plus an entry \code{CHECKED} having the
 #' value \code{TRUE}.
@@ -72,10 +74,12 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac", "c
                         q_school_grade = 1/500,
                         q_supermarket = 1/500,
                         q_places = 1/500,
+                        q_major_event = 1/5000,
                         resistance_threshold = 400L,
                         p_asympto = 0.48,
                         p_critical = 0.02,
-                        p_death = 0.01) {
+                        p_death = 0.01,
+                        p_visit_major_event = 1/52) {
   incubation_distribution <- match.arg(incubation_distribution)
 
   switch(incubation_distribution,
@@ -135,7 +139,7 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac", "c
 
   CHECKED <- TRUE
 
-  mget(ls())
+  mget(unique(c("CHECKED", ls(sorted = TRUE))))
 }
 
 distrs <- function() {

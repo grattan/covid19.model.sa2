@@ -1,3 +1,8 @@
+# 0.20.0
+
+* Support for infection via major events
+
+
 # 0.19.0
 
 * Simulation now infects other SA2s internally.

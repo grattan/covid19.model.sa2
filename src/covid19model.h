@@ -5,6 +5,7 @@
 #include <vector>
 #include <array>
 #include <random>
+#include <iomanip>
 #include <numeric>      // std::iota
 #include <algorithm>
 // [[Rcpp::depends(RcppProgress)]]
@@ -61,6 +62,7 @@ const int SOURCE_WORKPL = 19;
 const int SOURCE_SCHOOL = 20;
 const int SOURCE_HOUSEH = 21;
 const int SOURCE_OTHSA2 = 22;
+const int SOURCE_STADIA = 23;
 
 
 const int NSTATUSES = 12;
@@ -760,6 +762,7 @@ IntegerVector prlnorm_int(int n, double a, double b, int nThread);
 IntegerVector RCauchy(IntegerVector U, double location, double scale, int nThread);
 IntegerVector do_lemire_rand_par(int n, int nThread);
 IntegerVector do_lemire_rand(int n, bool fill_if_odd);
+int percentage_to_int(double p);
 int do_one_unif(int a, int b, bool odd, int s);
 #if INTPTR_MAX == INT64_MAX
 void update_seed(uint64_t s64);

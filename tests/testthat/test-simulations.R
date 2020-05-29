@@ -1,6 +1,7 @@
 test_that("simulation works", {
   skip_on_cran()
   skip_if_not(identical(.Platform$r_arch, "x64"))
+  skip_if_not(is64bit())
   skip_if_not_installed("data.table")
   library(data.table)
   DAYS <- 18L
@@ -158,15 +159,16 @@ test_that("a_household_infections", {
   library(data.table)
   # Policy to expose household effects
   PolicyH <- set_policypars(do_contact_tracing = FALSE, workplaces_open = FALSE)
-  SH000 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.00), returner = 1)
-  SH005 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.05), returner = 1)
-  SH025 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.25), returner = 1)
-  s000 <- SH000[Status == "Suscep"][["N"]]
-  s005 <- SH005[Status == "Suscep"][["N"]]
-  s025 <- SH025[Status == "Suscep"][["N"]]
+  withr::with_seed(10, {
+    SH000 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.00), returner = 1)
+    SH005 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.05), returner = 1)
+    SH025 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.25), returner = 1)
+    s000 <- SH000[Status == "Suscep"][["N"]]
+    s005 <- SH005[Status == "Suscep"][["N"]]
+    s025 <- SH025[Status == "Suscep"][["N"]]
 
-  expect_lt(mean(tail(s000, 10) <  tail(s005, 10)), 0.5)
-
+    expect_lt(mean(tail(s000, 10) <  tail(s005, 10)), 0.5)
+  })
 
 
 })
@@ -175,6 +177,7 @@ test_that("a_household_infections", {
 test_that("returner 3 no race condition", {
   skip_on_cran()
   skip_on_travis()
+  skip_if_not(is64bit())
   library(data.table)
   S <- simulate_sa2(10, nThread = parallel::detectCores(), returner = 3)
   pop <- data.table(S3 = S$Status12)[, Day := rep_each(1:10, .N)][, .(N3 = sum(S3)), by = .(Day)]
