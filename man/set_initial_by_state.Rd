@@ -17,7 +17,7 @@ set_initial_by_state(
   asympto = 0.48,
   p_critical = 0.03,
   first_yday = NULL,
-  .population = length(state_id)
+  .population = NULL
 )
 }
 \arguments{
