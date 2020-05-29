@@ -4,17 +4,17 @@ test_that("simulate_cache validates and invalidates", {
   skip_if_not_installed("withr")
   skip_if_not_installed("tibble")
 
-  manual_initial_status <- tibble::tribble(
-    ~state, ~active, ~critical, ~dead, ~healed,
-    "NSW",     100,         9,     6,      30,
-    "VIC",      40,         5,     4,      20,
-    "QLD",      30,         2,     3,      10,
-    "SA",      10,         0,     0,      10,
-    "WA",      12,         0,     0,      10,
-    "TAS",      20,         0,     0,       1,
-    "NT",       1,         0,     0,       3,
-    "ACT",       0,         0,     0,       1
-    )
+  manual_initial_status <-
+    tibble::tribble(
+      ~state, ~active, ~critical, ~dead, ~healed,
+      "NSW",     100,         9,     6,      30,
+      "VIC",      40,         5,     4,      20,
+      "QLD",      30,         2,     3,      10,
+       "SA",      10,         0,     0,      10,
+       "WA",      12,         0,     0,      10,
+      "TAS",      20,         0,     0,       1,
+       "NT",       1,         0,     0,       3,
+      "ACT",       0,         0,     0,       1)
 
 
 
