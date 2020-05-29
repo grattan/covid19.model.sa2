@@ -2513,157 +2513,176 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
     // Now actually performs the interactions and infections
 
-    // Infect other sa2 (then return instantly -- i.e. continue to infect)
-    if (travel_outside_sa2) {
-      infect_other_sa2(Status,
+    // To avoid problems arising from some forms of infection always occuring
+    // before others, we randomize the order each day.  If this remains a problem
+    // we would need to do this by person.  (Pass ExecutionOrder and eo to
+    // each infector.)
+    IntegerVector ExecutionOrder = Rcpp::sample(8, 8);
+    for (int eo = 0; eo < 8; ++eo) {
+      switch(ExecutionOrder[eo]) {
+
+
+      case 1:
+        // Infect other sa2 (then return instantly -- i.e. continue to infect)
+        if (travel_outside_sa2) {
+          infect_other_sa2(Status,
+                           InfectedOn,
+                           Source,
+                           shortSA2,
+                           SA2_firsts,
+                           SA2_finals,
+                           stateShortSA2,
+                           day,
+                           wday,
+                           yday,
+                           nThread,
+                           N);
+        }
+        continue;
+
+      case 2:
+        if (supermarkets_open) {
+          infect_supermarkets(Status,
+                              InfectedOn,
+                              Source,
+                              shortSA2,
+                              SA2_firsts,
+                              SA2_finals,
+                              nThread,
+                              Age,
+                              LabourForceStatus,
+                              nSupermarketsBySA2,
+                              nSupermarketsAvbl,
+                              Resistant,
+                              day,
+                              wday,
+                              yday,
+                              N,
+                              SupermarketTypical,
+                              q_supermarket,
+                              TodayHz,
+                              max_persons_per_supermarket,
+                              false);
+        }
+        continue;
+
+      case 3:
+        // infect cafes
+        if (cafes_open) {
+          // perhaps do for (int p = 0; p < 105; ++p) but not yet
+          infect_place(15 - 1, // 15 is place id for cafe -1 for 0-index
+                       Status,
                        InfectedOn,
                        Source,
                        shortSA2,
                        SA2_firsts,
                        SA2_finals,
-                       stateShortSA2,
+                       Age,
+                       nThread,
+                       minPlaceID_nPlacesByDestType,
                        day,
                        wday,
                        yday,
-                       nThread,
-                       N);
-    }
+                       N,
+                       Resistant,
+                       q_places,
+                       TodayHz,
+                       max_persons_per_cafe,
+                       TodaysK);
+        }
+        continue;
+
+      case 4:
+        if (is_weekday && schools_open) {
+          // Check whether any states are in lockdown
+          // We only check every 'Monday' (i.e. just before Monday)
+          // to reflect decision timing.
 
 
-    if (supermarkets_open) {
-      infect_supermarkets(Status,
-                          InfectedOn,
-                          Source,
-                          shortSA2,
-                          SA2_firsts,
-                          SA2_finals,
-                          nThread,
-                          Age,
-                          LabourForceStatus,
-                          nSupermarketsBySA2,
-                          nSupermarketsAvbl,
-                          Resistant,
-                          day,
-                          wday,
-                          yday,
-                          N,
-                          SupermarketTypical,
-                          q_supermarket,
-                          TodayHz,
-                          max_persons_per_supermarket,
-                          false);
-    }
+          for (int s = 0; s < NSTATES; ++s) {
+            // Each Monday morning we check whether there has been an
+            // event to trigger a lockdown (and what sort of trigger it was)
+            // If there was one we set the lockdown period then reset the
+            // trigger. A lockdown so triggered takes place immediately (i.e.
+            // before 9am)
 
-    // infect cafes
-    if (cafes_open) {
-      // perhaps do for (int p = 0; p < 105; ++p) but not yet
-      infect_place(15 - 1, // 15 is place id for cafe -1 for 0-index
-                   Status,
-                   InfectedOn,
-                   Source,
-                   shortSA2,
-                   SA2_firsts,
-                   SA2_finals,
-                   Age,
-                   nThread,
-                   minPlaceID_nPlacesByDestType,
-                   day,
-                   wday,
-                   yday,
-                   N,
-                   Resistant,
-                   q_places,
-                   TodayHz,
-                   max_persons_per_cafe,
-                   TodaysK);
-    }
+            // Otherwise, we continue any extant lockdown
 
-
-
-    if (is_weekday && schools_open) {
-      // Check whether any states are in lockdown
-      // We only check every 'Monday' (i.e. just before Monday)
-      // to reflect decision timing.
-
-
-        for (int s = 0; s < NSTATES; ++s) {
-          // Each Monday morning we check whether there has been an
-          // event to trigger a lockdown (and what sort of trigger it was)
-          // If there was one we set the lockdown period then reset the
-          // trigger. A lockdown so triggered takes place immediately (i.e.
-          // before 9am)
-
-          // Otherwise, we continue any extant lockdown
-
-          if (is_monday && state_trigger_pulled[s] != 0) {
-            if (optionz) Rcout << "triggered";
+            if (is_monday && state_trigger_pulled[s] != 0) {
+              if (optionz) Rcout << "triggered";
               areSchoolsLockedDown[s] = true;
               int d_1 = lockdown_trigger_schools_with_infections_duration_of_lockdown;
               int d_2 = lockdown_trigger_schools_with_any_critical_duration_of_lockdown;
               schools_lockdown_until[s] = yday + ((state_trigger_pulled[s] == 1) ? d_1 : d_2);
               state_trigger_pulled[s] = 0;  // can only be reset on Mondays
-          } else if (schools_lockdown_until[s]) {
-            schools_lockdown_until[s] -= 1;
-            areSchoolsLockedDown[s] = schools_lockdown_until[s] > yday;
+            } else if (schools_lockdown_until[s]) {
+              schools_lockdown_until[s] -= 1;
+              areSchoolsLockedDown[s] = schools_lockdown_until[s] > yday;
+            }
+          }
+
+          infect_school(Status, InfectedOn, Source,
+                        School, Age,
+                        AttendsWday,
+                        day, wday, yday,
+                        N,
+                        SA2,
+                        state_by_school,
+                        areSchoolsLockedDown,
+                        state_trigger_pulled,
+                        lockdown_trigger_schools_with_infections,
+                        lockdown_trigger_schools_with_infections_geq,
+                        lockdown_trigger_schools_with_infections_duration_of_lockdown,
+                        lockdown_trigger_schools_with_any_critical,
+                        lockdown_trigger_schools_with_any_critical_duration_of_lockdown,
+                        schoolsIndex,
+                        Srand,
+                        a_schools_rate,
+                        q_school,
+                        only_Year12,
+                        school_days_per_wk,
+                        nThread,
+                        optionz,
+                        -99);
+        }
+        continue;
+
+      case 5:
+        if (workplaces_open) {
+          infect_dzn(Status, InfectedOn, Source,
+                     DZN, wid,
+                     n_workplaces,
+                     widIndex,
+                     LabourForceStatus, nColleagues,
+                     day, wday, yday, N,
+                     a_workplace_rate,
+                     q_workplace,
+                     workplaces_open,
+                     workplace_size_max,
+                     TodaysK, Resistant, 0, optionz, nThread);
+          if (day < 2 && optionz) {
+            Rcout << "infected_dzn = " << day << "\n";
           }
         }
+        continue;
 
-      infect_school(Status, InfectedOn, Source,
-                    School, Age,
-                    AttendsWday,
-                    day, wday, yday,
-                    N,
-                    SA2,
-                    state_by_school,
-                    areSchoolsLockedDown,
-                    state_trigger_pulled,
-                    lockdown_trigger_schools_with_infections,
-                    lockdown_trigger_schools_with_infections_geq,
-                    lockdown_trigger_schools_with_infections_duration_of_lockdown,
-                    lockdown_trigger_schools_with_any_critical,
-                    lockdown_trigger_schools_with_any_critical_duration_of_lockdown,
-                    schoolsIndex,
-                    Srand,
-                    a_schools_rate,
-                    q_school,
-                    only_Year12,
-                    school_days_per_wk,
-                    nThread,
-                    optionz,
-                    -99);
-    }
-    if (workplaces_open) {
-      infect_dzn(Status, InfectedOn, Source,
-                 DZN, wid,
-                 n_workplaces,
-                 widIndex,
-                 LabourForceStatus, nColleagues,
-                 day, wday, yday, N,
-                 a_workplace_rate,
-                 q_workplace,
-                 workplaces_open,
-                 workplace_size_max,
-                 TodaysK, Resistant, 0, optionz, nThread);
-      if (day < 2 && optionz) {
-        Rcout << "infected_dzn = " << day << "\n";
+      case 6:
+        int n_major_events_today =
+          (is_weekday) ? n_major_events_weekday : n_major_events_weekend;
+
+        if (max_persons_per_event > 1000) {
+          infect_major_event(Status, InfectedOn, Source,
+                             p_visit_major_event, n_major_events_today,
+                             q_major_event, max_persons_per_event,
+                             day,
+                             wday, yday, Resistant, nThread, N, optionz);
+        }
+        continue;
       }
     }
 
-    int n_major_events_today =
-      (is_weekday) ? n_major_events_weekday : n_major_events_weekend;
-
-    if (max_persons_per_event > 1000) {
-      infect_major_event(Status, InfectedOn, Source,
-                         p_visit_major_event, n_major_events_today,
-                         q_major_event, max_persons_per_event,
-                         day,
-                         wday, yday, Resistant, nThread, N, optionz);
-    }
-
-
 
     // finally
-
     infect_household(Status, InfectedOn, Source,
                      shortSA2,
                      hid, HouseholdSize,
@@ -2677,6 +2696,8 @@ List do_au_simulate(IntegerVector StatusOriginal,
     if (day < 2 && optionz) {
       Rcout << "infected_household " << "\n";
     }
+
+
 
     if (do_contact_tracing) {
       contact_tracing(Status,
@@ -2703,7 +2724,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
                       nThread,
                       TestedOn);
     }
-
 
   }
 

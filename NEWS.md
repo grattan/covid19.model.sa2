@@ -1,3 +1,9 @@
+
+# 0.22.0
+
+* The execution order of infectors is now random, rather than supermarket
+  infections coming first.
+
 # 0.21.0
 
 * Initial status can be set by state
