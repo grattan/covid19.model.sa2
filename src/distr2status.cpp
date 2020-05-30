@@ -39,7 +39,7 @@ IntegerVector distr2status(int N,
 List fifo_status(IntegerVector CumCases,
                  IntegerVector Healed,
                  IntegerVector Killed,
-                 int tmp = 0) {
+                 int first_day = 25) {
   int ncc = CumCases.size();
   int nh = Healed.size();
   int nk = Killed.size();
@@ -94,7 +94,7 @@ List fifo_status(IntegerVector CumCases,
         Rcerr << day << " " << i_ConcludedOn << " " << Pop << "\n";
         stop("i_ConcludedOn >= Pop");
       }
-      ConcludedOn[i_ConcludedOn] = day;
+      ConcludedOn[i_ConcludedOn] = first_day + day;
       --concluded_today;
       ++i_ConcludedOn;
     }
@@ -103,7 +103,7 @@ List fifo_status(IntegerVector CumCases,
         Rcerr << day << " " << i_InfectedOn << " " << Pop << "\n";
         stop("i_InfectedOn >= Pop");
       }
-      InfectedOn[i_InfectedOn] = day;
+      InfectedOn[i_InfectedOn] = first_day + day;
       --active_today;
       ++i_InfectedOn;
     }

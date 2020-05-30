@@ -31,16 +31,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // fifo_status
-List fifo_status(IntegerVector CumCases, IntegerVector Healed, IntegerVector Killed, int tmp);
-RcppExport SEXP _covid19_model_sa2_fifo_status(SEXP CumCasesSEXP, SEXP HealedSEXP, SEXP KilledSEXP, SEXP tmpSEXP) {
+List fifo_status(IntegerVector CumCases, IntegerVector Healed, IntegerVector Killed, int first_day);
+RcppExport SEXP _covid19_model_sa2_fifo_status(SEXP CumCasesSEXP, SEXP HealedSEXP, SEXP KilledSEXP, SEXP first_daySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< IntegerVector >::type CumCases(CumCasesSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type Healed(HealedSEXP);
     Rcpp::traits::input_parameter< IntegerVector >::type Killed(KilledSEXP);
-    Rcpp::traits::input_parameter< int >::type tmp(tmpSEXP);
-    rcpp_result_gen = Rcpp::wrap(fifo_status(CumCases, Healed, Killed, tmp));
+    Rcpp::traits::input_parameter< int >::type first_day(first_daySEXP);
+    rcpp_result_gen = Rcpp::wrap(fifo_status(CumCases, Healed, Killed, first_day));
     return rcpp_result_gen;
 END_RCPP
 }
