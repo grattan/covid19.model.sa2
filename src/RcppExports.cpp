@@ -30,6 +30,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// fifo_status
+List fifo_status(IntegerVector CumCases, IntegerVector Healed, IntegerVector Killed, int tmp);
+RcppExport SEXP _covid19_model_sa2_fifo_status(SEXP CumCasesSEXP, SEXP HealedSEXP, SEXP KilledSEXP, SEXP tmpSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type CumCases(CumCasesSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type Healed(HealedSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type Killed(KilledSEXP);
+    Rcpp::traits::input_parameter< int >::type tmp(tmpSEXP);
+    rcpp_result_gen = Rcpp::wrap(fifo_status(CumCases, Healed, Killed, tmp));
+    return rcpp_result_gen;
+END_RCPP
+}
 // status_killed
 int status_killed();
 RcppExport SEXP _covid19_model_sa2_status_killed() {
@@ -81,6 +95,15 @@ RcppExport SEXP _covid19_model_sa2_status_critic() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     rcpp_result_gen = Rcpp::wrap(status_critic());
+    return rcpp_result_gen;
+END_RCPP
+}
+// isolated_plus
+int isolated_plus();
+RcppExport SEXP _covid19_model_sa2_isolated_plus() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    rcpp_result_gen = Rcpp::wrap(isolated_plus());
     return rcpp_result_gen;
 END_RCPP
 }
@@ -634,12 +657,14 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_InstallTime", (DL_FUNC) &_covid19_model_sa2_InstallTime, 0},
     {"_covid19_model_sa2_distr2status", (DL_FUNC) &_covid19_model_sa2_distr2status, 5},
+    {"_covid19_model_sa2_fifo_status", (DL_FUNC) &_covid19_model_sa2_fifo_status, 4},
     {"_covid19_model_sa2_status_killed", (DL_FUNC) &_covid19_model_sa2_status_killed, 0},
     {"_covid19_model_sa2_status_healed", (DL_FUNC) &_covid19_model_sa2_status_healed, 0},
     {"_covid19_model_sa2_status_suscep", (DL_FUNC) &_covid19_model_sa2_status_suscep, 0},
     {"_covid19_model_sa2_status_nosymp", (DL_FUNC) &_covid19_model_sa2_status_nosymp, 0},
     {"_covid19_model_sa2_status_insymp", (DL_FUNC) &_covid19_model_sa2_status_insymp, 0},
     {"_covid19_model_sa2_status_critic", (DL_FUNC) &_covid19_model_sa2_status_critic, 0},
+    {"_covid19_model_sa2_isolated_plus", (DL_FUNC) &_covid19_model_sa2_isolated_plus, 0},
     {"_covid19_model_sa2_supermarket_weekday_hrs", (DL_FUNC) &_covid19_model_sa2_supermarket_weekday_hrs, 0},
     {"_covid19_model_sa2_supermarket_weekend_hrs", (DL_FUNC) &_covid19_model_sa2_supermarket_weekend_hrs, 0},
     {"_covid19_model_sa2_test_array4k", (DL_FUNC) &_covid19_model_sa2_test_array4k, 8},

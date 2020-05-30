@@ -11,6 +11,7 @@ set_initial_by_state(
   active = NULL,
   critical = NULL,
   cases = NULL,
+  isolated = NULL,
   cases_by_state = "time_series_cases.fst",
   deaths_by_state = "time_series_deaths.fst",
   recovered_by_state = "time_series_recovered.fst",
@@ -36,6 +37,9 @@ and have not recovered, died, or been admitted to intensive care.}
 
 \item{cases}{Optionally, the number of cumulative cases. That is,
 \code{dead + healed + active + critical}.}
+
+\item{isolated}{Number of \strong{active} cases who are isolated or
+quarantined.}
 
 \item{cases_by_state}{A table of total cases (cumulative) by date,
 ordered by date, and having columns matching the states in \code{state_id}.

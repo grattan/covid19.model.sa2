@@ -20,25 +20,31 @@ update_pappubahry <- function() {
     github_url <- paste0("https://github.com/pappubahry/AU_COVID19/raw/master/", nom, ".csv")
     dataraw.csv <- tempfile(fileext = ".csv")
     extdata.fst <- system.file("extdata", paste0(nom, ".fst"), package = packageName())
-    if (!file.exists(extdata.fst)) {
-      stop("`extdata.fst = ", extdata.fst, "`.")
-    }
-    fread(github_url) %T>%
+
+    result <-
+      fread(github_url) %>%
+      setnames("date", "Date", skip_absent = TRUE) %>%
+      .[] %T>%
       fwrite(provide.file(dataraw.csv)) %>%
       .[, Date := as.Date(Date)] %>%
       setkey(Date) %>%
-      write_fst(extdata.fst, compress = 100)
+      .[]
+    if (file.exists(extdata.fst)) {
+      write_fst(result, extdata.fst)
+    }
 
     if (dir.exists("inst/extdata") &&
         Sys.getenv("USERNAME") == "hughp") {
-      file.copy(extdata.fst, paste0("inst/extdata/", nom, ".fst"), overwrite = TRUE)
+      write_fst(result, paste0("inst/extdata/", nom, ".fst"), compress = 100)
     }
 
     TRUE
   }
 
   sapply(c("time_series_cases", "time_series_deaths",
-           "time_series_recovered", "time_series_tests"),
+           "time_series_recovered", "time_series_tests",
+           "time_series_nsw_sources",
+           "time_series_vic_sources"),
          read_pappu)
 
 }

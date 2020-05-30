@@ -30,6 +30,11 @@ int status_critic() {
   return STATUS_CRITIC;
 }
 // [[Rcpp::export(rng = false)]]
+int isolated_plus() {
+  return ISOLATED_PLUS;
+}
+
+// [[Rcpp::export(rng = false)]]
 int supermarket_weekday_hrs() {
   return SUPERMARKET_WEEKDAY_HRS;
 }

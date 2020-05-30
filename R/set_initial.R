@@ -11,6 +11,9 @@
 #' @param cases Optionally, the number of cumulative cases. That is,
 #' \code{dead + healed + active + critical}.
 #'
+#' @param isolated Number of \strong{active} cases who are isolated or
+#' quarantined.
+#'
 #' @param cases_by_state A table of total cases (cumulative) by date,
 #' ordered by date, and having columns matching the states in \code{state_id}.
 #' Alternatively a string to be read in by \code{\link{read_sys}}, the path
@@ -40,6 +43,7 @@ set_initial_by_state <- function(state_id,
                                  active = NULL,
                                  critical = NULL,
                                  cases = NULL,
+                                 isolated = NULL,
                                  cases_by_state = "time_series_cases.fst",
                                  deaths_by_state = "time_series_deaths.fst",
                                  recovered_by_state = "time_series_recovered.fst",
@@ -151,6 +155,7 @@ set_initial_by_state <- function(state_id,
                                        deaths_by_state = deaths_by_state,
                                        recovered_by_state = recovered_by_state,
                                        asympto = asympto,
+                                       isolated = isolated,
                                        first_yday = first_yday,
                                        .population = .N),
        by = "x"]
@@ -186,7 +191,7 @@ set_initial_by_state <- function(state_id,
                     "state_id = {state_id}."), "\n",
          "Ensure the population at least the number of total cases.")
   }
-  dqsamp_status(dead, healed, nosymp, insymp, critical, .population, asympto)
+  dqsamp_status(dead, healed, nosymp, insymp, critical, .population, asympto, isolated)
 }
 
 
@@ -223,22 +228,56 @@ impute_time_series <- function(time_series_cases, time_series_deaths, time_serie
   list(time_series_cases, time_series_deaths, time_series_healed)
 }
 
+quarantine_by_date <- function(.date) {
+  nsw_abroad <- read_sys("time_series_nsw_sources.fst", columns = c("Date", "overseas"))
+  vic_abroad <- read_sys("time_series_vic_sources.fst", columns = c("Date", "overseas"))
+
+  if (!inherits(.date, "Date")) {
+    .date <- as.Date(.date)
+  }
+
+  n_isolated_nsw <-
+    nsw_abroad[.(.date), overseas]
+  n_isolated_vic <-
+    vic_abroad[.(.date), overseas]
+
+  n_isolated_vic + n_isolated_nsw
+}
 
 
-dqsamp_status <- function(dead, healed, nosymp, insymp, critical, .population, asympto) {
+
+dqsamp_status <- function(dead, healed, nosymp,
+                          insymp, critical,
+                          .population,
+                          asympto,
+                          isolated = 0L) {
+
+  p_isol <- isolated / (nosymp + insymp)
+
+
+  nosymp_isola <- as.integer(p_isol * nosymp)
+  nosymp_libre <- nosymp - nosymp_isola
+  insymp_isola <- as.integer(p_isol * insymp)
+  insymp_libre <- insymp - insymp_isola
+
+
   n_status0 <- .population - (dead + healed + nosymp + insymp + critical)
   status <-
     rep(c(status_killed(),
           status_healed(),
           status_suscep(),
           status_nosymp(),
+          status_nosymp() + isolated_plus(),
           status_insymp(),
+          status_insymp() + isolated_plus(),
           status_critic()),
         times = c(dead,
                   healed,
                   n_status0,
-                  nosymp,
-                  insymp,
+                  nosymp_libre,
+                  nosymp_isola,
+                  insymp_libre,
+                  insymp_isola,
                   critical))
   if (length(status) != .population) {
     stop("Internal error: length(status) != .population.")
@@ -246,4 +285,12 @@ dqsamp_status <- function(dead, healed, nosymp, insymp, critical, .population, a
 
   dqrng::dqsample(status)
 }
+
+#
+# fifo_status <- function(NewCases_by_Date, Recovered_by_Date) {
+#
+# }
+
+
+
 

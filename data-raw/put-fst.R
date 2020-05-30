@@ -636,6 +636,9 @@ write_fst(bus, "inst/extdata/businesses.fst")
 try({
   # When n > 3 we functionalize
   read_pappu <- function(nom) {
+    "https://github.com/pappubahry/AU_COVID19/raw/master/time_series_nsw_sources.csv"
+    "https://github.com/pappubahry/AU_COVID19/raw/master/time_series_vic_sources.csv"
+
     stopifnot(!endsWith(nom, ".csv"))
     github_url <- paste0("https://github.com/pappubahry/AU_COVID19/raw/master/", nom, ".csv")
     dataraw.csv <- paste0("data-raw/pappubahry/AU_COVID19/", nom, ".csv")
@@ -650,7 +653,9 @@ try({
   }
 
   sapply(c("time_series_cases", "time_series_deaths",
-           "time_series_recovered", "time_series_tests"),
+           "time_series_recovered", "time_series_tests",
+           "time_series_nsw_sources",
+           "time_series_vic_sources"),
          read_pappu)
 })
 

@@ -17,3 +17,13 @@ test_that("set_initial_by_state works", {
 
 
 })
+
+
+test_that("set_initial retrospectively", {
+  cases <- read_sys("time_series_cases.fst")
+  killed <- read_sys("time_series_deaths.fst")
+  healed <- read_sys("time_series_recovered.fst")
+
+
+})
+
