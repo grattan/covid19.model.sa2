@@ -105,7 +105,7 @@ file_fst <- function(file.fst) {
 
 start_progress <- function(fst2_progress, file.fst) {
   start.time <- Sys.time()
-  if (fst2_progress) {
+  if (fst2_progress && sys.nframe() <= 2L) {
     cat(crayon::green(as.character(format(Sys.time(), format = "%H:%M:%S"))),
         crayon::red(basename(file.fst)), "\t")
   }
@@ -122,7 +122,7 @@ end_progress <- function(start.time, fst2_progress, file.fst) {
   dm <- dm %% 60L
   dm <- dm - (ds < 0)
   ds <- ds %% 60L
-  if (fst2_progress) {
+  if (fst2_progress && sys.nframe() <= 2L) {
     cat(crayon::blue(paste0("+",
                             formatC(dm,
                                     width = 2,

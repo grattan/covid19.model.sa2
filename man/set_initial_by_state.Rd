@@ -11,13 +11,13 @@ set_initial_by_state(
   active = NULL,
   critical = NULL,
   cases = NULL,
-  isolated = NULL,
   cases_by_state = "time_series_cases.fst",
   deaths_by_state = "time_series_deaths.fst",
   recovered_by_state = "time_series_recovered.fst",
   asympto = 0.48,
   p_critical = 0.03,
   first_yday = NULL,
+  p_isol = NULL,
   .population = NULL
 )
 }
@@ -38,9 +38,6 @@ and have not recovered, died, or been admitted to intensive care.}
 \item{cases}{Optionally, the number of cumulative cases. That is,
 \code{dead + healed + active + critical}.}
 
-\item{isolated}{Number of \strong{active} cases who are isolated or
-quarantined.}
-
 \item{cases_by_state}{A table of total cases (cumulative) by date,
 ordered by date, and having columns matching the states in \code{state_id}.
 Alternatively a string to be read in by \code{\link{read_sys}}, the path
@@ -58,8 +55,13 @@ if the number of active cases is 100 and }\code{asympto = 0.75}
 \item{first_yday}{An integer, the \code{\link[data.table]{yday}} to set
 as the initial day.}
 
+\item{p_isol}{The proportion of cases in isolation.}
+
 \item{.population}{The size of the output, the population. By default,
 set to the length of \code{state_id}.}
+
+\item{isolated}{Number of \strong{active} cases who are isolated or
+quarantined.}
 }
 \value{
 An integer vector of length \code{.population} with values

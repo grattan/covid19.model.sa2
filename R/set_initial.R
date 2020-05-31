@@ -26,6 +26,9 @@
 #' @param p_critical The proportion of symptomatic cases who are critical.
 #' @param first_yday An integer, the \code{\link[data.table]{yday}} to set
 #' as the initial day.
+#'
+#' @param p_isol The proportion of cases in isolation.
+#'
 #' @param .population The size of the output, the population. By default,
 #' set to the length of \code{state_id}.
 #'
@@ -43,13 +46,13 @@ set_initial_by_state <- function(state_id,
                                  active = NULL,
                                  critical = NULL,
                                  cases = NULL,
-                                 isolated = NULL,
                                  cases_by_state = "time_series_cases.fst",
                                  deaths_by_state = "time_series_deaths.fst",
                                  recovered_by_state = "time_series_recovered.fst",
                                  asympto = 0.48,
                                  p_critical = 0.03,
                                  first_yday = NULL,
+                                 p_isol = NULL,
                                  .population = NULL) {
   if (missing(state_id)) {
     stop("'state_id' is missing, with no default.")
@@ -156,8 +159,8 @@ set_initial_by_state <- function(state_id,
                                        deaths_by_state = deaths_by_state,
                                        recovered_by_state = recovered_by_state,
                                        asympto = asympto,
-                                       isolated = isolated,
                                        first_yday = first_yday,
+                                       p_isol = p_isol,
                                        .population = .N),
        by = "x"]
     return(DT[["out"]])
@@ -182,7 +185,7 @@ set_initial_by_state <- function(state_id,
 
   critical %<=% (as.integer(p_critical * insymp))
 
-  p_isol <- p_quarantine_by_date(as.Date("2020-01-01") + first_yday)
+  p_isol %<=% p_quarantine_by_date(as.Date("2020-01-01") + first_yday)
 
   if (.population < (dead + healed + active + critical)) {
     tot_cases <- dead + healed + active + critical
@@ -294,6 +297,7 @@ dqsamp_status <- function(dead, healed, nosymp,
     stop("Internal error: length(status) != .population.")
   }
 
+  dqrng::dqset.seed(seed = updateLemireSeedFromR()[1:2])
   dqrng::dqsample(status)
 }
 
