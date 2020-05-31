@@ -99,6 +99,7 @@ set_initial_by_state <- function(state_id,
       cases_by_state <- last(cases_by_state)
       deaths_by_state <- last(deaths_by_state)
       recovered_by_state <- last(recovered_by_state)
+      first_yday <- cases_by_state[, yday(Date)]
     } else {
       earliest_allowed_date <-
         recovered_by_state[complete.cases(recovered_by_state), min(Date)]
@@ -181,8 +182,7 @@ set_initial_by_state <- function(state_id,
 
   critical %<=% (as.integer(p_critical * insymp))
 
-
-
+  p_isol <- p_quarantine_by_date(as.Date("2020-01-01") + first_yday)
 
   if (.population < (dead + healed + active + critical)) {
     tot_cases <- dead + healed + active + critical
@@ -191,7 +191,7 @@ set_initial_by_state <- function(state_id,
                     "state_id = {state_id}."), "\n",
          "Ensure the population at least the number of total cases.")
   }
-  dqsamp_status(dead, healed, nosymp, insymp, critical, .population, asympto, isolated)
+  dqsamp_status(dead, healed, nosymp, insymp, critical, .population, asympto, p_isol)
 }
 
 
@@ -228,20 +228,33 @@ impute_time_series <- function(time_series_cases, time_series_deaths, time_serie
   list(time_series_cases, time_series_deaths, time_series_healed)
 }
 
-quarantine_by_date <- function(.date) {
-  nsw_abroad <- read_sys("time_series_nsw_sources.fst", columns = c("Date", "overseas"))
-  vic_abroad <- read_sys("time_series_vic_sources.fst", columns = c("Date", "overseas"))
-
-  if (!inherits(.date, "Date")) {
+p_quarantine_by_date <- function(.date, cap = TRUE) {
+  if (is.character(.date)) {
     .date <- as.Date(.date)
   }
 
-  n_isolated_nsw <-
-    nsw_abroad[.(.date), overseas]
-  n_isolated_vic <-
-    vic_abroad[.(.date), overseas]
+  nsw_abroad <- read_sys("time_series_nsw_sources.fst", columns = c("Date", "overseas"))
+  nsw_abroad[, nsw_abroad := cumsum(overseas)]
+  nsw_abroad[, overseas := NULL]
 
-  n_isolated_vic + n_isolated_nsw
+  vic_abroad <- read_sys("time_series_vic_sources.fst", columns = c("Date", "overseas"))
+  vic_abroad[, vic_abroad := cumsum(overseas)]
+  vic_abroad[, overseas := NULL]
+
+  cases <- read_sys("time_series_cases.fst", columns = c("Date", "NSW", "VIC"))
+  cases[, tot_cases := NSW + VIC]
+  cases[, c("NSW", "VIC") := NULL]
+
+  p_by_date <-
+    cases[nsw_abroad][vic_abroad] %>%
+    .[, tot_cases := nafill(tot_cases, type = "locf")] %>%
+    .[, nsw_abroad := nafill(nsw_abroad, type = "locf")] %>%
+    .[, p := (nsw_abroad + vic_abroad) / tot_cases]
+  if (cap) {
+    p_by_date[, p := pmin.int(p, 1)]
+  }
+  setkeyv(p_by_date, "Date")
+  p_by_date[.(.date), p, roll = "nearest"]
 }
 
 
@@ -250,9 +263,7 @@ dqsamp_status <- function(dead, healed, nosymp,
                           insymp, critical,
                           .population,
                           asympto,
-                          isolated = 0L) {
-
-  p_isol <- isolated / (nosymp + insymp)
+                          p_isol = 0) {
 
 
   nosymp_isola <- as.integer(p_isol * nosymp)
@@ -290,6 +301,9 @@ dqsamp_status <- function(dead, healed, nosymp,
 # fifo_status <- function(NewCases_by_Date, Recovered_by_Date) {
 #
 # }
+
+
+
 
 
 
