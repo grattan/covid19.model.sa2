@@ -1,4 +1,9 @@
 
+# 0.23.0
+
+* `set_initial_by_state` and hence `simulate_sa2` now by default isolate approximately
+  50\% of the cases set for the given start day.
+
 # 0.22.0
 
 * The execution order of infectors is now random, rather than supermarket
