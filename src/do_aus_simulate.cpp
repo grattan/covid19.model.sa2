@@ -2739,10 +2739,11 @@ List do_au_simulate(IntegerVector StatusOriginal,
   }
 
   if (returner == 0) {
+    Statuses.push_back(InfectedOn);
+    Statuses.push_back(Source);
     return Rcpp::List::create(Named("nInfected") = nInfected,
                               Named("Statuses") = Statuses,
-                              Named("TestedOn") = TestedOn,
-                              Named("InfectionSource") = Source);
+                              Named("TestedOn") = TestedOn);
   }
   if (returner == 1) {
     return List::create(Named("Status7") = out1);
