@@ -1,0 +1,81 @@
+\documentclass[a4paper,11pt]{scrreprt}
+\usepackage{tikz}
+
+\newcommand*{\code}[1]{\texttt{#1}}
+\newcommand*{\defi}[1]{\textbf{#1}}
+
+\title{Technical supplement to the COVID19 report}
+\author{Hugh Parsonage}
+
+\providecommand{\crema}{\textsc{crema}}
+
+
+\begin{document}
+
+\addchap{Overview}
+Our model, \crema, is a dynamic microsimulation model of Australia. 
+
+\subsection{Static data}
+The model runs on a static data table, each row a person in Australia, 
+which identifies each person's
+
+\begin{enumerate}
+	\item state and SA2,
+	\item age
+	\item household
+	\item school,
+	\item labour force status,
+\end{enumerate}
+
+For performance reasons, data is cached before being passed to the dynamic model.
+Obviously, the cache includes the static data. Other features of each person is 
+also cached (or ``generated at cache time''). Cache time variables include:
+
+\begin{description}
+\item[\code{SupermarketTypical}] If an individual's SA2 contains zero supermarkets, 
+a value of zero. 
+For implementation convenience,%
+	\footnote{By \defi{implementation convenience}, I mean that the choice was not made 
+	on the basis of research, because it was necessary to do so and was not considered 
+	sufficiently important to make more than an arbitrary decision. In this case,
+	the choice of 8 was made to avoid stack overflow.}
+If the individual's SA2 contains more than eight supermarket we 
+exclude all but eight supermarkets. We then assign to each person a random integer
+from 1 to \(N_S = {}\) the number of supermarkets in each SA2 to represent the 
+`typical' supermarket a person visits.
+\end{description}
+
+For technical reasons, we shorten variables so that they are a sequence. 
+
+\subsection{Assignment of individuals to workplaces}
+While we are confident about the distribution of labour force status among
+the population we assign in the static data, we do not know how large each 
+worker's workplace is. To model this, for each destination zone we construct
+a sequence of geometrically distributed random variables with parameters 
+\(1/\beta = 1/15\). 
+
+\begin{figure}[!htbp]
+\caption{The geometric distribution with mean 15 over the range [0, 50]}\label{fig:geom-distr}
+\makebox[\textwidth]{
+	\input{tex/geom-distr.tikz}
+}
+\end{figure}
+
+The number of random variables to generate is determined algorithmically: if the next random variable
+would overflow into the next DZN, we fill the rest of the sequences with 2, which has the useful 
+side-effect of inflating the number of partnerships to a number consistent with observation.
+With this sequence we obtain, for each working person, a group of workers associated with each person 
+and the size of their workplace.
+
+
+
+
+
+
+
+
+\end{document}
+
+
+
+
