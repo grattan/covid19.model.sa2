@@ -138,7 +138,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
   updateLemireSeedFromR()
 
-  aus <- generate_static_aus(use_dataEnv, nThread)
+  aus <- generate_static_aus(use_dataEnv, nThread = nThread)
 
   Incubation <-
     with(EpiPars, {

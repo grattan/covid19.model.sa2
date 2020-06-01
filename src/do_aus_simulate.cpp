@@ -2522,8 +2522,14 @@ List do_au_simulate(IntegerVector StatusOriginal,
     // before others, we randomize the order each day.  If this remains a problem
     // we would need to do this by person.  (Pass ExecutionOrder and eo to
     // each infector.)
-    IntegerVector ExecutionOrder = Rcpp::sample(8, 8);
-    for (int eo = 0; eo < 8; ++eo) {
+    IntegerVector ExecutionOrder = Rcpp::sample(6, 6);
+    for (int eo = 0; eo < 6; ++eo) {
+
+      // Anti-pattern?
+      // https://en.wikipedia.org/wiki/Loop-switch_sequence
+      // No: because the order is not known at compile-time. In particular,
+      // it's different each day.
+
       switch(ExecutionOrder[eo]) {
 
 
