@@ -136,7 +136,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
     .first_day <- yday(.first_day)
   }
 
-  updateLemireSeedFromR(unlist(dqrng::generateSeedVectors(42)))
+  updateLemireSeedFromR()
 
   aus <- generate_static_aus(use_dataEnv, nThread)
 
@@ -359,7 +359,8 @@ mutate_Status_InfectedOn <- function(aus,
                                      InitialStatus = NULL,
                                      yday_initial = NULL,
                                      asympto = 0.48,
-                                     p_critical = 0.03) {
+                                     p_critical = 0.03,
+                                     nThread = getOption("covid19.model.sa2_nThread")) {
 
   stopifnot(hasName(aus, "state"),
             is.integer(aus[["state"]]),
@@ -370,7 +371,9 @@ mutate_Status_InfectedOn <- function(aus,
     Healed <- read_sys("time_series_recovered.fst")
     Killed <- read_sys("time_series_deaths.fst")
     aus[, Status := set_initial_by_state(state)]
-    yday_initial <- Killed[, last(yday(Date))]
+    if (is.null(yday_initial)) {
+      yday_initial <- Killed[, last(yday(Date))]
+    }
 
   } else {
     if (!is.integer(yday_initial)) {
@@ -425,16 +428,18 @@ mutate_Status_InfectedOn <- function(aus,
   }
 
 
+
   # Now set the yday when each individual was infected
 
   aus[, InfectedOn := NA_integer_]
-  aus[, InfectedOn := fifelse(Status == status_nosymp(),
+  aus[, InfectedOn := fifelse(or3s(Status == status_nosymp(), nThread = nThread),
 
                               # Assume those we observe represnt half
                               # of those infected concurrently
-                              yday_initial - (Incubation %/% 2L),
+                              yday_initial - (Incubation %/% 2L) - 1L,
                               InfectedOn)]
-  aus[, InfectedOn := fifelse(Status %in% c(status_insymp(), status_critic()),
+  aus[, InfectedOn := fifelse(or3s(Status %in% c(status_insymp(), status_critic()),
+                                   nThread = nThread),
                               yday_initial - Incubation - (Illness %/% 2L),
                               InfectedOn)]
 
