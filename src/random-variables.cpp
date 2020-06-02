@@ -483,7 +483,7 @@ IntegerVector RCauchy(IntegerVector U, double location, double scale, int nThrea
 #pragma omp parallel for num_threads(nThread)
   for (int i = 0; i < N; ++i ) {
     double theta = scale2radius(U[i] / 2, M_PI);
-    double oi = scale * std::tan(theta) + location;
+    double oi = std::fabs(scale * std::tan(theta) + location);
     if (oi > INT_MIN && oi < INT_MAX) {
       out[i] = (int)oi;
     } else {

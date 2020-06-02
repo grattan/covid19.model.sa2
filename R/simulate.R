@@ -173,6 +173,9 @@ simulate_sa2 <- function(days_to_simulate = 5,
                   " was unexpected at this time."))
     })
 
+  aus[, Incubation := Incubation]
+  aus[, Illness := Illness]
+
 
   mutate_Status_InfectedOn(aus,
                            Incubation = Incubation,
@@ -260,9 +263,14 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
   # Rcpp doesn't put (any) names on the push_back
   setnames(setDT(out[[2]]), paste0("V", seq_along(out[[2]])))
+  setnames(out[[2]], tail(names(out[[2]]), 2), c("InfectedOn", "Source"))
+
 
   # Put aus back into the statuses
   for (j in names(aus)) {
+    if (j %in% c("InfectedOn")) {
+      next
+    }
     set(out[[2]], j = j, value = aus[[j]])
   }
   hutils::set_cols_first(out[[2]], names(aus))
@@ -367,14 +375,8 @@ mutate_Status_InfectedOn <- function(aus,
             !hutilscpp::anyOutside(aus[["state"]], 1L, 9L))
 
   if (is.null(InitialStatus)) {
-    Cases <- read_sys("time_series_cases.fst")
-    Healed <- read_sys("time_series_recovered.fst")
-    Killed <- read_sys("time_series_deaths.fst")
-    aus[, Status := set_initial_by_state(state)]
-    if (is.null(yday_initial)) {
-      yday_initial <- Killed[, last(yday(Date))]
-    }
-
+    set_initial_stochastic(aus, yday_initial, Incubation, Illness)
+    return(aus)
   } else {
     if (!is.integer(yday_initial)) {
       stop("`InitialStatus` is used, but `yday_initial` is not set.")

@@ -301,10 +301,90 @@ dqsamp_status <- function(dead, healed, nosymp,
   dqrng::dqsample(status)
 }
 
-#
-# fifo_status <- function(NewCases_by_Date, Recovered_by_Date) {
-#
-# }
+
+set_initial_stochastic <- function(aus, .yday, Incubation, Illness, p_asympto = 0.48) {
+  # Everything in war is simple, but the simplest thing is hard.
+
+  stopifnot(is.data.table(aus), hasName(aus, "state"))
+  cases <- read_sys("time_series_cases.fst")[yday(Date) <= .yday]
+  NewCases_by_Date <-
+    cases[, lapply(.SD, function(x) if (inherits(x, "Date")) x[-1] else diff(cummax(x)))]
+
+
+  CasesUnwt <-
+    NewCases_by_Date %>%
+    .[, InfectedOn := yday(Date)] %>%
+    .[, c("Date", "Total") := NULL] %>%
+    melt.data.table(id.vars = c("InfectedOn"),
+                    variable.name = "State") %>%
+
+    # Account for hidden asymptomatic
+    .[, value := as.integer(value / (1 - p_asympto))] %>%
+    weight2rows("value", discard_weight.var = TRUE)
+
+  n_cases_by_state <- function(state) {
+    the_state <- force(state)
+    stopifnot(length(the_state) == 1L)
+    if (is.integer(the_state)) {
+      the_state <- states()[state - 1L]
+    }
+
+    CasesUnwt[State == the_state, .N]
+
+  }
+
+  pid_by_state <- function(state) {
+    the_state <- force(state)
+    state_no_aus <- states()[-1]
+    if (!is.integer(state)) {
+      the_state <- match(state, state_no_aus)
+    }
+    aus[state == the_state, unique(pid)]
+  }
+
+  deaths <- read_sys("time_series_deaths.fst")[yday(Date) == .yday]
+  deathss <- function(state) {
+    the_state <- state
+    if (is.integer(the_state)) {
+      the_state <- states()[state + 1L]
+    }
+    if (hasName(deaths, the_state)) {
+      deaths[[the_state]]
+    } else {
+      0L
+    }
+  }
+
+  rep_time <- function(x, times, .default) {
+    if (min(length(times)) == 0 || anyNA(times) || min(times) <= 0L) {
+      return(.default)
+    }
+    rep(x, times)
+  }
+
+
+  dqrng::dqset.seed(seed = updateLemireSeedFromR()[1:2])
+  CasesUnwt[, StateN := .N, by = .(State)]
+  CasesUnwt[, "pid" := dqrng::dqsample(pid_by_state(.BY[[1]]),
+                                       size = n_cases_by_state(.BY[[1]])),
+            by = c("State")]
+  aus[CasesUnwt, InfectedOn := i.InfectedOn, on = "pid"]
+  aus[, Status := 0L]
+  aus[, IncubationEnds := InfectedOn + Incubation]
+  aus[, IllnessEnds := IncubationEnds + Illness]
+  aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds >= .yday), Status := 1L]
+  aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds < .yday, IllnessEnds >= .yday), Status := 2L]
+  aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds < .yday, IllnessEnds < .yday), Status := -1L]
+  aus[or3s(Status == 1L, Status == 2L), Status := Status + fifelse(run)]
+  aus[Status == -1L,
+      Status := rep_time(c(-2L, -1L),
+                         times = c(deathss(.BY[[1]]),
+                                   .N - deathss(.BY[[1]])),
+                         .default = Status),
+      by = .(state)]
+
+  aus
+}
 
 
 

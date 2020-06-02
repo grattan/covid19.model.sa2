@@ -181,7 +181,7 @@ set_policy_no_restrictions <- function(...) {
                  only_Year12 = FALSE,
                  school_days_per_wk = 5L,
                  do_contact_tracing = FALSE,
-                 # max_persons_per_event = .Machine$integer.max,
+                 max_persons_per_event = .Machine$integer.max,
                  max_persons_per_supermarket = .Machine$integer.max %/% 2L,
                  cafes_open = TRUE,
                  age_based_lockdown = integer(100),
