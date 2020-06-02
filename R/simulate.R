@@ -178,8 +178,6 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
 
   mutate_Status_InfectedOn(aus,
-                           Incubation = Incubation,
-                           Illness = Illness,
                            InitialStatus = InitialStatus,
                            yday_initial = .first_day)
 
@@ -362,8 +360,6 @@ generate_static_aus <- function(use_dataEnv = TRUE, nThread = 1L) {
 }
 
 mutate_Status_InfectedOn <- function(aus,
-                                     Incubation,
-                                     Illness,
                                      InitialStatus = NULL,
                                      yday_initial = NULL,
                                      asympto = 0.48,
@@ -371,11 +367,13 @@ mutate_Status_InfectedOn <- function(aus,
                                      nThread = getOption("covid19.model.sa2_nThread")) {
 
   stopifnot(hasName(aus, "state"),
+            hasName(aus, "Incubation"),
+            hasName(aus, "Illness"),
             is.integer(aus[["state"]]),
             !hutilscpp::anyOutside(aus[["state"]], 1L, 9L))
 
   if (is.null(InitialStatus)) {
-    set_initial_stochastic(aus, yday_initial, Incubation, Illness)
+    set_initial_stochastic(aus, yday_initial)
     return(aus)
   } else {
     if (!is.integer(yday_initial)) {

@@ -232,7 +232,10 @@ impute_time_series <- function(time_series_cases, time_series_deaths, time_serie
 }
 
 p_quarantine_by_date <- function(.date, cap = TRUE) {
-  if (is.character(.date)) {
+  if (is.integer(.date) && min(.date) >= 0L && max(.date) <= 366L) {
+    # is yday
+    .date <- as.Date("2019-12-31") + .date
+  } else if (is.character(.date)) {
     .date <- as.Date(.date)
   }
 
@@ -302,7 +305,7 @@ dqsamp_status <- function(dead, healed, nosymp,
 }
 
 
-set_initial_stochastic <- function(aus, .yday, Incubation, Illness, p_asympto = 0.48) {
+set_initial_stochastic <- function(aus, .yday, p_asympto = 0.48) {
   # Everything in war is simple, but the simplest thing is hard.
 
   stopifnot(is.data.table(aus), hasName(aus, "state"))
@@ -316,10 +319,11 @@ set_initial_stochastic <- function(aus, .yday, Incubation, Illness, p_asympto = 
     .[, InfectedOn := yday(Date)] %>%
     .[, c("Date", "Total") := NULL] %>%
     melt.data.table(id.vars = c("InfectedOn"),
-                    variable.name = "State") %>%
+                    variable.name = "State",
+                    variable.factor = FALSE) %>%
 
     # Account for hidden asymptomatic
-    .[, value := as.integer(value / (1 - p_asympto))] %>%
+    # .[, value := as.integer(value * (1 + p_asympto))] %>%
     weight2rows("value", discard_weight.var = TRUE)
 
   n_cases_by_state <- function(state) {
@@ -333,13 +337,17 @@ set_initial_stochastic <- function(aus, .yday, Incubation, Illness, p_asympto = 
 
   }
 
+  n_Status0_by_state <- function(state) {
+    state_population(state) - n_cases_by_state(state)
+  }
+
   pid_by_state <- function(state) {
     the_state <- force(state)
     state_no_aus <- states()[-1]
     if (!is.integer(state)) {
       the_state <- match(state, state_no_aus)
     }
-    aus[state == the_state, unique(pid)]
+    aus[state == the_state, identity(pid)]
   }
 
   deaths <- read_sys("time_series_deaths.fst")[yday(Date) == .yday]
@@ -362,25 +370,42 @@ set_initial_stochastic <- function(aus, .yday, Incubation, Illness, p_asympto = 
     rep(x, times)
   }
 
+  CasesReWt <- copy(CasesUnwt)
+  CasesReWt[, pid := sample(pid_by_state(.BY[[1]]), size = .N), by = "State"]
 
-  dqrng::dqset.seed(seed = updateLemireSeedFromR()[1:2])
-  CasesUnwt[, StateN := .N, by = .(State)]
-  CasesUnwt[, "pid" := dqrng::dqsample(pid_by_state(.BY[[1]]),
-                                       size = n_cases_by_state(.BY[[1]])),
-            by = c("State")]
-  aus[CasesUnwt, InfectedOn := i.InfectedOn, on = "pid"]
+
+  stopifnot(hasName(aus, "Incubation"),
+            hasName(aus, "Illness"))
+  InfectedOn <- Incubation <- Illness <- NULL
+
+  # In case rerun
+  aus[, InfectedOn := NA_integer_]
+  aus[CasesReWt, InfectedOn := i.InfectedOn, on = "pid"]
   aus[, Status := 0L]
-  aus[, IncubationEnds := InfectedOn + Incubation]
-  aus[, IllnessEnds := IncubationEnds + Illness]
+
+  # | ------------------------ | ---------------- | -------------| ------------|
+  #                                                       ^yday
+  # 0                     InfectedOn              b              c             d
+  #  b = InfectedOn + Incubation = IncubationEnds
+  #  c = InfectedOn + Incubation + Illness = IllnessEnds
+
+
+  # InfectedOn >= 0L within and3s implies !is.na
+  aus[and3s(InfectedOn >= 0L), IncubationEnds := InfectedOn + Incubation]
+  aus[and3s(InfectedOn >= 0L), IllnessEnds := IncubationEnds + Illness]
   aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds >= .yday), Status := 1L]
-  aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds < .yday, IllnessEnds >= .yday), Status := 2L]
-  aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds < .yday, IllnessEnds < .yday), Status := -1L]
+  aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds %in% 1:.yday, IllnessEnds >= .yday), Status := 2L]
+  aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds %in% 1:.yday, IllnessEnds %in% 1:.yday), Status := -1L]
   aus[Status == -1L,
       Status := rep_time(c(-2L, -1L),
                          times = c(deathss(.BY[[1]]),
                                    .N - deathss(.BY[[1]])),
                          .default = Status),
       by = .(state)]
+
+  aus[and3s(Status %in% 1:2), Status := Status + fifelse(runif(.N) < p_quarantine_by_date(.yday),
+                                                         isolated_plus(),
+                                                         0L)]
 
   aus
 }

@@ -20,10 +20,27 @@ test_that("set_initial_by_state works", {
 
 
 test_that("set_initial retrospectively", {
+  skip_if_not_installed("data.table")
+  library(data.table)
+
   cases <- read_sys("time_series_cases.fst")
   killed <- read_sys("time_series_deaths.fst")
   healed <- read_sys("time_series_recovered.fst")
 
 
+  S <- simulate_sa2(5, .first_day = "2020-04-01",
+                    EpiPars = set_epipars(incubation_distribution = "dirac",
+                                          incubation_mean = 5,
+                                          illness_distribution = "dirac",
+                                          illness_mean = 5))
+
+  # Number of cases should be consistent with cumulative cases
+  expect_true(abs(S$Statuses[V1 != 0, .N] - 4860L) < 50L)
+
+
 })
+
+
+
+
 
