@@ -67,9 +67,16 @@ g <- glue::glue
 
 and3s <- function(...) {
   if ("and3s" %in% getNamespaceExports("hutilscpp")) {
-    return(eval.parent(and3s(...)))
+    return(eval.parent(hutilscpp::and3s(...)))
   }
   hutilscpp::and3(...)
+}
+
+or3s <- function(...) {
+  if ("or3s" %in% getNamespaceExports("hutilscpp")) {
+    return(eval.parent(hutilscpp::or3s(...)))
+  }
+  hutilscpp::or3(...)
 }
 
 
