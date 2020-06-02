@@ -375,7 +375,6 @@ set_initial_stochastic <- function(aus, .yday, Incubation, Illness, p_asympto = 
   aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds >= .yday), Status := 1L]
   aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds < .yday, IllnessEnds >= .yday), Status := 2L]
   aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds < .yday, IllnessEnds < .yday), Status := -1L]
-  aus[or3s(Status == 1L, Status == 2L), Status := Status + fifelse(run)]
   aus[Status == -1L,
       Status := rep_time(c(-2L, -1L),
                          times = c(deathss(.BY[[1]]),
