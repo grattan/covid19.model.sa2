@@ -62,3 +62,17 @@ rep_each <- function(x, len) {
 }
 
 g <- glue::glue
+
+
+
+and3s <- function(...) {
+  if ("and3s" %in% getNamespaceExports("hutilscpp")) {
+    return(eval.parent(and3s(...)))
+  }
+  hutilscpp::and3(...)
+}
+
+
+
+
+
