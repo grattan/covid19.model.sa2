@@ -81,5 +81,14 @@ or3s <- function(...) {
 
 
 
+yday2date <- function(.yday) {
+  stopifnot(is.integer(.yday), !anyNA(.yday), min(.yday) >= 0L)
+  as.Date("2019-12-31") + .yday
+}
+
+
+
+
+
 
 

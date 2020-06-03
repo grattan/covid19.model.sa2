@@ -432,13 +432,14 @@ mutate_Status_InfectedOn <- function(aus,
   # Now set the yday when each individual was infected
 
   aus[, InfectedOn := NA_integer_]
-  aus[, InfectedOn := fifelse(or3s(Status == status_nosymp()),
+  aus[, InfectedOn := fifelse(Status == status_nosymp(),
 
                               # Assume those we observe represnt half
                               # of those infected concurrently
                               yday_initial - (Incubation %/% 2L) - 1L,
                               InfectedOn)]
-  aus[, InfectedOn := fifelse(or3s(Status %in% c(status_insymp(), status_critic())),
+  aus[, InfectedOn := fifelse(or3s(Status == status_insymp(),
+                                   Status == status_critic()),
                               yday_initial - Incubation - (Illness %/% 2L),
                               InfectedOn)]
 

@@ -391,8 +391,8 @@ set_initial_stochastic <- function(aus, .yday, p_asympto = 0.48) {
 
 
   # InfectedOn >= 0L within and3s implies !is.na
-  aus[and3s(InfectedOn >= 0L), IncubationEnds := InfectedOn + Incubation]
-  aus[and3s(InfectedOn >= 0L), IllnessEnds := IncubationEnds + Illness]
+  aus[and3s(InfectedOn >= 0L, InfectedOn >= 0L), IncubationEnds := InfectedOn + Incubation]
+  aus[and3s(InfectedOn >= 0L, InfectedOn >= 0L), IllnessEnds := IncubationEnds + Illness]
   aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds >= .yday), Status := 1L]
   aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds %in% 1:.yday, IllnessEnds >= .yday), Status := 2L]
   aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds %in% 1:.yday, IllnessEnds %in% 1:.yday), Status := -1L]
@@ -403,9 +403,10 @@ set_initial_stochastic <- function(aus, .yday, p_asympto = 0.48) {
                          .default = Status),
       by = .(state)]
 
-  aus[and3s(Status %in% 1:2), Status := Status + fifelse(runif(.N) < p_quarantine_by_date(.yday),
-                                                         isolated_plus(),
-                                                         0L)]
+  aus[and3s(Status %in% 1:2, Status > 0L),
+      Status := Status + fifelse(runif(.N) < p_quarantine_by_date(.yday),
+                                 isolated_plus(),
+                                 0L)]
 
   aus
 }
