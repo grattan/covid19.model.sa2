@@ -229,7 +229,11 @@ set_multipolicy <- function() {
 
        # Easing
        set_policypars(yday_start = "2020-05-15",
-                      max_persons_per_event = 100L))
+                      workplaces_open = 0.5,
+                      max_persons_per_event = 100L),
+
+       set_policypars(yday_start = "2020-06-01",
+                      workplaces_open = 0.9))
 }
 
 

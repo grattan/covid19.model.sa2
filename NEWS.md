@@ -1,4 +1,8 @@
 
+# 0.26.0
+
+* The historical multipolicy default eases workplace restrictions faster
+
 # 0.25.0
 
 * The (beta) distribution of supermarket visit frequency is now a user-visible parameter.
