@@ -46,6 +46,9 @@ test_that("lemire_char", {
     expect_true(mean(p74) >= 0.026 && mean(p74) <= 0.048)
     # expect_true(sum(p74) %in% c(37L, 42L))
   })
+  library(data.table)
+
+  expect_true(sum_lemire_char(1048576, 0.01) %between% c(1048576 * 0.005, 1048576 * 0.015))
 
 })
 

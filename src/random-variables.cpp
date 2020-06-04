@@ -623,6 +623,19 @@ int do_one_unif(int a, int b, bool odd = false, int s = 0) {
 }
 
 
+// [[Rcpp::export]]
+int sum_lemire_char(int n, double p, int nThread = 1) {
+  int out = 0;
+  std::vector<unsigned char> x = do_lemire_char_par(n, p, nThread, false);
+  for (int i = 0; i < n; ++i) {
+    if (x[i]) {
+      ++out;
+    }
+  }
+  return out;
+}
+
+
 
 
 

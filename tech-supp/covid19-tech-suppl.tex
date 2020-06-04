@@ -1,5 +1,10 @@
 \documentclass[a4paper,11pt]{scrreprt}
+\usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{tikz}
+\usepackage{url}
+\usepackage{lmodern}
+\usepackage{microtype}
 
 \newcommand*{\code}[1]{\texttt{#1}}
 \newcommand*{\defi}[1]{\textbf{#1}}
@@ -66,6 +71,124 @@ would overflow into the next DZN, we fill the rest of the sequences with 2, whic
 side-effect of inflating the number of partnerships to a number consistent with observation.
 With this sequence we obtain, for each working person, a group of workers associated with each person 
 and the size of their workplace.
+
+Assignment of workplace information completes the data generated at cache time. All other personal
+features are constructed anew at runtime. 
+
+\subsection{Assignment of candidate incubation and illness }
+
+Our next step is to construct vectors to reflect user-supplied epidemiological parameters.
+We construct for each person the duration of their incubation period and illness should they
+be infected when the model starts. Although it would seem wasteful to generate these values
+for every person, even if only a fraction of a percent of the rows are likely to be used, it 
+so happens that this is more efficient than constructing them `just-in-time', mostly because
+the model can perform large parts of its operation across the population in parallel, during 
+which time the generation of random numbers is more difficult to coordinate.
+
+The generation of the Poisson and log-normal distributions are done in the normal way using
+ standard functions from the \code{stats} package.  For efficiency, we construct a small vector
+ then use \code{rep\_len} to replicate it along the height of the data table. For example, if
+ a Poisson distribution with parameter \(\lambda = 5\) is requested, we construct the vector
+
+\[\text{\code{rep\_len(rpois(131059, 5), nrow(aus))}} \]
+
+ For the Cauchy distribution, we implement our own version to allow for parallelized random
+ number generation with an R seed. The Cauchy distribution is characterized by infrequent 
+ extreme values so taking a small sample and repeating it was not adequate for this task.
+ Since the Cauchy distribution has support over negative values,
+ we use the absolute value.
+
+\subsection{Reconstructing patient histories from the starting point}
+The model accepts a starting date as an input, as an alternative to supplying the 
+number and distribution of active and inactive cases in the population.
+ To determine the number of active and inactive cases from a given starting date,
+ we use a time series of each state's cumulative cases, together with assumptions
+ about the source of each infection, and the epidemiological parameters that govern
+ the duration of each persons' illness.%
+ 	\footnote{The time series data is from \url{https://github.com/pappubahry/AU_COVID19}, who
+ 	compiled the data from the state and territory health departments.}
+ While some states
+ 	report recoveries and sources of infections, this information is not reported consistently
+ 	 (if at all) throughout the period.
+Hence we are only able to \emph{estimate} the number of active cases at a point in time,
+even if we take the data at face value. We assume that the cumulative number of cases
+by date is correct, and we use the day-on-day difference of this number to reckon the
+number of new cases. To each new case we assign a random member of the state's population and,
+using the incubation and illness vectors allocated previously, determine the dates on which
+the case was active.
+
+Since a large number of new cases were from overseas arrivals, and since such individuals are more
+likely to be quarantined from the population, we also need to estimate how many of the 
+above cases would be in quarantine (and thus excluded from the model). We use the NSW and 
+Victorian time series of infection sources to impute an overall percentage of new cases
+on a given date that would be isolated and apply this percentage to all new cases to 
+determine the number of new cases that exist in the wider community. On certain dates, 
+in certain states,
+the number of cases reported to have an overseas origin appears to exceed the \emph{total}
+number of cases. In addition, the number of overseas cases is higher for earlier dates and 
+becomes a less common source of infection after March. To moderate these effects, we subtract
+the corresponding numbers of recovered patients in NSW and Victoria from both the number of 
+overseas infections and the number of infections overall. We then take the average of the 
+two percentages as the overall percentage of quarantined new infections on a particular date.
+The number of deaths at the starting point is determined by the time series of deaths by state.
+
+Otherwise, if the \code{InitialStatus} input is set, it is used to construct the initial status itself.
+
+\section{PRNG}
+
+Like most models of this nature, random number generation is both a core element and
+a performance bottleneck.  We use a pseudo-random
+number generator devised by Lehmer:\footnote{\url{https://lemire.me/blog/2019/03/19/the-fastest-conventional-random-number-generator-that-can-pass-big-crush/}}
+
+\[x \mapsto \frac{(x \times 15750249268501108736)}{2^{64}}\]
+
+The simplicity in the formulation makes seeding and parallelism relatively straightforward. We
+provide a state space of 20 128-bit integers and simply cap the number of threads at 20 whenever
+the PRNG is used. For uniformly distributed booleans of a fixed probability distribution
+(as when applying transmission 
+probabilities), we unpack the random number into \code{unsigned char} values as required. 
+This array is seeded before each day, using R's PRNG's state, \code{.Random.seed} via 
+the \code{dqrng} package.
+
+\section{Infection model}
+
+At the start of each day, various properties of the current state of the population is recorded, 
+depending on the return type selected. In all cases, the number of active cases is recorded. 
+If the number of active cases reaches zero, or the number of days to simulate is reached, the model
+ terminates and these daily summaries returned.
+
+Each person has a \textbf{Status} which is a 32-bit signed integer indicating whether or not
+they are infected or have been infected, whether or not they are in isolation, and whether they are 
+in intensive care. A status of zero indicates the person is susceptible to infection (but not
+in isolation). Negative values indicate the person had been infected previously.
+
+
+If an age-based lockdown is selected, the status of  all individuals of the ages requested have their
+status flagged as isolated.
+
+All infected individuals are then moved either from an incubation period to one of 
+`symptomatic' or `critical', or from one of those status to `healed' or `killed', based
+on the precomputed prognosis. 
+
+Next, the person-to-person infection model runs, determined by the policy inputs and
+the epidemiological inputs. Each person can be infected at a supermarket, a `place', 
+a workplace, a school, at home, at a major event, or via a visit to another SA2. Each day
+the order of these infectors is randomized, except that household infection always
+occurs last. Following the modelling of household infection, contact tracing is performed,
+if requested, and isolation applies for the next day.
+
+\subsection{Supermarket infections}
+
+Supermarkets are used to model basic interactions among people in the same suburb. 
+
+Each person attends a supermarket 
+
+
+
+
+
+
+
 
 
 

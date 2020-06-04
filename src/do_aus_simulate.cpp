@@ -807,7 +807,7 @@ void infect_dzn(IntegerVector Status,
                 const int N,
                 const double a_workplace_rate,
                 const double q_workplace,
-                const int workplaces_open,
+                double workplaces_open,
                 const int workplace_size_max,
                 IntegerVector TodaysK,
                 const std::vector<unsigned char> &Resistant,
@@ -887,9 +887,6 @@ void infect_dzn(IntegerVector Status,
     }
     int widi0 = widi - 1;
 
-    if (workplaces_open < 1000 && ((widi0 % 1000) > workplaces_open)) {
-      continue;
-    }
     InfectionsByWorkplace[widi0] += 1;
   }
 
@@ -2659,7 +2656,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
         continue;
 
       case 5:
-        if (workplaces_open) {
+        if (workplaces_open > 0) {
           infect_dzn(Status, InfectedOn, Source,
                      DZN, wid,
                      n_workplaces,

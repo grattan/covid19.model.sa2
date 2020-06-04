@@ -525,6 +525,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sum_lemire_char
+int sum_lemire_char(int n, double p, int nThread);
+RcppExport SEXP _covid19_model_sa2_sum_lemire_char(SEXP nSEXP, SEXP pSEXP, SEXP nThreadSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double >::type p(pSEXP);
+    Rcpp::traits::input_parameter< int >::type nThread(nThreadSEXP);
+    rcpp_result_gen = Rcpp::wrap(sum_lemire_char(n, p, nThread));
+    return rcpp_result_gen;
+END_RCPP
+}
 // haversine_distance_sa2
 double haversine_distance_sa2(int sa2_orig, int sa2_dest);
 RcppExport SEXP _covid19_model_sa2_haversine_distance_sa2(SEXP sa2_origSEXP, SEXP sa2_destSEXP) {
@@ -699,6 +712,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_percentage_to_int", (DL_FUNC) &_covid19_model_sa2_percentage_to_int, 1},
     {"_covid19_model_sa2_test_q_lemire_32", (DL_FUNC) &_covid19_model_sa2_test_q_lemire_32, 3},
     {"_covid19_model_sa2_do_one_unif", (DL_FUNC) &_covid19_model_sa2_do_one_unif, 4},
+    {"_covid19_model_sa2_sum_lemire_char", (DL_FUNC) &_covid19_model_sa2_sum_lemire_char, 3},
     {"_covid19_model_sa2_haversine_distance_sa2", (DL_FUNC) &_covid19_model_sa2_haversine_distance_sa2, 2},
     {"_covid19_model_sa2_short_sa2", (DL_FUNC) &_covid19_model_sa2_short_sa2, 1},
     {"_covid19_model_sa2_shorten_sa2s_ordered", (DL_FUNC) &_covid19_model_sa2_shorten_sa2s_ordered, 1},

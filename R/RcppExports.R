@@ -176,6 +176,10 @@ do_one_unif <- function(a, b, odd = FALSE, s = 0L) {
     .Call(`_covid19_model_sa2_do_one_unif`, a, b, odd, s)
 }
 
+sum_lemire_char <- function(n, p, nThread = 1L) {
+    .Call(`_covid19_model_sa2_sum_lemire_char`, n, p, nThread)
+}
+
 haversine_distance_sa2 <- function(sa2_orig, sa2_dest) {
     .Call(`_covid19_model_sa2_haversine_distance_sa2`, sa2_orig, sa2_dest)
 }
