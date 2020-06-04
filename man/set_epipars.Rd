@@ -35,7 +35,9 @@ set_epipars(
   p_asympto = 0.48,
   p_critical = 0.02,
   p_death = 0.01,
-  p_visit_major_event = 1/52
+  p_visit_major_event = 1/52,
+  supermarket_beta_shape1 = 3,
+  supermarket_beta_shape2 = 1
 )
 }
 \arguments{
@@ -77,6 +79,10 @@ are asymptomatic.}
 \strong{critical cases} that die.}
 
 \item{p_visit_major_event}{Probability a person attends a major event on a given day.}
+
+\item{supermarket_beta_shape1, supermarket_beta_shape2}{Parameters for the
+\code{rbeta} function that determines the distribution of visit frequency
+to supermarkets.}
 }
 \value{
 A list of the components, plus an entry \code{CHECKED} having the

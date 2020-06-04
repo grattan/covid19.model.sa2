@@ -42,6 +42,10 @@
 #'
 #' @param p_visit_major_event Probability a person attends a major event on a given day.
 #'
+#' @param supermarket_beta_shape1,supermarket_beta_shape2 Parameters for the
+#' \code{rbeta} function that determines the distribution of visit frequency
+#' to supermarkets.
+#'
 #' @return A list of the components, plus an entry \code{CHECKED} having the
 #' value \code{TRUE}.
 #'
@@ -79,7 +83,9 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac", "c
                         p_asympto = 0.48,
                         p_critical = 0.02,
                         p_death = 0.01,
-                        p_visit_major_event = 1/52) {
+                        p_visit_major_event = 1/52,
+                        supermarket_beta_shape1 = 3,
+                        supermarket_beta_shape2 = 1) {
   incubation_distribution <- match.arg(incubation_distribution)
 
   switch(incubation_distribution,
@@ -130,6 +136,9 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac", "c
                            lower = 0,
                            upper = 1000)
   resistance_threshold <- resistance_threshold / 1000
+
+  checkmate::assert_number(supermarket_beta_shape1, lower = 0, finite = TRUE)
+  checkmate::assert_number(supermarket_beta_shape2, lower = 0, finite = TRUE)
 
   lapply(ls(), function(x) {
     if (is.null(get(x))) {

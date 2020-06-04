@@ -64,6 +64,7 @@ inline bool is_infectious(const int & statusi) {
 }
 
 
+
 int array3k(int x, int y, int z, int ny, int nz) {
   return x * (ny * nz) + y * (nz) + z;
 }
@@ -414,6 +415,8 @@ void infect_supermarkets(IntegerVector Status,
                          const double q_supermarket,
                          IntegerVector TodaysHz,
                          const int max_persons_per_supermarket,
+                         const double supermarket_beta_shape1,
+                         const double supermarket_beta_shape2,
                          const bool verbose = false) {
   if (day < 0) {
     stop("Internal error(infect_supermarkets): day < 0");
@@ -458,7 +461,7 @@ void infect_supermarkets(IntegerVector Status,
   std::vector<int> SupermarketFreq;
   SupermarketFreq.reserve(nFreqs);
   for (int i = 0; i < nFreqs; ++i) {
-    double o = R::rbeta(3, 1);
+    double o = R::rbeta(supermarket_beta_shape1, supermarket_beta_shape2);
     o *= 360;
     int oi = (int)(o);
     SupermarketFreq.push_back(oi);
@@ -2111,8 +2114,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
   // Now we can attach Epipars and create vectors that
   // supply the stochasticity in the model.
 
-  double resistance_threshold = Epi["resistance_threshold"];
-
   // Unlike the p_ and q_ values below, these apply to the workplace/house/school
   // as a whole
   const double a_workplace_rate = Epi["a_workplace_rate"];
@@ -2121,6 +2122,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 
   // Personal epidemiological parameters
+  double resistance_threshold = Epi["resistance_threshold"];
   const std::vector<unsigned char> Resistant = do_lemire_char_par(N, resistance_threshold, nThread, false);
 
 
@@ -2139,6 +2141,9 @@ List do_au_simulate(IntegerVector StatusOriginal,
   const double q_supermarket = Epi["q_supermarket"];
   const double q_places = Epi["q_places"];
   const double q_major_event = Epi["q_major_event"];
+
+  const double supermarket_beta_shape1 = Epi["supermarket_beta_shape1"];
+  const double supermarket_beta_shape2 = Epi["supermarket_beta_shape2"];
 
 
 
@@ -2570,6 +2575,8 @@ List do_au_simulate(IntegerVector StatusOriginal,
                               q_supermarket,
                               TodayHz,
                               max_persons_per_supermarket,
+                              supermarket_beta_shape1,
+                              supermarket_beta_shape2,
                               false);
         }
         continue;

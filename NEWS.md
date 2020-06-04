@@ -1,4 +1,14 @@
 
+# 0.25.0
+
+* The (beta) distribution of supermarket visit frequency is now a user-visible parameter.
+
+
+# 0.24.0
+
+* bugfix (#58): Workplaces are much more likely to be sources of infection, 
+  fixes a double-int roundtrip bug.
+
 # 0.23.0
 
 * `set_initial_by_state` and hence `simulate_sa2` now by default isolate approximately
