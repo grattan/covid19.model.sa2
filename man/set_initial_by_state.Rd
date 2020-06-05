@@ -59,9 +59,6 @@ as the initial day.}
 
 \item{.population}{The size of the output, the population. By default,
 set to the length of \code{state_id}.}
-
-\item{isolated}{Number of \strong{active} cases who are isolated or
-quarantined.}
 }
 \value{
 An integer vector of length \code{.population} with values

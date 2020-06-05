@@ -11,8 +11,6 @@
 #' @param cases Optionally, the number of cumulative cases. That is,
 #' \code{dead + healed + active + critical}.
 #'
-#' @param isolated Number of \strong{active} cases who are isolated or
-#' quarantined.
 #'
 #' @param cases_by_state A table of total cases (cumulative) by date,
 #' ordered by date, and having columns matching the states in \code{state_id}.
