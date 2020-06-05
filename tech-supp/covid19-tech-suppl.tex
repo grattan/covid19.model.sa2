@@ -181,7 +181,108 @@ if requested, and isolation applies for the next day.
 
 Supermarkets are used to model basic interactions among people in the same suburb. 
 
-Each person attends a supermarket 
+Each person has a `typical' supermarket drawn from the static data.
+
+The frequency of an individual's visits to their typical supermarket is a random variable
+drawn from a beta distribution with user-visible shape parameters. By default, the distribution
+is skewed so that approximately 40\% of individuals visit the supermarket 6 times a week or
+more.
+
+Supermarkets have the same opening hours each weekday, but reduced opening hours on weekends.
+Each person visits at a fixed hour, which is based on the modulus of the row numbers. The transmission
+probability is with respect to contact of people who visit the same supermarket in the same hour. 
+
+Infected individuals are not bound by caps on supermarket sizes, but susceptible individuals are.
+For a given supermarket-hour, individuals enter supermarket in the order they appear in the data,
+which exaggerates the effect of supermarket caps. On each day, each person is assigned a
+new \code{unsigned char}, which is a Bernoulli random variable with the user-supplied 
+transmission probability. 
+
+\subsection{Places}
+
+Infection of `places',\footnote{Currently, the only places are caf\'{e}s.}
+takes place in a manner similar to that of supermarket infections.
+
+All persons above the age of 12 visit caf\'es \(n\)
+times per week where \(n\) is drawn from a 
+uniform distribution \(\{0, 1, \dots, 7\}\). An equal number of people
+visit once every day as once every week. All caf\'es are open for eight
+hours every day and, like supermarkets, contact with an infection person 
+only occurs if the visit coincides in the same place-hour. With probability
+1/8 an individual visits a different caf\'e in their SA2 than their typical
+haunt.
+
+\subsection{Workplaces}
+
+A user-supplied parameter gives a probability that a given workplace can act as a site
+of reinfection. Unless the user requests a value of 100\% -- that all workplaces 
+be potential sites -- this is intended to reflect the potential that some workplaces are more
+conducive to reinfection, as well as some workplaces taking greater precautions than those 
+required by the policy parameters. 
+
+In addition, a random variable is generated daily for each person determining for each day 
+and each person the probability that that person will be infected, given an infected person
+attends their workplace. If a cap of the number of individuals is enforced via a policy 
+parameter, infected individuals only attend work if the number of uninfected workers does 
+not exceed the cap. Put another way, if a person is infectious but not symptomatic they are 
+the first to remain home in the presence of a cap on the number of workers.
+
+\subsection{Schools}
+
+The modelling of reinfections through schools is very similar to that through workplaces.
+There are a few differences.
+First, schools have school terms and no infection is possible through schools outside school terms.
+Similarly, schools open only on school days (or on fewer days if set by policy).
+
+Secondly, there is a dynamic element specific to schools. Schools infections can trigger school
+lockdowns. If a (user-supplied) threshold of schools have at least a (user-supplied) number of 
+infected students, the state's school system is shut down for a (user-supplied) number of days.
+Independently, if any student's illness becomes critical, the school system is shut down for 
+a (possibly different) number of days.  While the condition for triggering such lockdowns can occur
+on any school day, the lockdown is only enforced over the weekend or the following week.
+
+\subsection{Households}
+
+Infections through households are modelled very similarly to workplace infections, 
+with both an atomic probability that a household will be infected and contact
+tranmission probabilities for people in the same household.
+Policy parameters are limited for households.
+
+\subsection{Other SA2s}
+
+To model movement out of SA2s (though likely within the same state),
+we generate an exponentially distributed random variable 
+for each individual to represent the maximum allowable distance that person 
+travels. If the distance is less than the distance to the nearest SA2, the person
+does not travel outside the SA2; otherwise, the SA2 is chosen through that distribution
+(close SA2s are more likely to be visited than those farther away).
+ If an infected person does go to a different SA2, they visit a random individual in the SA2 and 
+ infect them (with certainty).
+
+\subsection{Major events}
+For each individual we construct an integer, drawn from a beta distribution ranging from zero
+to the number of major events requested. The number of people assigned to each event so constructed
+is calculated and, if it exceeds the maximum number allowed, is ignored. Otherwise, the number of 
+infected attendees is calculated. We then calculate, for each event, the value
+\[p_e = q_m(1 + \sqrt{(n_i / N)}) \]
+where \(q_m\) is a user-supplied parameter, \(n_i\) is the number of infected individuals, and \(N\)
+is the total number of attendees. This value inflates the threshold below which a person is infected 
+or not. So the higher the proportion of infected individuals at a large event the more likely each 
+susceptible attendee is to be infected. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -503,10 +503,17 @@ void infect_supermarkets(IntegerVector Status,
       if (!i_supermarkets[sa2i][supermarketi][hr]) {
         continue;
       }
+
       if (Status[i] ||
           !nSupermarketsAvbl[i] ||
           TodaysHz[(i * 11 + yday) % NTODAY] > SupermarketFreq[i % nFreqs]) {
         continue;
+      }
+      if (check_max_persons) {
+        if (s_supermarket[supermarketi][hr] >= max_persons_per_supermarket) {
+          break;
+        }
+        s_supermarket[supermarketi][hr] += 1;
       }
 
       // not transmitted
@@ -516,12 +523,7 @@ void infect_supermarkets(IntegerVector Status,
 
 
 
-      if (check_max_persons) {
-        if (s_supermarket[supermarketi][hr] >= max_persons_per_supermarket) {
-          break;
-        }
-        s_supermarket[supermarketi][hr] += 1;
-      }
+      
 
       if (Resistant[i]) {
         // i_supermarkets[sa2i][supermarketi][hr] -= 1;
@@ -1622,7 +1624,7 @@ void infect_major_event(IntegerVector Status,
       continue;
     }
 
-    if (Resistant[i]) {
+    if (!Resistant[i]) {
       continue;
     }
     if (Rand[i] >= p_infected[ei]) {
