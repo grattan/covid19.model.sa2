@@ -29,10 +29,10 @@
 \begin{document}
 \contentspage
 
-\addchap{Overview}\label{chap:tech-supp-overview}
+\chapter{Overview}\label{chap:tech-supp-overview}
 Our model, \crema, is a dynamic microsimulation model of Australia.
 
-\subsection{Static data}
+\section{Static data}
 The model runs on a static data table, each row a person in Australia,
 which identifies each person's
 
@@ -46,10 +46,11 @@ which identifies each person's
 
 For performance reasons, data is cached before being passed to the dynamic model.
 Obviously, the cache includes the static data. Other features of each person is
-also cached (or ``generated at cache time''). Cache time variables include:
+also cached (or ``generated at cache time''). 
 
-\begin{description}
-\item[\code{SupermarketTypical}] If an individual's SA2 contains zero supermarkets,
+The other cache time variables are \code{SupermarketTypical} and the workplace variables.
+For \code{SupermarketTypical},
+if an individual's SA2 contains zero supermarkets,
 a value of zero.
 For implementation convenience,%
 	\footnote{By \defi{implementation convenience}, I mean that the choice was not made
@@ -60,7 +61,6 @@ If the individual's SA2 contains more than eight supermarket we
 exclude all but eight supermarkets. We then assign to each person a random integer
 from 1 to \(N_S = {}\) the number of supermarkets in each SA2 to represent the
 `typical' supermarket a person visits.
-\end{description}
 
 For technical reasons, we shorten variables so that they are a sequence.
 
@@ -88,7 +88,7 @@ and the size of their workplace.
 Assignment of workplace information completes the data generated at cache time. All other personal
 features are constructed anew at runtime.
 
-\subsection{Assignment of candidate incubation and illness }
+\section{Assignment of candidate incubation and illness }
 
 Our next step is to construct vectors to reflect user-supplied epidemiological parameters.
 We construct for each person the duration of their incubation period and illness should they
@@ -110,6 +110,12 @@ The generation of the Poisson and log-normal distributions are done in the norma
  extreme values so taking a small sample and repeating it was not adequate for this task.
  Since the Cauchy distribution has support over negative values,
  we use the absolute value.
+
+ In addition, we construct a \defi{Resistance} vector which assigns a integer value from 0-1000
+ for each person. These values combined with a parameter \code{resistance\_threshold} simulate
+ natural resistance throughout the population: persons whose \code{Resistance[i]} exceeds
+ the user-supplied \code{resistance\_threshold} do not get infected, even if they come into 
+ contact with an infectious person. 
 
 \subsection{Reconstructing patient histories from the starting point}
 The model accepts a starting date as an input, as an alternative to supplying the
@@ -145,7 +151,7 @@ overseas infections and the number of infections overall. We then take the avera
 two percentages as the overall percentage of quarantined new infections on a particular date.
 The number of deaths at the starting point is determined by the time series of deaths by state.
 
-Otherwise, if the \code{InitialStatus} input is set, it is used to construct the initial status itself.
+Otherwise, if the \code{InitialStatus} input is set, it is used to construct the initial status directly.
 
 \section{Pseudo random number generator}
 
@@ -216,8 +222,13 @@ performance or technical reasons.%
 	\footnote{For some sites infections can be recorded on the stack, whereas for others this would
 	overflow the stack. The default ordering of the data groups SA2s together, so some sites
 	(like supermarkets and households) can use this assumption whereas others cannot.}
-All infection site work in the same essential way. A site can be visited by an infected
-individual or not. If the site is infected, parameters prefixed with \code{a\_} determine
+All infection site work in the same essential way. 
+A person is \defi{infectious} if the current day is between the date of infection and the
+end of the person's incubation period. People whose incubation period has passed; 
+during the illness period, individuals do not infect others.
+A site can be visited by an infectious
+individual or not.
+If the site is infected, parameters prefixed with \code{a\_} determine
 whether this site acts as a site of infection or not. If the site is infectious,
 each susceptible visitor to the site is infected probabilistically
 via parameters prefixed with \code{q\_}.
@@ -226,6 +237,10 @@ each site. The disadvantage of this parameterization was that the number of new
 infections at a site would be independent of the number of visitors to the site, which would limit
 the ability of the model to handle policy changes which limited the size of gatherings, workplaces,
 and the like.
+
+Even if a person is simulated to have come into contact with an infectious person at an infectious 
+site, they may not become infected themselves if they are sufficiently resistant or if they have 
+already been infected.
 
 
 \subsection{Supermarket infections}
@@ -322,30 +337,36 @@ or not. So the higher the proportion of infected individuals at a large event th
 susceptible attendee is to be infected.
 
 
-\section{Default transmissions probabilities}
+\onecolumn
+\section{Default epidemiological}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+\begin{longtable}{llp{0.5\linewidth}}
+\toprule
+\textbf{Parameter} & \textbf{Default} & \textbf{Comment} \\
+\midrule
+Incubation distribution & Poisson \\
+Incubation mean & 5 days \\
+Illness distribution & Poisson \\ 
+Illness mean & 15 days \\
+\code{a\_workplace\_rate} & 7\% & Probability that a workplace can support reinfection \\
+\code{a\_household\_rate} & 15\% & \\ %Probability that a household can support reinfection \\
+\code{a\_schools\_rate} & 15\% & \\ %Probability that a school can support reinfection \\ 
+\code{q\_workplace} & 1/100 & Transmission probability: the chance that an individual may be
+infected, given the individual attends a workplace with an infected individual on the same
+day as the infected individual attends work. \\
+\code{q\_household} & 1/20 \\
+\code{q\_school} & 1/3000 & \\
+\code{q\_supermarket} & 1/1000 & \\
+\code{q\_places} & 1/500 & \\
+\code{q\_major\_event} & 1/5000 & \\
+\code{resistance\_threshold} & 400 & The number of people out of 1000 who are naturally resistant to the virus\\
+\code{p\_asympto} & 48\% & The proportion of cases that do not develop symptoms \\
+\code{p\_critical} & 2\% & The proportion of symptomatic cases that become critical.\\
+\code{p\_death} & 1\% & The proportion of critical cases that die. \\
+\code{supermarket\_beta\_shape1,2} & 3, 1 & Parameters to the beta distribution that govern how 
+frequently individual visits a supermarket. \\
+\bottomrule
+\end{longtable}
 
 
 
