@@ -52,7 +52,7 @@ if the number of active cases is 100 and }\code{asympto = 0.75}
 
 \item{p_critical}{The proportion of symptomatic cases who are critical.}
 
-\item{first_yday}{An integer, the \code{\link[data.table]{yday}} to set
+\item{first_yday}{An integer, the \code{\link[data.table:IDateTime]{yday}} to set
 as the initial day.}
 
 \item{p_isol}{The proportion of cases in isolation.}

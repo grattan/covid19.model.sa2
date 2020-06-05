@@ -62,7 +62,7 @@
 #'
 #' @param cafes_open (TEMPORARY).
 #' @param age_based_lockdown Integer vector of ages to lockdown. Either a vector
-#' of the ages (1-100) or a length-100 vector specifying the ages to be lockdown
+#' of the ages (0-100) or a length-101 vector specifying the ages to be lockdown
 #' (as 1).
 #'
 #' @param workplaces_open Are workplaces to be open?
@@ -111,7 +111,7 @@ set_policypars <- function(yday_start = 0L,
                            n_major_events_weekend = 56L,
                            max_persons_per_supermarket = 200L,
                            cafes_open = TRUE,
-                           age_based_lockdown = integer(100),
+                           age_based_lockdown = integer(101),
                            workplaces_open = FALSE,
                            workplace_size_max = 1L,
                            workplace_size_beta = 13,
@@ -184,7 +184,7 @@ set_policy_no_restrictions <- function(...) {
                  max_persons_per_event = .Machine$integer.max,
                  max_persons_per_supermarket = .Machine$integer.max %/% 2L,
                  cafes_open = TRUE,
-                 age_based_lockdown = integer(100),
+                 age_based_lockdown = integer(101),
                  workplaces_open = TRUE,
                  workplace_size_max = .Machine$integer.max %/% 2L,
                  lockdown_triggers__schools = NULL,
@@ -409,15 +409,15 @@ update_policypars <- function(Policy,
   if (anyNA(x)) {
     stop(vname(x), " contained missing value.")
   }
-  if (length(x) == 100L && is.integer(x)) {
+  if (length(x) == 101L && is.integer(x)) {
     return(x)
   }
   if (is.integer(x) &&
-      length(x) <= 100 &&
+      length(x) <= 101 &&
       min(x, na.rm = TRUE) >= 0 &&
       max(x, na.rm = TRUE) <= 100) {
     # interpret as the ages to lockdown
-    out <- integer(100)
+    out <- integer(101)
     out[x] <- 1L
     return(out)
   }

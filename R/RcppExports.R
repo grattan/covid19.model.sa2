@@ -9,10 +9,6 @@ distr2status <- function(N, dead, healed, active, critical) {
     .Call(`_covid19_model_sa2_distr2status`, N, dead, healed, active, critical)
 }
 
-fifo_status <- function(CumCases, Healed, Killed, Overseas, LocalContact, LocalUnknown, UnderInvestigation, first_day = 25L) {
-    .Call(`_covid19_model_sa2_fifo_status`, CumCases, Healed, Killed, Overseas, LocalContact, LocalUnknown, UnderInvestigation, first_day)
-}
-
 #' @title do_au_simulate
 #' @name do_au_simulate
 #' @description The internal mechanism of the \code{\link{simulate_sa2}} function

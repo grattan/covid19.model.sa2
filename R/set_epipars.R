@@ -80,9 +80,13 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac", "c
                         q_places = 1/500,
                         q_major_event = 1/5000,
                         resistance_threshold = 400L,
-                        p_asympto = 0.48,
-                        p_critical = 0.02,
-                        p_death = 0.01,
+                        p_asympto = 0.35,
+                        p_critical = c(0.017,
+                                       0.045,
+                                       0.074),
+                        p_death = c(0.0294,
+                                    0.0444,
+                                    0.1757),
                         p_visit_major_event = 1/52,
                         supermarket_beta_shape1 = 3,
                         supermarket_beta_shape2 = 1) {
@@ -125,8 +129,26 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac", "c
 
 
   checkmate::assert_number(p_asympto, finite = TRUE, lower = 0, upper = 1)
-  checkmate::assert_number(p_critical, finite = TRUE, lower = 0, upper = 1)
-  checkmate::assert_number(p_death, finite = TRUE, lower = 0, upper = 1)
+
+  checkmate::check_double(p_critical,
+                          max.len = 3, min.len = 1,
+                          lower = 0, upper = 1)
+  checkmate::check_double(p_death,
+                          max.len = 3, min.len = 1,
+                          lower = 0, upper = 1)
+  if (length(p_critical) != 3L) {
+    if (length(p_critical) != 1L) {
+      stop("`p_critical` was length-{length(p_critical)} must be length 3.")
+    }
+    p_critical <- rep_len(p_critical, 3)
+  }
+  if (length(p_death) != 3L) {
+    if (length(p_death) != 1L) {
+      stop("`p_death` was length-{length(p_critical)} must be length 3.")
+    }
+    p_death <- rep_len(p_death, 3)
+  }
+
 
   # Convert to int for convenience
   incubation_distribution <- match_distr(incubation_distribution)

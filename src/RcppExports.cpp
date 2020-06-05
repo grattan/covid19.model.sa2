@@ -30,24 +30,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// fifo_status
-List fifo_status(IntegerVector CumCases, IntegerVector Healed, IntegerVector Killed, IntegerVector Overseas, IntegerVector LocalContact, IntegerVector LocalUnknown, IntegerVector UnderInvestigation, int first_day);
-RcppExport SEXP _covid19_model_sa2_fifo_status(SEXP CumCasesSEXP, SEXP HealedSEXP, SEXP KilledSEXP, SEXP OverseasSEXP, SEXP LocalContactSEXP, SEXP LocalUnknownSEXP, SEXP UnderInvestigationSEXP, SEXP first_daySEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< IntegerVector >::type CumCases(CumCasesSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type Healed(HealedSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type Killed(KilledSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type Overseas(OverseasSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type LocalContact(LocalContactSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type LocalUnknown(LocalUnknownSEXP);
-    Rcpp::traits::input_parameter< IntegerVector >::type UnderInvestigation(UnderInvestigationSEXP);
-    Rcpp::traits::input_parameter< int >::type first_day(first_daySEXP);
-    rcpp_result_gen = Rcpp::wrap(fifo_status(CumCases, Healed, Killed, Overseas, LocalContact, LocalUnknown, UnderInvestigation, first_day));
-    return rcpp_result_gen;
-END_RCPP
-}
 // status_killed
 int status_killed();
 RcppExport SEXP _covid19_model_sa2_status_killed() {
@@ -674,7 +656,6 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_InstallTime", (DL_FUNC) &_covid19_model_sa2_InstallTime, 0},
     {"_covid19_model_sa2_distr2status", (DL_FUNC) &_covid19_model_sa2_distr2status, 5},
-    {"_covid19_model_sa2_fifo_status", (DL_FUNC) &_covid19_model_sa2_fifo_status, 8},
     {"_covid19_model_sa2_status_killed", (DL_FUNC) &_covid19_model_sa2_status_killed, 0},
     {"_covid19_model_sa2_status_healed", (DL_FUNC) &_covid19_model_sa2_status_healed, 0},
     {"_covid19_model_sa2_status_suscep", (DL_FUNC) &_covid19_model_sa2_status_suscep, 0},

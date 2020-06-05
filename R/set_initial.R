@@ -22,7 +22,7 @@
 #' if the number of active cases is 100 and }\code{asympto = 0.75}
 #' \strong{ the number of total cases is 400.}
 #' @param p_critical The proportion of symptomatic cases who are critical.
-#' @param first_yday An integer, the \code{\link[data.table]{yday}} to set
+#' @param first_yday An integer, the \code{\link[data.table:IDateTime]{yday}} to set
 #' as the initial day.
 #'
 #' @param p_isol The proportion of cases in isolation.

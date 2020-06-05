@@ -523,7 +523,7 @@ void infect_supermarkets(IntegerVector Status,
 
 
 
-      
+
 
       if (Resistant[i]) {
         // i_supermarkets[sa2i][supermarketi][hr] -= 1;
@@ -1468,6 +1468,12 @@ void infect_other_sa2(IntegerVector Status,
         break;
       }
     }
+    int dest_statei = stateShortSA2[dest_sa2i];
+    // we don't model interstate travel here
+    if (dest_statei != statei) {
+      continue;
+    }
+
     i_visitors[dest_sa2i] += 1;
     tot_i_visitors += 1;
   }
@@ -1487,6 +1493,10 @@ void infect_other_sa2(IntegerVector Status,
     int sa2_first = SA2_firsts[sa2i];
     int sa2_final = SA2_finals[sa2i];
     int d = sa2_final - sa2_first;
+    if (d <= 1) {
+      // don't model potentially small sa2s
+      continue;
+    }
     for (int j = 0; j < infected_visitors; ++j) {
       int s = 0;
 #ifdef _OPENMP
@@ -2129,12 +2139,16 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 
   const double p_asympto = Epi["p_asympto"];
-  const double p_critical = Epi["p_critical"];
-  const double p_death = Epi["p_death"];
+  DoubleVector p_critical = Epi["p_critical"];
+  DoubleVector p_death = Epi["p_death"];
 
   const std::vector<unsigned char> ProgInSymp = do_lemire_char_par(N, 1 - p_asympto, nThread, false);
-  const std::vector<unsigned char> ProgCritic = do_lemire_char_par(N, p_critical, nThread, false);
-  const std::vector<unsigned char> ProgKilled = do_lemire_char_par(N, p_death, nThread, false);
+  const std::vector<unsigned char> ProgCritic     = do_lemire_char_par(N, p_critical[0], nThread, false);
+  const std::vector<unsigned char> ProgCritic5064 = do_lemire_char_par(N, p_critical[1], nThread, false);
+  const std::vector<unsigned char> ProgCritic6599 = do_lemire_char_par(N, p_critical[2], nThread, false);
+  const std::vector<unsigned char> ProgKilled     = do_lemire_char_par(N, p_death[0], nThread, false);
+  const std::vector<unsigned char> ProgKilled5064 = do_lemire_char_par(N, p_death[1], nThread, false);
+  const std::vector<unsigned char> ProgKilled6599 = do_lemire_char_par(N, p_death[2], nThread, false);
 
 
   const double q_workplace = Epi["q_workplace"];
@@ -2486,9 +2500,14 @@ List do_au_simulate(IntegerVector StatusOriginal,
           // This is reevaluated each day, but because they are uniform
           // this is okay. Nonetheless we don't second-guess the original
           // statusi
+          int age012 = (Age[i] >= 50) + (Age[i] >= 65);
+
           bool prog_insymp = statusi >  STATUS_NOSYMP || ProgInSymp[i];
-          bool prog_critic = statusi == STATUS_CRITIC || (prog_insymp && ProgCritic[i]);
-          bool prog_killed = (prog_critic && ProgKilled[i]);
+          bool prog_critic =
+            statusi == STATUS_CRITIC ||
+            (prog_insymp && ((age012 == 0) ? ProgCritic[i] : ((age012 == 1) ? ProgCritic5064[i] : ProgCritic6599[i])));
+          bool prog_killed =
+             prog_critic && ((age012 == 0) ? ProgKilled[i] : ((age012 == 1) ? ProgKilled5064[i] : ProgKilled6599[i]));
           bool in_isolation =
             statusi > (STATUS_KILLED + ISOLATED_PLUS) &&
             (

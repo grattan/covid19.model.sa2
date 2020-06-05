@@ -33,7 +33,7 @@ set_policypars(
   n_major_events_weekend = 56L,
   max_persons_per_supermarket = 200L,
   cafes_open = TRUE,
-  age_based_lockdown = integer(100),
+  age_based_lockdown = integer(101),
   workplaces_open = FALSE,
   workplace_size_max = 1L,
   workplace_size_beta = 13,
@@ -125,7 +125,7 @@ supermarket (within one hour i.e. concurrently).}
 \item{cafes_open}{(TEMPORARY).}
 
 \item{age_based_lockdown}{Integer vector of ages to lockdown. Either a vector
-of the ages (1-100) or a length-100 vector specifying the ages to be lockdown
+of the ages (0-100) or a length-101 vector specifying the ages to be lockdown
 (as 1).}
 
 \item{workplaces_open}{Are workplaces to be open?

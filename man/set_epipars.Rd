@@ -32,9 +32,9 @@ set_epipars(
   q_places = 1/500,
   q_major_event = 1/5000,
   resistance_threshold = 400L,
-  p_asympto = 0.48,
-  p_critical = 0.02,
-  p_death = 0.01,
+  p_asympto = 0.35,
+  p_critical = c(0.017, 0.045, 0.074),
+  p_death = c(0.0294, 0.0444, 0.1757),
   p_visit_major_event = 1/52,
   supermarket_beta_shape1 = 3,
   supermarket_beta_shape2 = 1
