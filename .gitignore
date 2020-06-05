@@ -15,3 +15,12 @@ data-raw/SP.rds
 *.txt
 .Rprofile
 *.so
+tech-supp/covid19-tech-suppl.toc
+tech-supp/covid19-tech-suppl.run.xml
+tech-supp/covid19-tech-suppl.pdf
+tech-supp/covid19-tech-suppl.out
+tech-supp/covid19-tech-suppl.log
+tech-supp/covid19-tech-suppl.fn100
+tech-supp/covid19-tech-suppl.bcf
+tech-supp/covid19-tech-suppl.aux
+tech-supp/covid19-tech-suppl
