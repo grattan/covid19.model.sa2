@@ -1,111 +1,111 @@
-% Created by tikzDevice version 0.12.3 on 2020-05-31 18:14:11
+% Created by tikzDevice version 0.12.3 on 2020-06-05 12:24:45
 % !TEX encoding = UTF-8 Unicode
 \begin{tikzpicture}[x=1pt,y=1pt]
 \definecolor{fillColor}{RGB}{255,255,255}
-\path[use as bounding box,fill=fillColor,fill opacity=0.00] (0,0) rectangle (578.16,108.41);
+\path[use as bounding box,fill=fillColor,fill opacity=0.00] (0,0) rectangle (323.21,105.74);
 \begin{scope}
-\path[clip] (  0.00,  0.00) rectangle (578.16,108.41);
-\definecolor{drawColor}{RGB}{0,0,0}
-\definecolor{fillColor}{RGB}{128,128,128}
+\path[clip] (  0.00,  0.00) rectangle (323.21,105.74);
+\definecolor{drawColor}{RGB}{255,255,255}
+\definecolor{fillColor}{RGB}{246,139,51}
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] ( 26.28,  4.93) rectangle ( 35.76,103.48);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] ( 14.69,  4.81) rectangle ( 19.99,100.94);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] ( 36.81,  4.93) rectangle ( 46.29, 96.91);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] ( 20.58,  4.81) rectangle ( 25.88, 94.53);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] ( 47.35,  4.93) rectangle ( 56.83, 90.78);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] ( 26.47,  4.81) rectangle ( 31.77, 88.55);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] ( 57.88,  4.93) rectangle ( 67.36, 85.05);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] ( 32.36,  4.81) rectangle ( 37.66, 82.96);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] ( 68.41,  4.93) rectangle ( 77.89, 79.71);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] ( 38.24,  4.81) rectangle ( 43.54, 77.75);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] ( 78.95,  4.93) rectangle ( 88.43, 74.73);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] ( 44.13,  4.81) rectangle ( 49.43, 72.89);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] ( 89.48,  4.93) rectangle ( 98.96, 70.07);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] ( 50.02,  4.81) rectangle ( 55.32, 68.35);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (100.01,  4.93) rectangle (109.49, 65.73);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] ( 55.91,  4.81) rectangle ( 61.21, 64.11);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (110.54,  4.93) rectangle (120.02, 61.68);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] ( 61.80,  4.81) rectangle ( 67.10, 60.16);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (121.08,  4.93) rectangle (130.56, 57.89);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] ( 67.69,  4.81) rectangle ( 72.99, 56.47);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (131.61,  4.93) rectangle (141.09, 54.36);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] ( 73.57,  4.81) rectangle ( 78.87, 53.03);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (142.14,  4.93) rectangle (151.62, 51.07);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] ( 79.46,  4.81) rectangle ( 84.76, 49.81);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (152.68,  4.93) rectangle (162.16, 47.99);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] ( 85.35,  4.81) rectangle ( 90.65, 46.81);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (163.21,  4.93) rectangle (172.69, 45.12);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] ( 91.24,  4.81) rectangle ( 96.54, 44.01);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (173.74,  4.93) rectangle (183.22, 42.44);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] ( 97.13,  4.81) rectangle (102.43, 41.40);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (184.28,  4.93) rectangle (193.76, 39.94);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (103.02,  4.81) rectangle (108.31, 38.96);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (194.81,  4.93) rectangle (204.29, 37.60);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (108.90,  4.81) rectangle (114.20, 36.68);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (205.34,  4.93) rectangle (214.82, 35.43);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (114.79,  4.81) rectangle (120.09, 34.56);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (215.88,  4.93) rectangle (225.35, 33.39);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (120.68,  4.81) rectangle (125.98, 32.57);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (226.41,  4.93) rectangle (235.89, 31.50);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (126.57,  4.81) rectangle (131.87, 30.72);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (236.94,  4.93) rectangle (246.42, 29.72);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (132.46,  4.81) rectangle (137.76, 28.99);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (247.47,  4.93) rectangle (256.95, 28.07);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (138.34,  4.81) rectangle (143.64, 27.38);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (258.01,  4.93) rectangle (267.49, 26.53);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (144.23,  4.81) rectangle (149.53, 25.88);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (268.54,  4.93) rectangle (278.02, 25.09);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (150.12,  4.81) rectangle (155.42, 24.47);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (279.07,  4.93) rectangle (288.55, 23.74);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (156.01,  4.81) rectangle (161.31, 23.16);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (289.61,  4.93) rectangle (299.09, 22.49);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (161.90,  4.81) rectangle (167.20, 21.94);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (300.14,  4.93) rectangle (309.62, 21.32);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (167.79,  4.81) rectangle (173.09, 20.80);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (310.67,  4.93) rectangle (320.15, 20.23);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (173.67,  4.81) rectangle (178.97, 19.73);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (321.21,  4.93) rectangle (330.69, 19.21);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (179.56,  4.81) rectangle (184.86, 18.73);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (331.74,  4.93) rectangle (341.22, 18.25);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (185.45,  4.81) rectangle (190.75, 17.81);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (342.27,  4.93) rectangle (351.75, 17.37);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (191.34,  4.81) rectangle (196.64, 16.94);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (352.81,  4.93) rectangle (362.28, 16.54);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (197.23,  4.81) rectangle (202.53, 16.13);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (363.34,  4.93) rectangle (372.82, 15.76);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (203.12,  4.81) rectangle (208.42, 15.38);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (373.87,  4.93) rectangle (383.35, 15.04);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (209.00,  4.81) rectangle (214.30, 14.67);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (384.40,  4.93) rectangle (393.88, 14.37);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (214.89,  4.81) rectangle (220.19, 14.01);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (394.94,  4.93) rectangle (404.42, 13.74);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (220.78,  4.81) rectangle (226.08, 13.40);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (405.47,  4.93) rectangle (414.95, 13.15);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (226.67,  4.81) rectangle (231.97, 12.83);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (416.00,  4.93) rectangle (425.48, 12.60);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (232.56,  4.81) rectangle (237.86, 12.29);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (426.54,  4.93) rectangle (436.02, 12.09);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (238.45,  4.81) rectangle (243.75, 11.79);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (437.07,  4.93) rectangle (446.55, 11.61);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (244.33,  4.81) rectangle (249.63, 11.33);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (447.60,  4.93) rectangle (457.08, 11.17);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (250.22,  4.81) rectangle (255.52, 10.89);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (458.14,  4.93) rectangle (467.62, 10.75);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (256.11,  4.81) rectangle (261.41, 10.49);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (468.67,  4.93) rectangle (478.15, 10.36);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (262.00,  4.81) rectangle (267.30, 10.11);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (479.20,  4.93) rectangle (488.68, 10.00);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (267.89,  4.81) rectangle (273.19,  9.75);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (489.73,  4.93) rectangle (499.21,  9.66);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (273.78,  4.81) rectangle (279.07,  9.42);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (500.27,  4.93) rectangle (509.75,  9.35);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (279.66,  4.81) rectangle (284.96,  9.12);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (510.80,  4.93) rectangle (520.28,  9.05);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (285.55,  4.81) rectangle (290.85,  8.83);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (521.33,  4.93) rectangle (530.81,  8.78);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (291.44,  4.81) rectangle (296.74,  8.56);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (531.87,  4.93) rectangle (541.35,  8.52);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (297.33,  4.81) rectangle (302.63,  8.31);
 
-\path[draw=drawColor,line width= 0.6pt,line cap=rect,fill=fillColor] (542.40,  4.93) rectangle (551.88,  8.28);
+\path[draw=drawColor,line width= 0.3pt,line cap=rect,fill=fillColor] (303.22,  4.81) rectangle (308.52,  8.08);
 \end{scope}
 \end{tikzpicture}

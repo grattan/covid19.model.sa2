@@ -1,13 +1,19 @@
-\documentclass[a4paper,11pt]{scrreprt}
+
+\documentclass{grattan}
+%\documentclass[a4paper,11pt]{scrreprt}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{tikz}
 \usepackage{url}
-\usepackage{lmodern}
+%\usepackage{lmodern}
 \usepackage{microtype}
 
 \newcommand*{\code}[1]{\texttt{#1}}
 \newcommand*{\defi}[1]{\textbf{#1}}
+
+\ReportOrWorkingPaper{WorkingPaper}
+\GrattanReportNumber{2019-00}
+\MONTH{July}
 
 \title{Technical supplement to the COVID19 report}
 \author{Hugh Parsonage}
@@ -16,6 +22,7 @@
 
 
 \begin{document}
+\contentspage
 
 \addchap{Overview}
 Our model, \crema, is a dynamic microsimulation model of Australia. 
@@ -60,10 +67,11 @@ a sequence of geometrically distributed random variables with parameters
 \(1/\beta = 1/15\). 
 
 \begin{figure}[!htbp]
-\caption{The geometric distribution with mean 15 over the range [0, 50]}\label{fig:geom-distr}
-\makebox[\textwidth]{
+\caption{The geometric distribution with mean 15 over [0, 50]}\label{fig:geom-distr}
+% \makebox[\textwidth]{
+\par
 	\input{tex/geom-distr.tikz}
-}
+% }
 \end{figure}
 
 The number of random variables to generate is determined algorithmically: if the next random variable
@@ -140,15 +148,34 @@ Like most models of this nature, random number generation is both a core element
 a performance bottleneck.  We use a pseudo-random
 number generator devised by Lehmer:\footnote{\url{https://lemire.me/blog/2019/03/19/the-fastest-conventional-random-number-generator-that-can-pass-big-crush/}}
 
-\[x \mapsto \frac{(x \times 15750249268501108736)}{2^{64}}\]
+\[ \frac{x \mapsto(x \times 15750249268501108736)}{2^{64}}\]
 
 The simplicity in the formulation makes seeding and parallelism relatively straightforward. We
-provide a state space of 20 128-bit integers and simply cap the number of threads at 20 whenever
-the PRNG is used. For uniformly distributed booleans of a fixed probability distribution
+initialize the PRNG with a state space of twenty 128-bit integers 
+and simply cap the number of threads at twenty whenever
+the PRNG is used. This array is seeded before each day, using R's PRNG's default state, the integer
+vector \code{.Random.seed} via 
+the \code{dqrng} package.
+
+When the user requests single-threaded operations, a single 128-bit integer is used for 
+the state and seeded in the same technique as Lemire. 
+
+ To obtain Bernoulli random variables 
 (as when applying transmission 
 probabilities), we unpack the random number into \code{unsigned char} values as required. 
-This array is seeded before each day, using R's PRNG's state, \code{.Random.seed} via 
-the \code{dqrng} package.
+This approach reduces the loop iteration by a factor of eight, though leads to data dependencies
+within each pack (indeed along adjacent packs or every sixteen numbers). While this weakens
+the randomness of transmission probabilities among adjacent persons, this lack of
+independence dwarfed by the simulation's dependence on the precise initial state. Since the only way
+to reduce errors arising from unlucky choices of initial state (such as all infectious cases occuring 
+in a single suburb, or all infectious individuals being in single-person households) is to increase
+the raw number of simulations, the performance gains were deemed to be worth this infelicity.
+
+Although most of the parallelism is embarrassingly parallel or simple reductions, we expect the OpenMP
+compiler to statically allocate threads, which should maintain the reproducibility of results. A more
+thorough approach to reproducible PRNGs would be to statically allocate threads.
+
+
 
 \section{Infection model}
 
@@ -271,7 +298,7 @@ or not. So the higher the proportion of infected individuals at a large event th
 susceptible attendee is to be infected. 
 
 
-
+\section{Default transmissions probabilities}
 
 
 
