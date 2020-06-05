@@ -1,4 +1,3 @@
-
 \documentclass{grattan}
 %\documentclass[a4paper,11pt]{scrreprt}
 \usepackage{amsmath}
@@ -11,6 +10,8 @@
 \newcommand*{\code}[1]{\texttt{#1}}
 \newcommand*{\defi}[1]{\textbf{#1}}
 
+\addbibresource{bib/Grattan-Master-Bibliography.bib}
+
 \ReportOrWorkingPaper{WorkingPaper}
 \GrattanReportNumber{2019-00}
 \MONTH{July}
@@ -20,77 +21,81 @@
 
 \providecommand{\crema}{\textsc{crema}}
 
+% ignore_spelling_in: code
+% add_to_dictionary: SupermarketTypical Lehmer Lemire OpenMP lockdowns? infectors caf es
+
+
 
 \begin{document}
 \contentspage
 
-\addchap{Overview}
-Our model, \crema, is a dynamic microsimulation model of Australia. 
+\addchap{Overview}\label{chap:tech-supp-overview}
+Our model, \crema, is a dynamic microsimulation model of Australia.
 
 \subsection{Static data}
-The model runs on a static data table, each row a person in Australia, 
+The model runs on a static data table, each row a person in Australia,
 which identifies each person's
 
 \begin{enumerate}
 	\item state and SA2,
-	\item age
-	\item household
+	\item age,
+	\item household,
 	\item school,
 	\item labour force status,
 \end{enumerate}
 
 For performance reasons, data is cached before being passed to the dynamic model.
-Obviously, the cache includes the static data. Other features of each person is 
+Obviously, the cache includes the static data. Other features of each person is
 also cached (or ``generated at cache time''). Cache time variables include:
 
 \begin{description}
-\item[\code{SupermarketTypical}] If an individual's SA2 contains zero supermarkets, 
-a value of zero. 
+\item[\code{SupermarketTypical}] If an individual's SA2 contains zero supermarkets,
+a value of zero.
 For implementation convenience,%
-	\footnote{By \defi{implementation convenience}, I mean that the choice was not made 
-	on the basis of research, because it was necessary to do so and was not considered 
+	\footnote{By \defi{implementation convenience}, I mean that the choice was not made
+	on the basis of research, because it was necessary to do so and was not considered
 	sufficiently important to make more than an arbitrary decision. In this case,
 	the choice of 8 was made to avoid stack overflow.}
-If the individual's SA2 contains more than eight supermarket we 
+If the individual's SA2 contains more than eight supermarket we
 exclude all but eight supermarkets. We then assign to each person a random integer
-from 1 to \(N_S = {}\) the number of supermarkets in each SA2 to represent the 
+from 1 to \(N_S = {}\) the number of supermarkets in each SA2 to represent the
 `typical' supermarket a person visits.
 \end{description}
 
-For technical reasons, we shorten variables so that they are a sequence. 
+For technical reasons, we shorten variables so that they are a sequence.
 
 \subsection{Assignment of individuals to workplaces}
 While we are confident about the distribution of labour force status among
-the population we assign in the static data, we do not know how large each 
+the population we assign in the static data, we do not know how large each
 worker's workplace is. To model this, for each destination zone we construct
-a sequence of geometrically distributed random variables with parameters 
-\(1/\beta = 1/15\). 
+a sequence of geometrically distributed random variables with parameters
+\(1/\beta = 1/15\).
 
 \begin{figure}[!htbp]
 \caption{The geometric distribution with mean 15 over [0, 50]}\label{fig:geom-distr}
 % \makebox[\textwidth]{
 \par
-	\input{tex/geom-distr.tikz}
+	\input{tex/geom-distr.tex}
 % }
 \end{figure}
 
 The number of random variables to generate is determined algorithmically: if the next random variable
-would overflow into the next DZN, we fill the rest of the sequences with 2, which has the useful 
+would overflow into the next DZN, we fill the rest of the sequences with 2, which has the useful
 side-effect of inflating the number of partnerships to a number consistent with observation.
-With this sequence we obtain, for each working person, a group of workers associated with each person 
+With this sequence we obtain, for each working person, a group of workers associated with each person
 and the size of their workplace.
 
 Assignment of workplace information completes the data generated at cache time. All other personal
-features are constructed anew at runtime. 
+features are constructed anew at runtime.
 
 \subsection{Assignment of candidate incubation and illness }
 
 Our next step is to construct vectors to reflect user-supplied epidemiological parameters.
 We construct for each person the duration of their incubation period and illness should they
 be infected when the model starts. Although it would seem wasteful to generate these values
-for every person, even if only a fraction of a percent of the rows are likely to be used, it 
+for every person, even if only a fraction of a percent of the rows are likely to be used, it
 so happens that this is more efficient than constructing them `just-in-time', mostly because
-the model can perform large parts of its operation across the population in parallel, during 
+the model can perform large parts of its operation across the population in parallel, during
 which time the generation of random numbers is more difficult to coordinate.
 
 The generation of the Poisson and log-normal distributions are done in the normal way using
@@ -101,13 +106,13 @@ The generation of the Poisson and log-normal distributions are done in the norma
 \[\text{\code{rep\_len(rpois(131059, 5), nrow(aus))}} \]
 
  For the Cauchy distribution, we implement our own version to allow for parallelized random
- number generation with an R seed. The Cauchy distribution is characterized by infrequent 
+ number generation with an R seed. The Cauchy distribution is characterized by infrequent
  extreme values so taking a small sample and repeating it was not adequate for this task.
  Since the Cauchy distribution has support over negative values,
  we use the absolute value.
 
 \subsection{Reconstructing patient histories from the starting point}
-The model accepts a starting date as an input, as an alternative to supplying the 
+The model accepts a starting date as an input, as an alternative to supplying the
 number and distribution of active and inactive cases in the population.
  To determine the number of active and inactive cases from a given starting date,
  we use a time series of each state's cumulative cases, together with assumptions
@@ -126,48 +131,48 @@ using the incubation and illness vectors allocated previously, determine the dat
 the case was active.
 
 Since a large number of new cases were from overseas arrivals, and since such individuals are more
-likely to be quarantined from the population, we also need to estimate how many of the 
-above cases would be in quarantine (and thus excluded from the model). We use the NSW and 
+likely to be quarantined from the population, we also need to estimate how many of the
+above cases would be in quarantine (and thus excluded from the model). We use the NSW and
 Victorian time series of infection sources to impute an overall percentage of new cases
-on a given date that would be isolated and apply this percentage to all new cases to 
-determine the number of new cases that exist in the wider community. On certain dates, 
+on a given date that would be isolated and apply this percentage to all new cases to
+determine the number of new cases that exist in the wider community. On certain dates,
 in certain states,
 the number of cases reported to have an overseas origin appears to exceed the \emph{total}
-number of cases. In addition, the number of overseas cases is higher for earlier dates and 
+number of cases. In addition, the number of overseas cases is higher for earlier dates and
 becomes a less common source of infection after March. To moderate these effects, we subtract
-the corresponding numbers of recovered patients in NSW and Victoria from both the number of 
-overseas infections and the number of infections overall. We then take the average of the 
+the corresponding numbers of recovered patients in NSW and Victoria from both the number of
+overseas infections and the number of infections overall. We then take the average of the
 two percentages as the overall percentage of quarantined new infections on a particular date.
 The number of deaths at the starting point is determined by the time series of deaths by state.
 
 Otherwise, if the \code{InitialStatus} input is set, it is used to construct the initial status itself.
 
-\section{PRNG}
+\section{Pseudo random number generator}
 
 Like most models of this nature, random number generation is both a core element and
-a performance bottleneck.  We use a pseudo-random
-number generator devised by Lehmer:\footnote{\url{https://lemire.me/blog/2019/03/19/the-fastest-conventional-random-number-generator-that-can-pass-big-crush/}}
+a performance bottleneck.  We use a
+pseudo random number generator (PRNG) devised by Lehmer:\footnote{\url{https://lemire.me/blog/2019/03/19/the-fastest-conventional-random-number-generator-that-can-pass-big-crush/}.}
 
 \[ \frac{x \mapsto(x \times 15750249268501108736)}{2^{64}}\]
 
 The simplicity in the formulation makes seeding and parallelism relatively straightforward. We
-initialize the PRNG with a state space of twenty 128-bit integers 
+initialize the PRNG with a state space of twenty 128-bit integers
 and simply cap the number of threads at twenty whenever
 the PRNG is used. This array is seeded before each day, using R's PRNG's default state, the integer
-vector \code{.Random.seed} via 
+vector \code{.Random.seed} via
 the \code{dqrng} package.
 
-When the user requests single-threaded operations, a single 128-bit integer is used for 
-the state and seeded in the same technique as Lemire. 
+When the user requests single-threaded operations, a single 128-bit integer is used for
+the state and seeded in the same technique as Lemire.
 
- To obtain Bernoulli random variables 
-(as when applying transmission 
-probabilities), we unpack the random number into \code{unsigned char} values as required. 
+ To obtain Bernoulli random variables
+(as when applying transmission
+probabilities), we unpack the random number into \code{unsigned char} values as required.
 This approach reduces the loop iteration by a factor of eight, though leads to data dependencies
 within each pack (indeed along adjacent packs or every sixteen numbers). While this weakens
 the randomness of transmission probabilities among adjacent persons, this lack of
 independence dwarfed by the simulation's dependence on the precise initial state. Since the only way
-to reduce errors arising from unlucky choices of initial state (such as all infectious cases occuring 
+to reduce errors arising from unlucky choices of initial state (such as all infectious cases occurring
 in a single suburb, or all infectious individuals being in single-person households) is to increase
 the raw number of simulations, the performance gains were deemed to be worth this infelicity.
 
@@ -179,34 +184,53 @@ thorough approach to reproducible PRNGs would be to statically allocate threads.
 
 \section{Infection model}
 
-At the start of each day, various properties of the current state of the population is recorded, 
-depending on the return type selected. In all cases, the number of active cases is recorded. 
+At the start of each day, various properties of the current state of the population is recorded,
+depending on the return type selected. In all cases, the number of active cases is recorded.
 If the number of active cases reaches zero, or the number of days to simulate is reached, the model
  terminates and these daily summaries returned.
 
 Each person has a \textbf{Status} which is a 32-bit signed integer indicating whether or not
-they are infected or have been infected, whether or not they are in isolation, and whether they are 
+they are infected or have been infected, whether or not they are in isolation, and whether they are
 in intensive care. A status of zero indicates the person is susceptible to infection (but not
-in isolation). Negative values indicate the person had been infected previously.
+in isolation). Negative values indicate the person had been infected previously. Individuals with
+negative statuses cannot be reinfected.
 
 
 If an age-based lockdown is selected, the status of  all individuals of the ages requested have their
 status flagged as isolated.
 
-All infected individuals are then moved either from an incubation period to one of 
+All infected individuals are then moved either from an incubation period to one of
 `symptomatic' or `critical', or from one of those status to `healed' or `killed', based
-on the precomputed prognosis. 
+on the precomputed prognosis.
 
 Next, the person-to-person infection model runs, determined by the policy inputs and
-the epidemiological inputs. Each person can be infected at a supermarket, a `place', 
-a workplace, a school, at home, at a major event, or via a visit to another SA2. Each day
-the order of these infectors is randomized, except that household infection always
+the epidemiological inputs. Each person can be infected at a supermarket, a `place',
+a workplace, a school, at home, at a major event, or via a visitor from another SA2. Each day
+the order of these infectors is randomized, but the order on any day is the same for
+all individuals, except that household infection always
 occurs last. Following the modelling of household infection, contact tracing is performed,
 if requested, and isolation applies for the next day.
 
+While the reinfection mechanism at each site is coded separately, this is mostly for
+performance or technical reasons.%
+	\footnote{For some sites infections can be recorded on the stack, whereas for others this would
+	overflow the stack. The default ordering of the data groups SA2s together, so some sites
+	(like supermarkets and households) can use this assumption whereas others cannot.}
+All infection site work in the same essential way. A site can be visited by an infected
+individual or not. If the site is infected, parameters prefixed with \code{a\_} determine
+whether this site acts as a site of infection or not. If the site is infectious,
+each susceptible visitor to the site is infected probabilistically
+via parameters prefixed with \code{q\_}.
+Previously we also allowed \code{r\_} parameters, which acted as the reproduction number for
+each site. The disadvantage of this parameterization was that the number of new
+infections at a site would be independent of the number of visitors to the site, which would limit
+the ability of the model to handle policy changes which limited the size of gatherings, workplaces,
+and the like.
+
+
 \subsection{Supermarket infections}
 
-Supermarkets are used to model basic interactions among people in the same suburb. 
+Supermarkets are used to model basic interactions among people in the same suburb.
 
 Each person has a `typical' supermarket drawn from the static data.
 
@@ -217,13 +241,13 @@ more.
 
 Supermarkets have the same opening hours each weekday, but reduced opening hours on weekends.
 Each person visits at a fixed hour, which is based on the modulus of the row numbers. The transmission
-probability is with respect to contact of people who visit the same supermarket in the same hour. 
+probability is with respect to contact of people who visit the same supermarket in the same hour.
 
 Infected individuals are not bound by caps on supermarket sizes, but susceptible individuals are.
 For a given supermarket-hour, individuals enter supermarket in the order they appear in the data,
 which exaggerates the effect of supermarket caps. On each day, each person is assigned a
-new \code{unsigned char}, which is a Bernoulli random variable with the user-supplied 
-transmission probability. 
+new \code{unsigned char}, which is a Bernoulli random variable with the user-supplied
+transmission probability.
 
 \subsection{Places}
 
@@ -231,10 +255,10 @@ Infection of `places',\footnote{Currently, the only places are caf\'{e}s.}
 takes place in a manner similar to that of supermarket infections.
 
 All persons above the age of 12 visit caf\'es \(n\)
-times per week where \(n\) is drawn from a 
+times per week where \(n\) is drawn from a
 uniform distribution \(\{0, 1, \dots, 7\}\). An equal number of people
 visit once every day as once every week. All caf\'es are open for eight
-hours every day and, like supermarkets, contact with an infection person 
+hours every day and, like supermarkets, contact with an infection person
 only occurs if the visit coincides in the same place-hour. With probability
 1/8 an individual visits a different caf\'e in their SA2 than their typical
 haunt.
@@ -242,16 +266,16 @@ haunt.
 \subsection{Workplaces}
 
 A user-supplied parameter gives a probability that a given workplace can act as a site
-of reinfection. Unless the user requests a value of 100\% -- that all workplaces 
+of reinfection. Unless the user requests a value of 100\% -- that all workplaces
 be potential sites -- this is intended to reflect the potential that some workplaces are more
-conducive to reinfection, as well as some workplaces taking greater precautions than those 
-required by the policy parameters. 
+conducive to reinfection, as well as some workplaces taking greater precautions than those
+required by the policy parameters.
 
-In addition, a random variable is generated daily for each person determining for each day 
+In addition, a random variable is generated daily for each person determining for each day
 and each person the probability that that person will be infected, given an infected person
-attends their workplace. If a cap of the number of individuals is enforced via a policy 
-parameter, infected individuals only attend work if the number of uninfected workers does 
-not exceed the cap. Put another way, if a person is infectious but not symptomatic they are 
+attends their workplace. If a cap of the number of individuals is enforced via a policy
+parameter, infected individuals only attend work if the number of uninfected workers does
+not exceed the cap. Put another way, if a person is infectious but not symptomatic they are
 the first to remain home in the presence of a cap on the number of workers.
 
 \subsection{Schools}
@@ -262,40 +286,40 @@ First, schools have school terms and no infection is possible through schools ou
 Similarly, schools open only on school days (or on fewer days if set by policy).
 
 Secondly, there is a dynamic element specific to schools. Schools infections can trigger school
-lockdowns. If a (user-supplied) threshold of schools have at least a (user-supplied) number of 
+lockdowns. If a (user-supplied) threshold of schools have at least a (user-supplied) number of
 infected students, the state's school system is shut down for a (user-supplied) number of days.
-Independently, if any student's illness becomes critical, the school system is shut down for 
+Independently, if any student's illness becomes critical, the school system is shut down for
 a (possibly different) number of days.  While the condition for triggering such lockdowns can occur
 on any school day, the lockdown is only enforced over the weekend or the following week.
 
 \subsection{Households}
 
-Infections through households are modelled very similarly to workplace infections, 
+Infections through households are modelled very similarly to workplace infections,
 with both an atomic probability that a household will be infected and contact
-tranmission probabilities for people in the same household.
+transmission probabilities for people in the same household.
 Policy parameters are limited for households.
 
 \subsection{Other SA2s}
 
 To model movement out of SA2s (though likely within the same state),
-we generate an exponentially distributed random variable 
-for each individual to represent the maximum allowable distance that person 
+we generate an exponentially distributed random variable
+for each individual to represent the maximum allowable distance that person
 travels. If the distance is less than the distance to the nearest SA2, the person
 does not travel outside the SA2; otherwise, the SA2 is chosen through that distribution
 (close SA2s are more likely to be visited than those farther away).
- If an infected person does go to a different SA2, they visit a random individual in the SA2 and 
+ If an infected person does go to a different SA2, they visit a random individual in the SA2 and
  infect them (with certainty).
 
 \subsection{Major events}
 For each individual we construct an integer, drawn from a beta distribution ranging from zero
 to the number of major events requested. The number of people assigned to each event so constructed
-is calculated and, if it exceeds the maximum number allowed, is ignored. Otherwise, the number of 
+is calculated and, if it exceeds the maximum number allowed, is ignored. Otherwise, the number of
 infected attendees is calculated. We then calculate, for each event, the value
 \[p_e = q_m(1 + \sqrt{(n_i / N)}) \]
 where \(q_m\) is a user-supplied parameter, \(n_i\) is the number of infected individuals, and \(N\)
-is the total number of attendees. This value inflates the threshold below which a person is infected 
-or not. So the higher the proportion of infected individuals at a large event the more likely each 
-susceptible attendee is to be infected. 
+is the total number of attendees. This value inflates the threshold below which a person is infected
+or not. So the higher the proportion of infected individuals at a large event the more likely each
+susceptible attendee is to be infected.
 
 
 \section{Default transmissions probabilities}
