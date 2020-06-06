@@ -1,4 +1,8 @@
 
+# 0.27.0
+
+* Age-based prognosis (#51)
+
 # 0.26.0
 
 * The historical multipolicy default eases workplace restrictions faster
