@@ -27,6 +27,10 @@ update_pappubahry <- function() {
       .[] %T>%
       fwrite(provide.file(dataraw.csv)) %>%
       .[, Date := as.Date(Date)] %>%
+
+      # to avoid supurious executable warnings from `$ file `.
+      .[, lgl := NA] %>%
+
       setkey(Date) %>%
       .[]
     if (file.exists(extdata.fst)) {
@@ -35,7 +39,7 @@ update_pappubahry <- function() {
 
     if (dir.exists("inst/extdata") &&
         Sys.getenv("USERNAME") == "hughp") {
-      write_fst(result, paste0("inst/extdata/", nom, ".fst"), compress = 100)
+      write_fst(result, paste0("inst/extdata/", nom, ".fst"))
     }
 
     TRUE
