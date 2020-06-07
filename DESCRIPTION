@@ -14,7 +14,6 @@ Authors@R:
              family = "Lemire",
              role = "ctb",
              comment = "Adapted a header of his to generate the Lehmer PRNG"))
-           
 Description: 
     A dynamic microsimulation model of Australia, taking policy changes and
     epidemiological assumptions about transmissions.
