@@ -27,4 +27,4 @@ script:
 - travis_wait 25 R CMD check *tar.gz --no-manual
 
 after_success:
-    - Rscript -e 'covr::codecov()'
+    - travis_wait 45 Rscript -e 'covr::codecov()'
