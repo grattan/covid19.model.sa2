@@ -287,6 +287,14 @@ update_policypars <- function(Policy,
       anyNA(tests_by_state) ||
       min(tests_by_state) < 0) {
     time_series_tests <- read_sys("time_series_tests.fst")
+    for (s in states()) {
+      if (hasName(time_series_tests, s)) {
+        v <- .subset2(time_series_tests, s)
+        i <- which(complete.cases(v))
+        v <- cummax(coalesce(v, 0L))
+        set(time_series_tests, i = i, j = s, value = v[i])
+      }
+    }
     last_tests <- last(time_series_tests[, lapply(.SD, diff)])
 
     for (i in seq_along(out)) {
