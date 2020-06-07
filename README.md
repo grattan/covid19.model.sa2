@@ -209,9 +209,6 @@ Each person who is infected with COVID-19 in the simulation is given an incubati
 
 By default, this is a Poisson distribution with mean `5` days and sigma `0.44`, in line with parameters used by the [Imperial College COVID-19 Response Team](https://www.imperial.ac.uk/media/imperial-college/medicine/sph/ide/gida-fellowships/Imperial-College-COVID19-NPI-modelling-16-03-2020.pdf).
 
-[_note:_ justification for distribution]
-
-[_note:_ graphic of distribution with defaults and with plausible alternative]
 
 
 ### Illness: `illness_distribution`, `illness_mean`, `illness_sigma`
@@ -220,9 +217,6 @@ Each person who is infected with COVID-19 and becomes symptomatic in the simulat
 
 By default, this is a Poisson distribution with mean `15` days and sigma `1`. 
 
-[_note:_ citations for defaults; justification for distribution]
-
-[_note:_ graphic of distribution with defaults and with plausible alternative]
 
 
 ### Reproduction number: `r_distribution`, `r_location`, `r_sigma`
@@ -231,9 +225,6 @@ The reproduction number distribution is, by default, a Cauchy distribution with 
 
 
 
-[_note:_ citations for defaults; justification for distribution]
-
-[_note:_ graphic of distribution with defaults and with plausible alternative]
 
 
 ### Reproduction parameters in schools and supermarkets: `r_*_distribution`, `r_*_location`, `r_*_sigma`
@@ -241,16 +232,13 @@ The reproduction number distribution is, by default, a Cauchy distribution with 
 The reproduction number settings particular for school and supermarket scenarios. By default, these are set to the standard reproduction number.
 
 
-[_note:_ citations for defaults; justification for distribution]
-
-[_note:_ graphic of distribution with defaults and with plausible alternative]
 
 
 ### Probability of reaction to COVID-19: `p_asympto`, `p_critical`, `p_death`
 
 The probability of symptom severity is taken from findings gathered by the [Imperial College COVID-19 Response Team](https://www.imperial.ac.uk/media/imperial-college/medicine/sph/ide/gida-fellowships/Imperial-College-COVID19-NPI-modelling-16-03-2020.pdf)
 
-[_note:_ many citations]
+
 
 
 ### Resistance
@@ -475,97 +463,4 @@ The number of people allowed at **gatherings** is set by `max_persons_per_event`
 These policy settings affect the workings of the simulation events, described below.
 
 
-<!---------------------------------------------------------------------------->
-## Simulation
 
-The `australia` dataset is loaded. Each observation is a person (`pid`) who lives in a house (`hid`). Each house is in an 'statistical area' (SA2) about the size of a postcode. The house can contain other people. Aggregated to the SA2 level, the make up of the households --- lone person, couple with or without kids, group household, etc --- reflects the Australian Census.
-
-Each person has an age, determined by whether they are an adult or a child. 
-If the person is a child, they can attend a school in their SA2 on weekdays.
-
-If they are an adult and they are in the labour force, they have a job located in a 'destination zone', an area about the size of a city block in a CBD, and larger in areas with more sparsely populated commerce.
-
-Each adult visits the supermarket a certain number of times per year.
-
-The simulation starts on day zero with each person given one of six COVID-19 statuses: 
-
-- `-2` Dead
-- `-1` Healed
-- `0` Susceptible
-- `1` Infected and in their incubation period, not showing symptoms
-- `2` Infected and ill, showing symptoms
-- `3` Critical
-
-The starting point of the simulation is set by the user, and defaults to the number of dead, healed, critical and infected people by state. The number of infected people who are asymptomatic is determined by the epidemiological inputs. The number of susceptible people is the rest of the population (i.e. there is assumed to be no immunity.)
-
-A night, each person goes back to their house and has contact with other members.
-
-In the morning, each person wakes up and has their COVID-19 status re-assessed. 
-
-
-### Morning COVID-19 status assessment
-
-If a person is infected, their COVID-19 status can remain the same, get plausibly better or plausibly worse:
-
-- an infected asymptomatic person `1` can:
-    - `-1` become healed, i.e. this person has remained asymptomatic for the duration of their illness.
-    - `1` remain asymptomatic
-    - `2` become symptomatic
-- an infected symptomatic person `2` can:
-    - `-1` become healed
-    - `2` remain symptomatic
-    - `3` become critical
-- a critical person `3` can:
-    - `-2` die
-    - `-1` become healed
-    - `3` remain critical
-
-
-To what status the infected individual moves will depend on the number of days since their infection and conditions drawn from the epidemiology inputs.
-
-With the daily status of everyone in the country determined, some people head to the supermarket.
-
-
-### The supermarket
-
-If the supermarket is open (see policy parameters), some adults will go to a supermarket nearby their home on a given day. How often they go to the supermarket in a year is a random number between 0 and 360, drawn from a beta distribution. 
-
-Supermarkets have 8 hours of operation, and people are randomly assigned an hour to shop in.
-
-The number of infectious people in a supermarket in a particular hour defines how many additional infections occur, based on the reproduction number distribution (see the epidemiological varibales). The reproduction number distribution is reduced to reflect limited contact within supermarkets.
-
-_Note_: Hugh to explain the `1/32` reduction. Has noted the model is sensitive to this.
-
-A number of symptomatic people, equal to the number of additional infections, with low enough resistance will be infected. 
-
-If supermarkets are closed, nobody goes to the supermarket. 
-
-### Work 
-
-_Workplace interactions have not yet been added to the model_.
-
-
-
-### School
-
-If schools are open (see policy parameters) and it is a weekday, each school-age child will attend a nearby school.
-
-The number of kids infected by each infectious person in a school is drawn from the reproduction number distribution, set by the epidemiological variables.
-
-If school is closed, this action is skipped. If school is only open to Year 12s, only kids aged 17-18 attend school. 
-
-
-### House
-
-Each member of a household returns to their house at the end of the day.
-
-There is no transmission in a single person household.
-
-Transmission can occur in a house with more than one person with at least one person infected. A person's resistance determines their likelihood of being infected by another household memmber (see epidemiological variables).
-
-People then go to bed, before waking up and doing the same thing over again.
-
-
-## Model output
-
-The model returns the original `australia` dataset 
