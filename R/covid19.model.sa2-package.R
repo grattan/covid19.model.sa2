@@ -23,10 +23,12 @@
 #' @importFrom magrittr %T>%
 #' @importFrom stats complete.cases
 #' @importFrom stats rbeta
+#' @importFrom stats runif
 #' @importFrom stats setNames
 #' @importFrom utils packageName
 #' @importFrom utils hasName
 #' @importFrom utils combn
+#' @importFrom utils tail
 #'
 #' @useDynLib covid19.model.sa2, .registration = TRUE
 ## usethis namespace: end
