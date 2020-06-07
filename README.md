@@ -187,14 +187,6 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac"),
                         illness_distribution = c("pois", "lnorm", "dirac"),
                         illness_mean = 15,
                         illness_sigma = 1,
-                        r_distribution = c("cauchy", "lnorm", "pois", "dirac"),
-                        r_location = 2/5,
-                        r_scale = 1,
-                        r_schools_distribution = r_distribution,
-                        r_schools_location = r_location,
-                        r_schools_scale = r_scale,
-                        r_supermarket_location = r_location,
-                        r_supermarket_scale = r_scale,
                         resistance_threshold = 400L,
                         p_asympto = 0.48,
                         p_critical = 0.02,
@@ -218,18 +210,6 @@ Each person who is infected with COVID-19 and becomes symptomatic in the simulat
 By default, this is a Poisson distribution with mean `15` days and sigma `1`. 
 
 
-
-### Reproduction number: `r_distribution`, `r_location`, `r_sigma`
-
-The reproduction number distribution is, by default, a Cauchy distribution with location 2 and scale 1. In circumstances that require a reproduction number -- e.g. when there is an infected person in a supermarket, or at a school -- a figure is drawn that determines the number of people they go onto infect.
-
-
-
-
-
-### Reproduction parameters in schools and supermarkets: `r_*_distribution`, `r_*_location`, `r_*_sigma`
-
-The reproduction number settings particular for school and supermarket scenarios. By default, these are set to the standard reproduction number.
 
 
 
