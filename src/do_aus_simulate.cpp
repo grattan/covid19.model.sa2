@@ -43,6 +43,32 @@ int supermarket_weekend_hrs() {
   return SUPERMARKET_WEEKEND_HRS;
 }
 
+// const int SOURCE_ABROAD =  8;
+// const int SOURCE_SUPERM = 17;
+// const int SOURCE_PLACES = 18;
+// const int SOURCE_WORKPL = 19;
+// const int SOURCE_SCHOOL = 20;
+// const int SOURCE_HOUSEH = 21;
+// const int SOURCE_OTHSA2 = 22;
+// const int SOURCE_STADIA = 23;
+
+// [[Rcpp::export(rng = false)]]
+int source_workplace() {
+  return SOURCE_WORKPL;
+}
+// [[Rcpp::export(rng = false)]]
+int source_school() {
+  return SOURCE_SCHOOL;
+}
+// [[Rcpp::export(rng = false)]]
+int source_household() {
+  return SOURCE_HOUSEH;
+}
+// [[Rcpp::export(rng = false)]]
+int source_other_sa2() {
+  return SOURCE_OTHSA2;
+}
+
 constexpr int MIN_ISOL = STATUS_KILLED + ISOLATED_PLUS;
 
 inline bool isolatable(const int & statusi) {
@@ -2330,8 +2356,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
           if (statusi > 5) {
             statusi = 6;
           }
-          int oi2 =  7 * day * NSTATES + state * (7) + statusi;
-          out2[oi2] += 1;
+          out2[array3k(day, state, statusi, NSTATES, 7)] += 1;
         }
       }
     }

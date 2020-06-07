@@ -60,6 +60,22 @@ supermarket_weekend_hrs <- function() {
     .Call(`_covid19_model_sa2_supermarket_weekend_hrs`)
 }
 
+source_workplace <- function() {
+    .Call(`_covid19_model_sa2_source_workplace`)
+}
+
+source_school <- function() {
+    .Call(`_covid19_model_sa2_source_school`)
+}
+
+source_household <- function() {
+    .Call(`_covid19_model_sa2_source_household`)
+}
+
+source_other_sa2 <- function() {
+    .Call(`_covid19_model_sa2_source_other_sa2`)
+}
+
 test_array4k <- function(w, x, y, z, nw, nx, ny, nz) {
     .Call(`_covid19_model_sa2_test_array4k`, w, x, y, z, nw, nx, ny, nz)
 }

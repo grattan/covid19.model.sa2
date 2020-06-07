@@ -1,4 +1,7 @@
 test_that("a_household_rate", {
+  if (Sys.getenv("USERNAME") == "hughp") {
+    cat("a_rates", .Platform$r_arch, "\n", file = "~/testthat-log.txt", append = TRUE)
+  }
   skip_if(is32bit())
   skip_on_travis()
   skip_if_not_installed("magrittr")

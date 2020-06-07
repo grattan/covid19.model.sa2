@@ -1,8 +1,4 @@
 
-if (!("testthat" %in% .packages())) {
-  library(testthat)
-  library(covid19.model.sa2)
-}
 
 test_that("openmp reduces with count_by", {
   skip_if_not(.Platform$GUI == "RTerm")

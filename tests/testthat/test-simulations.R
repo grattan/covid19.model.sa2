@@ -183,9 +183,68 @@ test_that("returner 3 no race condition", {
   pop <- data.table(S3 = S$Status12)[, Day := rep_each(1:10, .N)][, .(N3 = sum(S3)), by = .(Day)]
   expect_true(is_constant(pop[["N3"]]))
   expect_equal(pop[["N3"]][1], fst_rows("australia.fst"))
+})
 
 
+test_that("workplaces/schools infect", {
+  skip_if_not(is64bit())
+  skip_on_travis()
+  library(hutilscpp)
 
+  for (pw in c(0.5, 0.6, 0.7, 0.8, 0.9, 1.0)) {
+    W <- simulate_sa2(100,
+                      .first_day = "2020-03-23",
+                      returner = 4,
+                      PolicyPars = set_policypars(supermarkets_open = FALSE,
+                                                  cafes_open = FALSE,
+                                                  do_contact_tracing = FALSE,
+                                                  schools_open = FALSE,
+                                                  workplaces_open = pw,
+                                                  workplace_size_max = 2e9),
+                      EpiPars = set_epipars(incubation_distribution = "dirac",
+                                            incubation_mean = 100,
+                                            q_workplace = pw,
+                                            q_household = 0))
+    WSources <- .subset2(W, "InfectionSource")
+
+    # Implementation detail
+    expect_equal(source_workplace(), 19L)
+    # Assumes source_workplace
+    expect_gt(which_first(WSources == 19L), 0L)
+  }
+
+  new_infected <- integer(6)
+  i <- 1L
+  for (ps in c(0.5, 0.6, 0.7, 0.8, 0.9, 1.0)) {
+    S <-
+      simulate_sa2(100,
+                   .first_day = "2020-04-23",
+                   returner = 4,
+                   PolicyPars = set_policypars(supermarkets_open = TRUE,
+                                               cafes_open = FALSE,
+                                               do_contact_tracing = FALSE,
+                                               schools_open = TRUE,
+                                               workplaces_open = 0,
+                                               workplace_size_max = 1,
+                                               lockdown_triggers__schools = set_lockdown_triggers__schools(FALSE)),
+                   EpiPars = set_epipars(incubation_distribution = "dirac",
+                                         incubation_mean = 100,
+                                         q_workplace = 0,
+                                         a_schools_rate = ps,
+                                         q_school = ps/100,
+                                         q_supermarket = 1/10000,
+                                         q_household = 1))
+    SSources <- .subset2(S, "InfectionSource")
+    new_infected[i] <- sum(S$InfectedOn > yday("2020-04-23"), na.rm = TRUE)
+    i <- i + 1L
+    # Implementation detail
+    expect_equal(source_school(), 20L)
+    expect_gt(which_first(SSources == 20L), 0L)
+
+    # The more likely school transmission, the more infections
+
+  }
+  expect_false(do_is_unsorted_pint(new_infected))
 })
 
 

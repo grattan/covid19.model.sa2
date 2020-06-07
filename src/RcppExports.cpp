@@ -111,6 +111,42 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// source_workplace
+int source_workplace();
+RcppExport SEXP _covid19_model_sa2_source_workplace() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    rcpp_result_gen = Rcpp::wrap(source_workplace());
+    return rcpp_result_gen;
+END_RCPP
+}
+// source_school
+int source_school();
+RcppExport SEXP _covid19_model_sa2_source_school() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    rcpp_result_gen = Rcpp::wrap(source_school());
+    return rcpp_result_gen;
+END_RCPP
+}
+// source_household
+int source_household();
+RcppExport SEXP _covid19_model_sa2_source_household() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    rcpp_result_gen = Rcpp::wrap(source_household());
+    return rcpp_result_gen;
+END_RCPP
+}
+// source_other_sa2
+int source_other_sa2();
+RcppExport SEXP _covid19_model_sa2_source_other_sa2() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    rcpp_result_gen = Rcpp::wrap(source_other_sa2());
+    return rcpp_result_gen;
+END_RCPP
+}
 // test_array4k
 IntegerVector test_array4k(IntegerVector w, IntegerVector x, IntegerVector y, IntegerVector z, int nw, int nx, int ny, int nz);
 RcppExport SEXP _covid19_model_sa2_test_array4k(SEXP wSEXP, SEXP xSEXP, SEXP ySEXP, SEXP zSEXP, SEXP nwSEXP, SEXP nxSEXP, SEXP nySEXP, SEXP nzSEXP) {
@@ -665,6 +701,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_isolated_plus", (DL_FUNC) &_covid19_model_sa2_isolated_plus, 0},
     {"_covid19_model_sa2_supermarket_weekday_hrs", (DL_FUNC) &_covid19_model_sa2_supermarket_weekday_hrs, 0},
     {"_covid19_model_sa2_supermarket_weekend_hrs", (DL_FUNC) &_covid19_model_sa2_supermarket_weekend_hrs, 0},
+    {"_covid19_model_sa2_source_workplace", (DL_FUNC) &_covid19_model_sa2_source_workplace, 0},
+    {"_covid19_model_sa2_source_school", (DL_FUNC) &_covid19_model_sa2_source_school, 0},
+    {"_covid19_model_sa2_source_household", (DL_FUNC) &_covid19_model_sa2_source_household, 0},
+    {"_covid19_model_sa2_source_other_sa2", (DL_FUNC) &_covid19_model_sa2_source_other_sa2, 0},
     {"_covid19_model_sa2_test_array4k", (DL_FUNC) &_covid19_model_sa2_test_array4k, 8},
     {"_covid19_model_sa2_do_rep", (DL_FUNC) &_covid19_model_sa2_do_rep, 2},
     {"_covid19_model_sa2_do_au_simulate", (DL_FUNC) &_covid19_model_sa2_do_au_simulate, 30},

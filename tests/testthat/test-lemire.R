@@ -34,6 +34,11 @@ test_that("lemire works", {
 
 
 test_that("lemire_char", {
+
+  library(data.table)
+  if (Sys.getenv("USERNAME") == "hughp") {
+    cat("lemire_char", .Platform$r_arch, "\n", file = "~/testthat-log.txt", append = TRUE)
+  }
   skip_on_cran()
   skip_if(is32bit())
   skip_if_not_installed("withr")
@@ -46,7 +51,6 @@ test_that("lemire_char", {
     expect_true(mean(p74) >= 0.026 && mean(p74) <= 0.048)
     # expect_true(sum(p74) %in% c(37L, 42L))
   })
-  library(data.table)
 
   expect_true(sum_lemire_char(1048576, 0.01) %between% c(1048576 * 0.005, 1048576 * 0.015))
 

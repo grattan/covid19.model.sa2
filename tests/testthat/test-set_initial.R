@@ -20,6 +20,7 @@ test_that("set_initial_by_state works", {
 
 
 test_that("set_initial retrospectively", {
+  skip_if(is32bit())
   skip_if_not_installed("data.table")
   library(data.table)
 
@@ -28,7 +29,8 @@ test_that("set_initial retrospectively", {
   healed <- read_sys("time_series_recovered.fst")
 
 
-  S <- simulate_sa2(5, .first_day = "2020-04-01",
+  S <- simulate_sa2(5,
+                    .first_day = "2020-04-01",
                     EpiPars = set_epipars(incubation_distribution = "dirac",
                                           incubation_mean = 5,
                                           illness_distribution = "dirac",

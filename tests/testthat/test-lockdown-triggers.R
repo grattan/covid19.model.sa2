@@ -4,6 +4,9 @@ test_that("lockdown triggers work", {
   skip_on_cran()
   skip_if_not_installed("data.table")
   skip_if_not_installed("withr")
+  if (Sys.getenv("USERNAME") == "hughp") {
+    cat("lockdown triggers work", .Platform$r_arch, "\n", file = "~/testthat-log.txt", append = TRUE)
+  }
   library(data.table)
 
   aus <- read_typical()
