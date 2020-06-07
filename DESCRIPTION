@@ -1,13 +1,22 @@
 Package: covid19.model.sa2
-Title: What the Package Does (One Line, Title Case)
+Title: Model Policy and Epidemiological Assumptions of the COVID-19 Pandemic
 Version: 0.28.0
 Authors@R: 
-    person(given = "Hugh",
+    c(person(given = "Hugh",
            family = "Parsonage",
            role = c("aut", "cre"),
            email = "hugh.parsonage@gmail.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+           comment = c(ORCID = "YOUR-ORCID-ID")),
+      person(given = "Will",
+             family = "Mackey",
+             role = c("aut")),
+      person(given = "Daniel",
+             family = "Lemire",
+             role = "ctb"))
+           
+Description: 
+    A dynamic microsimulation model of Australia, taking policy changes and
+    epidemiological assumptions about transmissions.
 License: GPL-2
 LinkingTo: Rcpp, RcppProgress, dqrng
 Imports:
