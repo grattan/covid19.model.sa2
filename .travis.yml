@@ -25,3 +25,6 @@ script:
 - Rscript -e "devtools::install(quiet = TRUE)"
 - R CMD build .
 - travis_wait 25 R CMD check *tar.gz --no-manual
+
+after_success:
+    - Rscript -e 'covr::codecov()'

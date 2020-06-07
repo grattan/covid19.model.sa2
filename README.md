@@ -1,4 +1,7 @@
+<!-- badges: start -->
 <h3 id="experimental"><img src="https://img.shields.io/badge/lifecycle-experimental-orange.svg" alt=""></h3>
+  [![Codecov test coverage](https://codecov.io/gh/grattan/covid19.model.sa2/branch/master/graph/badge.svg)](https://codecov.io/gh/grattan/covid19.model.sa2?branch=master)
+  <!-- badges: end -->
 
 This model is free to use but not yet mature enough to be relied upon or cited. Please refrain from attributing this model to Grattan Institute until this advice changes.
 

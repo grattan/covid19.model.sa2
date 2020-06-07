@@ -11,8 +11,9 @@ wsamp <- function(x, size, w) {
   samp(x, size = size, prob = probs)
 }
 
+
 isnt_testing <- function() {
-  !requireNamespace("testthat", quietly = TRUE) || !testthat::is_testing()
+  !requireNamespace("testthat", quietly = TRUE) || !testthat::is_testing()  # nocov
 }
 
 "%||%" <- function(a, b) if (is.null(a)) b else a
@@ -35,7 +36,7 @@ accel <- function(x, FUN) {
 ematch <- function(x, table) {
   # exists and match
   if (anyNA(out <- fastmatch::fmatch(x, table))) {
-    stop(glue("{vname(x)} contained elements, no matched with {vname(table)}"))
+    stop(glue("{vname(x)} contained elements, that are not matched with {vname(table)}"))
   }
   out
 }
@@ -64,6 +65,7 @@ rep_each <- function(x, len) {
 g <- glue::glue
 
 
+# nocov start
 
 and3s <- function(...) {
   if ("and3s" %in% getNamespaceExports("hutilscpp")) {
@@ -78,7 +80,7 @@ or3s <- function(...) {
   }
   hutilscpp::or3(...)
 }
-
+# nocov end
 
 
 yday2date <- function(.yday) {

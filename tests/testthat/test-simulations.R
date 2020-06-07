@@ -8,6 +8,24 @@ test_that("simulation works", {
   for (env_opt in c(getOption("covid19.model.sa2_useDataEnv", TRUE),
                     !getOption("covid19.model.sa2_useDataEnv", TRUE))) {
     for (thr in c(1L, 2L)) {
+
+      # These tests take a long time (hours) and for some purposes
+      # we can speed it up. On my computer, log the run, and don't
+      # test both thread modes when just testing coverage
+      if (Sys.getenv("USERNAME") == "hughp") {
+        cat(as.character(Sys.time()), "\tsimulations\t", normalizePath(getwd(), winslash = "/"), "\n",
+            file = "~/testthat-log.txt",
+            append = TRUE)
+
+        if (requireNamespace("covr", quietly = TRUE) && covr::in_covr()) {
+          if (thr == 1L) {
+            next
+          }
+        }
+        options(covid19.model.sa2_nThread = 10L)
+      }
+
+
       expect_true(is.logical(env_opt))
 
       S0 <- simulate_sa2(DAYS,
@@ -212,6 +230,7 @@ test_that("workplaces/schools infect", {
     # Assumes source_workplace
     expect_gt(which_first(WSources == 19L), 0L)
   }
+  clear_dataEnv()
 
   new_infected <- integer(6)
   i <- 1L
@@ -247,6 +266,18 @@ test_that("workplaces/schools infect", {
   expect_false(do_is_unsorted_pint(new_infected))
 })
 
+test_that("other SA2", {
+  skip_if_not(is64bit())
+  S <- simulate_sa2(40,
+                    returner = 4L,
+                    PolicyPars = set_policypars(supermarkets_open = FALSE,
+                                                cafes_open = FALSE,
+                                                travel_outside_sa2 = TRUE),
+                    EpiPars = set_epipars(q_supermarket = 0.001,
+                                          incubation_distribution = 'dirac',
+                                          incubation_mean = 50))
+  expect_true(source_other_sa2() %in% S$InfectionSource)
+})
 
 
 

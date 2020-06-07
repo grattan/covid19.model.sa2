@@ -1,6 +1,6 @@
 Package: covid19.model.sa2
 Title: What the Package Does (One Line, Title Case)
-Version: 0.27.0
+Version: 0.28.0
 Authors@R: 
     person(given = "Hugh",
            family = "Parsonage",
@@ -31,6 +31,7 @@ RoxygenNote: 7.1.0
 Suggests: 
     testthat (>= 2.1.0),
     parallel,
-    withr
+    withr,
+    covr
 Depends: 
     R (>= 2.10)

@@ -5,6 +5,8 @@ using namespace Rcpp;
 
 #define N_SUPERMARKETS 7487
 
+// nocov start
+
 // [[Rcpp::export(rng = false)]]
 int status_killed() {
   return STATUS_KILLED;
@@ -68,6 +70,8 @@ int source_household() {
 int source_other_sa2() {
   return SOURCE_OTHSA2;
 }
+
+// nocov end
 
 constexpr int MIN_ISOL = STATUS_KILLED + ISOLATED_PLUS;
 
@@ -1467,7 +1471,9 @@ void infect_other_sa2(IntegerVector Status,
 
   std::vector<double> MaxTravelDist = Rexp(N, rate, nThread);
 
+#if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread) reduction(+ : i_visitors[:NSA2]) reduction(+:tot_i_visitors)
+#endif
   for (int i = 0; i < N; ++i) {
     if (Status[i] != STATUS_NOSYMP && InfectedOn[i] < yday) {
       continue;
@@ -1585,11 +1591,9 @@ void infect_major_event(IntegerVector Status,
   }
 
 
-
-  // Beta[1] will be larger than B[10] generally
-
-
-#pragma omp parallel for num_threads(nThread) reduction(+:n_attendees) reduction(+:i_attendees)
+#if defined _OPENMP && _OPENMP >= 201511
+#pragma omp parallel for num_threads(nThread) reduction(+:n_attendees[:255]) reduction(+:i_attendees[:255])
+#endif
   for (int i = 0; i < N; ++i) {
 
 

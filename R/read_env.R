@@ -1,5 +1,5 @@
 
-
+# nocov start
 read_dataEnv <- function(obj = NULL) {
   if (is.null(obj)) {
     obj <- ls(envir = getOption("covid19.model.sa2_dataEnv"))
@@ -16,3 +16,4 @@ clear_dataEnv <- function() {
   rm(list = ls(envir = e), envir = e)
 }
 
+# nocov end

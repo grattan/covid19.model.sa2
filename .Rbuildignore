@@ -3,3 +3,4 @@
 ^data-raw$
 ^results$
 ^\.travis\.yml$
+^codecov\.yml$

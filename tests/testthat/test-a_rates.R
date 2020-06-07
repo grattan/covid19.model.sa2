@@ -1,6 +1,10 @@
 test_that("a_household_rate", {
   if (Sys.getenv("USERNAME") == "hughp") {
-    cat("a_rates", .Platform$r_arch, "\n", file = "~/testthat-log.txt", append = TRUE)
+    cat(as.character(Sys.time()),
+        "\ta_rates\t",
+        .Platform$r_arch,
+        "\t", normalizePath(getwd(), winslash = "/"), "\n",
+        file = "~/testthat-log.txt", append = TRUE)
   }
   skip_if(is32bit())
   skip_on_travis()
