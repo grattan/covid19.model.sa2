@@ -866,20 +866,6 @@ void infect_dzn(IntegerVector Status,
   }
 
   if (day == 0) {
-    if (optionz) {
-      Rcout << Status.length() << " ";
-      Rcout << InfectedOn.length() << " ";
-      Rcout << DZN.length() << " ";
-      Rcout << wid.length() << " ";
-      Rcout << LabourForceStatus.length() << " ";
-      Rcout << nColleagues.length() << " ";
-      Rcout << TodaysK.length() << " ";
-
-      Rcout << N << " ";
-      Rcout << workplaces_open << " ";
-      Rcout << workplace_size_max << " ";
-      Rcout << "\n";
-    }
 
     // check that DZN is short and ranges from 1 to (NDZN - 1)
     // check that wid_supremum0
@@ -910,10 +896,6 @@ void infect_dzn(IntegerVector Status,
 
   // can't use array as overflow risk is real
   std::vector<unsigned char> InfectionsByWorkplace(n_workplaces, 0);
-  if (optionz && day == 0) {
-    Rcout << InfectionsByWorkplace[0] << "\n";
-    Rcout << InfectionsByWorkplace[1] << "\n";
-  }
 
   // for (int w = 0; w < WID_SUPREMUM; ++w) {
   //   InfectionsByWorkplace[w] = 0;
@@ -1343,7 +1325,6 @@ void infect_school(IntegerVector Status,
   const int b = lockdown_trigger_schools_with_infections_geq;
   for (int schooli = 0; schooli < NSCHOOLS; ++schooli) {
     if (newInfectionsBySchool[schooli] >= b) {
-      if (optionz) Rcout << "schooli = " << schooli << "\t" << "newInfectionsBySchool = " << newInfectionsBySchool[schooli] << "\n";
       int statei = static_cast<int>(state_by_school[schooli]);
       schoolsWithGeqInfections[statei] += 1;
     }
@@ -1645,19 +1626,6 @@ void infect_major_event(IntegerVector Status,
     double q_i_a = q_major_event * (1 + sqrt(infected / attended));
 
     p_infected[ei] = percentage_to_int(q_i_a);
-  }
-
-  if (optionz && day == 0) {
-    Rcout << "\t";
-    Rcout << std::right << std::setw(12) << "i_attendees";
-    Rcout << std::right << std::setw(14) << "n_attendees";
-    Rcout << std::right << std::setw(14) << "p_infected\n\t";
-
-    for (int ei = 0; ei < n_major_events_today; ++ei) {
-      Rcout << std::right << std::setw(12) << i_attendees[ei];
-      Rcout << std::right << std::setw(14) << n_attendees[ei];
-      Rcout << std::right << std::setw(14) << ((int) p_infected[ei]) << "\n\t";
-    }
   }
 
   IntegerVector Rand = do_lemire_rand_par(N, nThread);
@@ -2688,7 +2656,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
             // Otherwise, we continue any extant lockdown
 
             if (is_monday && state_trigger_pulled[s] != 0) {
-              if (optionz) Rcout << "triggered";
               areSchoolsLockedDown[s] = true;
               int d_1 = lockdown_trigger_schools_with_infections_duration_of_lockdown;
               int d_2 = lockdown_trigger_schools_with_any_critical_duration_of_lockdown;
@@ -2739,9 +2706,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
                      workplaces_open,
                      workplace_size_max,
                      TodaysK, Resistant, 0, optionz, nThread);
-          if (day < 2 && optionz) {
-            Rcout << "infected_dzn = " << day << "\n";
-          }
         }
         continue;
 
@@ -2772,9 +2736,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
                      yday, N, HouseholdInfectedToday,
                      q_household,
                      nThread);
-    if (day < 2 && optionz) {
-      Rcout << "infected_household " << "\n";
-    }
 
 
 
