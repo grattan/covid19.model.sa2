@@ -121,6 +121,8 @@ IntegerVector test_array4k(IntegerVector w, IntegerVector x, IntegerVector y, In
   if (prod_ge_intmax(nw, nx, ny, nz)) {
     stop("test_array4k only available for integer-length outputs.");
   }
+  // purely to test array4k
+  R_xlen_t n = (nw * nx) * (ny * nz);
 
   if (n != w.length() ||
       n != x.length() ||

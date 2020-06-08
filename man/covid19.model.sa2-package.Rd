@@ -4,12 +4,23 @@
 \name{covid19.model.sa2-package}
 \alias{covid19.model.sa2}
 \alias{covid19.model.sa2-package}
-\title{covid19.model.sa2: What the Package Does (One Line, Title Case)}
+\title{covid19.model.sa2: Model Policy and Epidemiological Assumptions of the COVID-19 Pandemic}
 \description{
-What the package does (one paragraph).
+A dynamic microsimulation model of Australia, taking policy changes and
+    epidemiological assumptions about transmissions.
 }
 \author{
 \strong{Maintainer}: Hugh Parsonage \email{hugh.parsonage@gmail.com} (\href{https://orcid.org/YOUR-ORCID-ID}{ORCID})
+
+Authors:
+\itemize{
+  \item Will Mackey
+}
+
+Other contributors:
+\itemize{
+  \item Daniel Lemire (Adapted a header of his to generate the Lehmer PRNG) [contributor]
+}
 
 }
 \keyword{internal}
