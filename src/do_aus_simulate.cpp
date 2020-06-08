@@ -103,13 +103,23 @@ int array4k(int w, int x, int y, int z, int nx, int ny, int nz) {
   return w * (nx * ny * nz) + x * (ny * nz) + y * nz + z;
 }
 
+bool prod_ge_intmax(int a, int b, int c, int d) {
+  double prod = 1;
+  int inputs[4] = {a, b, c, d};
+  for (int i = 0; i < 4; ++i) {
+    prod *= ((double) inputs[i]);
+    if (prod > INT_MAX) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // [[Rcpp::export]]
 IntegerVector test_array4k(IntegerVector w, IntegerVector x, IntegerVector y, IntegerVector z,
                            int nw, int nx, int ny, int nz) {
-  // purely to test array4k
-  R_xlen_t n = nw * nx * ny * nz;
-  if (n >= INT_MAX) {
-    stop("test_array4k only available for integer-length.");
+  if (prod_ge_intmax(nw, nx, ny, nz)) {
+    stop("test_array4k only available for integer-length outputs.");
   }
 
   if (n != w.length() ||
