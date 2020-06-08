@@ -2177,6 +2177,8 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
   // Personal epidemiological parameters
   double resistance_threshold = Epi["resistance_threshold"];
+
+  // TODO: Variable is a misnomer, is true when person is *not* resistant (i.e. infectable)
   const std::vector<unsigned char> Resistant = do_lemire_char_par(N, resistance_threshold, nThread, false);
 
 
