@@ -36,6 +36,8 @@ test_that("which_last", {
 test_that("rep_each", {
   expect_identical(rep_each(1:3, 15),
                    rep(1:3, each = 5))
+
+  expect_identical(do_rep(2:5), rep(2:5, 2:5))
 })
 
 
