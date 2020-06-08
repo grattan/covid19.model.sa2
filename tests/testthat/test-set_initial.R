@@ -62,12 +62,17 @@ test_that("Set initial by state using a wide tribble", {
       "OTH",     100,         0,     0,       0)
 
   library(data.table)
+  clear_dataEnv()
   S <- simulate_sa2(5,
-                    .first_day = "2020-04-01",
+                    .first_day = "2020-06-01",
                     InitialStatus = manual_initial_status,
-                    EpiPars = set_epipars(incubation_distribution = "dirac", incubation_mean = 100L),
-                    PolicyPars = set_policy_no_restrictions())
-  n_act_active <- S$Statuses[and3s(state == 8, Status %in% 1:3), .N]
+                    EpiPars = set_epipars(incubation_distribution = "dirac",
+                                          incubation_mean = 100L),
+                    PolicyPars = set_policy_no_restrictions(),
+                    use_dataEnv = FALSE)
+  n_act_active <- S$Statuses[and3s(state == 8, V1 == status_insymp()), .N]
+  # Account for quarantine
+  n_act_active <- n_act_active / (1 - p_quarantine_by_date("2020-06-01"))
   expect_true(n_act_active %between% c(900, 1100))
 
 })

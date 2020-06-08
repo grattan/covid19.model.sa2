@@ -64,3 +64,35 @@ test_that("Able to model partial return to school", {
   expect_true(is.numeric(NSWPupils1DayAWeek_C))
 
 })
+
+test_that("coverage of school attendance", {
+  skip_if_not_installed("withr")
+  skip_if_not_installed("data.table")
+  library(data.table)
+  no_school_ld <- set_lockdown_triggers__schools(do_school_lockdown = FALSE)
+
+  withr::with_seed(28, {
+    S1 <- simulate_sa2(100,
+                       returner = 1,
+                       .first_day = "2020-05-01",
+                       EpiPars = set_epipars(q_school = 1/100),
+                       PolicyPars = set_policypars(schools_open = TRUE,
+                                                   do_contact_tracing = FALSE,
+                                                   school_days_per_wk = 1L,
+                                                   lockdown_triggers__schools = no_school_ld))
+  })
+  withr::with_seed(28, {
+    S4 <- simulate_sa2(100,
+                       returner = 1,
+                       .first_day = "2020-05-01",
+                       EpiPars = set_epipars(q_school = 1/100),
+                       PolicyPars = set_policypars(schools_open = TRUE,
+                                                   do_contact_tracing = FALSE,
+                                                   school_days_per_wk = 4L,
+                                                   lockdown_triggers__schools = no_school_ld))
+  })
+  merge.data.table(S1, S4, by = c("Day", "Status")) %>%
+    .[Status == "NoSymp"] %>%
+    tail %>%
+    .[, expect_lte(N.x, N.y), by = .(Day)]
+})

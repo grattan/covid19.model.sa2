@@ -282,6 +282,9 @@ test_that("other SA2", {
 
 test_that("contact tracing tests can be capped", {
   skip_if_not(is64bit())
+  skip_if_not_installed("withr")
+  skip_if_not_installed("data.table")
+  skip_if_not_installed("magrittr")
   manual_initial_status <-
     tibble::tribble(
       ~state, ~active, ~critical, ~dead, ~healed,
