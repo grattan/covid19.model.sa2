@@ -280,5 +280,54 @@ test_that("other SA2", {
 })
 
 
+test_that("contact tracing tests can be capped", {
+  skip_if_not(is64bit())
+  manual_initial_status <-
+    tibble::tribble(
+      ~state, ~active, ~critical, ~dead, ~healed,
+      "NSW",     100,         9,     6,      30,
+      "VIC",      40,         5,     4,      20,
+      "QLD",      30,         2,     3,      10,
+      "SA",      10,         0,     0,      10,
+      "WA",      12,         0,     0,      10,
+      "TAS",      20,         0,     0,       1,
+      "NT",       1,         0,     0,       3,
+      "ACT",    2000,         0,     0,       1,
+      "OTH",     100,         0,     0,       0)
+  library(magrittr)
+  library(data.table)
+  S_by_tests <-
+    lapply(rep(c(10L, 1000L), each = 5), function(tests) {
+      withr::with_seed(1, {
+        simulate_sa2(60,
+                     returner = 2,
+                     .first_day = "2020-06-01",
+                     InitialStatus = manual_initial_status,
+                     EpiPars = set_epipars(q_supermarket = 1/1000,
+                                           incubation_distribution = "dirac",
+                                           incubation_mean = 8L),
+                     PolicyPars = set_policypars(tests_by_state = rep(tests, 10L),
+                                                 cafes_open = FALSE)) %>%
+          .[, n_tests := tests] %>%
+          .[]
+      })
+    }) %>%
+    rbindlist(idcol = "id")
+
+  S_by_tests %>%
+    .[, id2 := (id - 1L) %% 5L] %>%
+    .[]
+
+  S_by_tests %>%
+    .[Day >= 24] %>%
+    .[State == "ACT" & Status == "Isolated"] %>%
+    .[, expect_lte(first(N), last(N),
+                   label = paste0("@id,Day ", .BY[["id2"]], ",", .BY[["Day"]],
+                                  " = ", first(N))),
+      by = .(id2, Day)]
+
+})
+
+
 
 
