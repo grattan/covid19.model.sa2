@@ -128,7 +128,7 @@ IntegerVector test_array4k(IntegerVector w, IntegerVector x, IntegerVector y, In
       n != x.length() ||
       n != y.length() ||
       n != z.length()) {
-    stop("Internal error: lengths differ.");
+    stop("Internal error: lengths differ."); // nocov
   }
   IntegerVector out = no_init(nw * nx * ny * nz);
   for (R_xlen_t i = 0; i < n; ++i) {
@@ -137,7 +137,7 @@ IntegerVector test_array4k(IntegerVector w, IntegerVector x, IntegerVector y, In
     int yi = y[i];
     int zi = z[i];
     if (wi >= nw || xi >= nx || yi >= ny || zi >= nz) {
-      stop("Internal error: wi >= nw || xi >= nx || yi >= ny || zi >= nz");
+      stop("Internal error: wi >= nw || xi >= nx || yi >= ny || zi >= nz"); // nocov
     }
     out[i] = array4k(w[i], x[i], y[i], z[i], nx, ny, nz);
   }
@@ -174,17 +174,17 @@ void contact_tracing(IntegerVector Status,
 #ifdef _OPENMP
   if (day == 0 && (nThread < 1 || nThread > omp_get_num_procs())) {
     // lots of large ints nearby!
-    stop("Internal error: nThread out of range");
+    stop("Internal error: nThread out of range"); // nocov
   }
 #endif
 
   if (day == 0) {
     int n_pupils = schoolsIndex.size();
     if (n_pupils != NPUPILS) {
-      stop("Internal error(contact tracing): n_pupils != NPUPILS");
+      stop("Internal error(contact tracing): n_pupils != NPUPILS"); // nocov
     }
     if (ct_success < 0 || ct_success > 1) {
-      stop("Internal error(contact tracing): ct_success < 0 || ct_success");
+      stop("Internal error(contact tracing): ct_success < 0 || ct_success"); // nocov
     }
   }
 
@@ -216,10 +216,10 @@ void contact_tracing(IntegerVector Status,
   // tests_performed[0] = all of australia
   int tests_performed[NSTATES1] = {0};
   if (TestsAvbl.length() != NSTATES1) {
-    stop("Internal error: TestsAvbl.length() != NSTATES + 1.");
+    stop("Internal error: TestsAvbl.length() != NSTATES + 1."); // nocov
   }
   if (NSTATES1 != 10) {
-    stop("Internal error. NSTATES1 != 10");
+    stop("Internal error. NSTATES1 != 10"); // nocov
   }
 
   // until OpenMP 4.5
@@ -461,12 +461,12 @@ void infect_supermarkets(IntegerVector Status,
                          const double supermarket_beta_shape2,
                          const bool verbose = false) {
   if (day < 0) {
-    stop("Internal error(infect_supermarkets): day < 0");
+    stop("Internal error(infect_supermarkets): day < 0"); // nocov
   }
   if (day == 0) {
     // poor man's assert()
     if (SupermarketTypical.length() != N) {
-      stop("Internal error(infect_supermarkets): SupermarketTypical.length() != N");
+      stop("Internal error(infect_supermarkets): SupermarketTypical.length() != N"); // nocov
     }
     int maxSupermarketBySA2 = SupermarketTypical[0];
 #pragma omp parallel for num_threads(nThread) reduction(max : maxSupermarketBySA2)
@@ -479,11 +479,11 @@ void infect_supermarkets(IntegerVector Status,
     // note maxSupermarketBySA2 is the index and MAXSUPER.. is the array size
     // so strict inequality is correct assertion
     if (maxSupermarketBySA2 > MAXSUPERMARKETSBYSA2) {
-      stop("Internal error(infect_supermarkets): maxSupermarketBySA2 > MAXSUPERMARKETSBYSA2");
+      stop("Internal error(infect_supermarkets): maxSupermarketBySA2 > MAXSUPERMARKETSBYSA2"); // nocov
     }
 
     if (SUPERMARKET_WEEKDAY_HRS < SUPERMARKET_WEEKEND_HRS) {
-      stop("Internal error(infect_supermarkets): SUPERMARKET_WEEKDAY_HRS < SUPERMARKET_WEEKEND_HRS");
+      stop("Internal error(infect_supermarkets): SUPERMARKET_WEEKDAY_HRS < SUPERMARKET_WEEKEND_HRS"); // nocov
     }
 
   }
@@ -619,15 +619,15 @@ void infect_place(int place_id,
     }
 
     if (SA2_firsts.length() != NSA2 || SA2_finals.length() != NSA2) {
-      stop("Internal error(infect_place): SA2_firsts.length() != NSA2 || SA2_finals.length() != NSA2");
+      stop("Internal error(infect_place): SA2_firsts.length() != NSA2 || SA2_finals.length() != NSA2"); // nocov
     }
 
     // make sure there is an entry for every SA2, not just those with places
     if (nPlacesBySA2.length() != NSA2) {
-      stop("Internal error(infect_place): nPlacesBySA2.length() != NSA2");
+      stop("Internal error(infect_place): nPlacesBySA2.length() != NSA2"); // nocov
     }
     if (minPlaceIdBySA2.length() != NSA2) {
-      stop("Internal error(infect_place): minPlaceIdBySA2.length() != NSA2");
+      stop("Internal error(infect_place): minPlaceIdBySA2.length() != NSA2"); // nocov
     }
 
     int n_places = 0;
@@ -636,18 +636,18 @@ void infect_place(int place_id,
     }
 
     if (n_places > MAX_N_PLACES_TOTAL) {
-      stop("Internal error(infect_place): n_places > MAX_N_PLACES_TOTAL");
+      stop("Internal error(infect_place): n_places > MAX_N_PLACES_TOTAL"); // nocov
     }
 
     if (NTODAY != TodaysHz.length()) {
-      stop("Internal error(infect_place): NTODAY != TodaysHz.length().");
+      stop("Internal error(infect_place): NTODAY != TodaysHz.length()."); // nocov
     }
     if (NTODAY != TodaysK.length()) {
-      stop("Internal error(infect_place): NTODAY != TodaysK.length().");
+      stop("Internal error(infect_place): NTODAY != TodaysK.length()."); // nocov
     }
 
     if (Age.length() != N) {
-      stop("Internal error(infect_place): Age.length() != N.");
+      stop("Internal error(infect_place): Age.length() != N."); // nocov
     }
 
     int observed_min_age = 100;
@@ -658,7 +658,7 @@ void infect_place(int place_id,
       observed_max_age = (Age[i] > observed_max_age) ? Age[i] : observed_max_age;
     }
     if (observed_min_age != 0 || observed_max_age != 100) {
-      stop("Internal error(infect_place): Age was not in 0:100.");
+      stop("Internal error(infect_place): Age was not in 0:100."); // nocov
     }
 
 
@@ -681,7 +681,7 @@ void infect_place(int place_id,
   // int i_places[n_places][hrs_open]
   // because 'C++ forbids variable size array'
   if (max_persons_per_place >= 255) {
-    stop("Internal error: max_persons_per_place > 255, exceeding unsigned char limit.");
+    stop("Internal error: max_persons_per_place > 255, exceeding unsigned char limit."); // nocov
   }
   unsigned char max_persons = max_persons_per_place & 255;
 
@@ -894,17 +894,17 @@ void infect_dzn(IntegerVector Status,
       }
     }
     if (max_dzn >= NDZN) {
-      stop("Internal error(infect_dzn): wmax_dzn >= NDZN");
+      stop("Internal error(infect_dzn): wmax_dzn >= NDZN"); // nocov
     }
 
     if (max_wid >= n_workplaces) {
-      stop("Internal error(infect_dzn): wid_supremeum0 > WID_SUPREMUM");
+      stop("Internal error(infect_dzn): wid_supremeum0 > WID_SUPREMUM"); // nocov
     }
     if (TodaysK.length() != NTODAY) {
       stop("TodaysK.length() != NTODAY");
     }
     if (nColleagues.length() != N) {
-      stop("Internal error(infect_dzn): nColleagues.length() != N");
+      stop("Internal error(infect_dzn): nColleagues.length() != N"); // nocov
     }
   }
 
@@ -930,7 +930,7 @@ void infect_dzn(IntegerVector Status,
 
     int widi = wid[i]; // if wid[i] is NA widi[i] - 1 is UBD
     if (day == 0 && widi <= 0) {
-      stop("Internal error (day == 0 && widi <= 0)).");
+      stop("Internal error (day == 0 && widi <= 0))."); // nocov
     }
     int widi0 = widi - 1;
 
@@ -1078,14 +1078,14 @@ void infect_school(IntegerVector Status,
       stop("nThread <= 0");
     }
     if (!school_days_per_wk.containsElementNamed("week15combns")) {
-      stop("Internal error: school_days_per_wk did not contain 'week15combns'.");
+      stop("Internal error: school_days_per_wk did not contain 'week15combns'."); // nocov
     }
     if (school_days_per_wk.length() < NSTATES1) {
       Rcout << "school_days_per_wk.length() = " << school_days_per_wk.length();
       stop("school_days_per_wk had wrong length");
     }
     if (AttendsWday.length() != (NPUPILS * 5)) {
-      stop("Internal error: AttendsWday.length() != (NPUPILS * 5)");
+      stop("Internal error: AttendsWday.length() != (NPUPILS * 5)"); // nocov
     }
     bool max_too_large = false;
     bool min_too_small = false;
@@ -1100,10 +1100,10 @@ void infect_school(IntegerVector Status,
     }
 
     if (min_too_small) {
-      stop("Internal error(infect_schools): min_too_small.");
+      stop("Internal error(infect_schools): min_too_small."); // nocov
     }
     if (max_too_large) {
-      stop("Internal error(infect_schools): max_too_large");
+      stop("Internal error(infect_schools): max_too_large"); // nocov
     }
 
   }
@@ -1171,7 +1171,7 @@ void infect_school(IntegerVector Status,
   for (int s = 0; s < NSTATES1; ++s) {
     IntegerVector sDaysPerWk = school_days_per_wk[s];
     if (sDaysPerWk.length() != 21) {
-      stop("Internal error: sDaysPerWk.length() != 21.");
+      stop("Internal error: sDaysPerWk.length() != 21."); // nocov
     }
     for (int a = 0; a < 21; ++a) {
       int da = sDaysPerWk[a];
@@ -1588,7 +1588,7 @@ void infect_major_event(IntegerVector Status,
   int n_attendees[255] = {};  // number of attendees of event
   int i_attendees[255] = {};  // number of infected attendees
   if (n_major_events_today >= 255) {
-    Rcerr << "Internal error (infect_major_events): ";
+    Rcerr << "Internal error (infect_major_events): "; // nocov
     Rcerr << "`n_major_events_today = " << n_major_events_today << "` >= 255";
     stop("i_attendees exceeded array.");
   }
@@ -1857,7 +1857,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 #ifdef _OPENMP
   if (nThread < 1 || nThread > omp_get_num_procs()) {
-    stop("Internal error: nThread out of range");
+    stop("Internal error: nThread out of range"); // nocov
   }
 #endif
 
@@ -1888,7 +1888,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 
   if (nPlacesByDestType.length() <= 98) {
-    stop("Internal error: FreqsByDestType.length < 98");
+    stop("Internal error: FreqsByDestType.length < 98"); // nocov
   }
 
   IntegerVector nSupermarketsBySA2 = nPlacesByDestType[97];
@@ -1896,14 +1896,14 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 
   if (N != nSupermarketsAvbl.length()) {
-    stop("Internal error: nSupermarketsAvbl.length mismatch");
+    stop("Internal error: nSupermarketsAvbl.length mismatch"); // nocov
   }
   if (NSA2 != nSupermarketsBySA2.length()) {
-    stop("Internal error: nSupermarketsBySA2.length() != NSA2.");
+    stop("Internal error: nSupermarketsBySA2.length() != NSA2."); // nocov
   }
 
   if (PlaceTypeBySA2.length() > 1) {
-    stop("Internal error: PlaceTypeBySA2 not implemented yet.");
+    stop("Internal error: PlaceTypeBySA2 not implemented yet."); // nocov
   }
 
 
@@ -1954,7 +1954,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
   const bool only_Year12  = Policy["only_Year12"];
 
   if (!Policy.containsElementNamed("school_days_per_wk")) {
-    stop("Internal error: 'Policy' did not contain element 'school_days_per_wk'.");
+    stop("Internal error: 'Policy' did not contain element 'school_days_per_wk'."); // nocov
   }
   List school_days_per_wk = Policy["school_days_per_wk"];
 
@@ -2107,7 +2107,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
         hhIndex.push_back(i);
         i += HouseholdSize[i];
       } else {
-        stop("Internal error: hhIndex/HouseholdSize mismatch.");
+        stop("Internal error: hhIndex/HouseholdSize mismatch."); // nocov
       }
     }
   }
@@ -2356,7 +2356,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
     if (returner == 2) {
       if (NSTATES != 9) {
-        stop("Internal error: NSTATES != 9");
+        stop("Internal error: NSTATES != 9"); // nocov
       }
       // int out2d[63] = {};
       // by state
@@ -2503,10 +2503,10 @@ List do_au_simulate(IntegerVector StatusOriginal,
       }
     }
     if (day == 0 && Incubation.length() != N) {
-      stop("Internal error: Incubation.length() != N");
+      stop("Internal error: Incubation.length() != N"); // nocov
     }
     if (day == 0 && Illness.length() != N) {
-      stop("Internal error: Incubation.length() != N");
+      stop("Internal error: Incubation.length() != N"); // nocov
     }
 
     // First, examine all individuals infected last night
