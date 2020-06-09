@@ -400,7 +400,45 @@ test_that(paste(as.character(Sys.time()), "Multipolicy-historical"), {
 })
 
 test_that(paste(as.character(Sys.time()), "early return"), {
+  skip_if_not(is64bit())
+  skip_if_not_installed("data.table")
+  library(data.table)
   S <- simulate_sa2(100, returner = 1L, PolicyPars = set_policypars(supermarkets_open = FALSE))
+  expect_equal( S[Day == 100][Status %in% c("NoSymp", "InSymp"), sum(N)], 0L)
+})
+
+test_that(paste(as.character(Sys.time()), "workplace caps bind"), {
+  skip_if_not(is64bit())
+  skip_if_not_installed("tibble")
+  skip_on_travis()  # too much memory required
+  skip_on_cran()  # nThread
+  manual_initial_status <-
+    tibble::tribble(
+      ~state, ~active, ~critical, ~dead, ~healed,
+      "NSW",     10000,         9,     6,      30,
+      "VIC",      10000,         5,     4,      20,
+      "QLD",      1000,         2,     3,      10,
+      "SA",      10,         0,     0,      10,
+      "WA",      12,         0,     0,      10,
+      "TAS",      20,         0,     0,       1,
+      "NT",       1,         0,     0,       3,
+      "ACT",    2000,         0,     0,       1,
+      "OTH",     100,         0,     0,       0)
+
+  S <- simulate_sa2(55,
+                    returner = 0,
+                    InitialStatus = manual_initial_status,
+                    EpiPars = set_epipars(q_workplace = 0.1,
+                                          a_workplace_rate = 1,
+                                          q_supermarket = 1/550,
+                                          incubation_mean = 25,
+                                          incubation_distribution = "dirac"),
+                    Policy = set_policypars(workplaces_open = 1,
+                                            workplace_size_max = 8),
+                    nThread = 10)
+  sw <- status_workplaces()
+  expect_equal(S$Statuses[and3s(nColleagues >= 10, Source == sw), .N], 0)
+  expect_gt(S$Statuses[and3s(nColleagues < 8, Source == sw), .N], 0)
 })
 
 
