@@ -217,18 +217,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// Next
-IntegerVector Next(IntegerVector x, int k);
-RcppExport SEXP _covid19_model_sa2_Next(SEXP xSEXP, SEXP kSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
-    Rcpp::traits::input_parameter< int >::type k(kSEXP);
-    rcpp_result_gen = Rcpp::wrap(Next(x, k));
-    return rcpp_result_gen;
-END_RCPP
-}
 // do_exp_dbl2int
 IntegerVector do_exp_dbl2int(DoubleVector x, int nThread);
 RcppExport SEXP _covid19_model_sa2_do_exp_dbl2int(SEXP xSEXP, SEXP nThreadSEXP) {
@@ -708,7 +696,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_test_array4k", (DL_FUNC) &_covid19_model_sa2_test_array4k, 8},
     {"_covid19_model_sa2_do_rep", (DL_FUNC) &_covid19_model_sa2_do_rep, 2},
     {"_covid19_model_sa2_do_au_simulate", (DL_FUNC) &_covid19_model_sa2_do_au_simulate, 30},
-    {"_covid19_model_sa2_Next", (DL_FUNC) &_covid19_model_sa2_Next, 2},
     {"_covid19_model_sa2_do_exp_dbl2int", (DL_FUNC) &_covid19_model_sa2_do_exp_dbl2int, 2},
     {"_covid19_model_sa2_do_lag_int", (DL_FUNC) &_covid19_model_sa2_do_lag_int, 2},
     {"_covid19_model_sa2_do_seqN_N", (DL_FUNC) &_covid19_model_sa2_do_seqN_N, 3},

@@ -40,6 +40,3 @@ test_that(paste(as.character(Sys.time()), "rep_each"), {
   expect_identical(do_rep(2:5), rep(2:5, 2:5))
 })
 
-
-
-
