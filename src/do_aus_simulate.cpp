@@ -208,7 +208,7 @@ void contact_tracing(IntegerVector Status,
 
   for (int s = 0; s < NSTATES1; ++s) {
     if (TestsAvbl[s] < 0) {
-      stop("TestsAvbl[s] < 0 was negative.");
+      stop("Internal error(contact tracing): TestsAvbl[s] < 0 was negative."); // # nocov
     }
     tests_avbl[s] = TestsAvbl[s];
   }
@@ -216,10 +216,10 @@ void contact_tracing(IntegerVector Status,
   // tests_performed[0] = all of australia
   int tests_performed[NSTATES1] = {0};
   if (TestsAvbl.length() != NSTATES1) {
-    stop("Internal error: TestsAvbl.length() != NSTATES + 1."); // # nocov
+    stop("Internal error(contact tracing): TestsAvbl.length() != NSTATES + 1."); // # nocov
   }
   if (NSTATES1 != 10) {
-    stop("Internal error. NSTATES1 != 10"); // # nocov
+    stop("Internal error(contact tracing): NSTATES1 != 10"); // # nocov
   }
 
   // until OpenMP 4.5
@@ -602,7 +602,7 @@ void infect_place(int place_id,
       place_id == PLACEID_STORE) {
     // don't support these
     // void function so just return early
-    return;
+    return; // # nocov
   }
 
   List minPlaceID_nPlaces = minPlaceID_nPlacesByDestType[place_id];
@@ -757,22 +757,12 @@ void infect_place(int place_id,
     int start_sa2i = SA2_firsts[sa2i];
     int end_sa2i   = SA2_finals[sa2i];
     if (start_sa2i == end_sa2i) {
-      continue;
+      continue; // # nocov
     }
 
     int min_place_id = minPlaceIdBySA2[sa2i]; // 0-indexed
 
     for (int i = start_sa2i; i < end_sa2i; ++i) {
-      // sa2 is ordered
-      // if we are below continue; if above skip
-      if (shortSA2[i] != sa2i) {
-        if (shortSA2[i] < sa2i) {
-          continue;
-        } else {
-          break;
-        }
-      }
-
       // healed
       if (!Status[i]) {
         continue;
@@ -887,7 +877,7 @@ void infect_dzn(IntegerVector Status,
       stop("Internal error(infect_dzn): wid_supremeum0 > WID_SUPREMUM"); // # nocov
     }
     if (TodaysK.length() != NTODAY) {
-      stop("TodaysK.length() != NTODAY");
+      stop("Internal error(infect_dzn): TodaysK.length() != NTODAY"); // # nocov
     }
     if (nColleagues.length() != N) {
       stop("Internal error(infect_dzn): nColleagues.length() != N"); // # nocov
@@ -1056,15 +1046,12 @@ void infect_school(IntegerVector Status,
 
   // first school day may not be day 0
   if (day == 0 || (day < 3 && wday == 1)) {
-    if (nThread <= 0) {
-      stop("nThread <= 0");
-    }
     if (!school_days_per_wk.containsElementNamed("week15combns")) {
       stop("Internal error: school_days_per_wk did not contain 'week15combns'."); // # nocov
     }
     if (school_days_per_wk.length() < NSTATES1) {
-      Rcout << "school_days_per_wk.length() = " << school_days_per_wk.length();
-      stop("school_days_per_wk had wrong length");
+      Rcerr << "school_days_per_wk.length() = " << school_days_per_wk.length();
+      stop("Internal error: school_days_per_wk had wrong length. Must be school_days_per_wk.length() < NSTATES1"); // # nocov
     }
     if (AttendsWday.length() != (NPUPILS * 5)) {
       stop("Internal error: AttendsWday.length() != (NPUPILS * 5)"); // # nocov
@@ -1105,7 +1092,7 @@ void infect_school(IntegerVector Status,
   }
   // 0 -> AUS i.e. all schools are locked down
   if (areSchoolsLockedDown[0]) {
-    return;
+    return; // # nocov
   }
   const bool anySchoolsLockedDown =
     areSchoolsLockedDown[1] ||
@@ -1163,7 +1150,7 @@ void infect_school(IntegerVector Status,
 
   const int wday0 = wday - 1;
   if (wday0 < 0 || wday0 >= 5) {
-    stop("'wday' out of range (1:5).");
+    stop("Internal error(infect_school): 'wday' out of range (1:5)."); // # nocov
   }
 
 
@@ -1453,7 +1440,7 @@ void infect_other_sa2(IntegerVector Status,
                       double p_goes_outside = 0.01,
                       double rate = 1) {
   if (p_goes_outside < 0 || p_goes_outside > 1) {
-    stop("wrong range.");
+    stop("Internal error(infect_other_sa2): wrong range of p.");  // # nocov
   }
   if (p_goes_outside == 0) {
     return;
@@ -1570,8 +1557,8 @@ void infect_major_event(IntegerVector Status,
   int i_attendees[255] = {};  // number of infected attendees
   if (n_major_events_today >= 255) {
     Rcerr << "Internal error (infect_major_events): "; // # nocov
-    Rcerr << "`n_major_events_today = " << n_major_events_today << "` >= 255";
-    stop("i_attendees exceeded array.");
+    Rcerr << "`n_major_events_today = " << n_major_events_today << "` >= 255"; // # nocov
+    stop("i_attendees exceeded array."); // # nocov
   }
 
 
