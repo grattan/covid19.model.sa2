@@ -381,20 +381,20 @@ test_that(paste(as.character(Sys.time()), "Multipolicy-historical"), {
       "NT",       1,         0,     0,       3,
       "ACT",    2000,         0,     0,       1,
       "OTH",     100,         0,     0,       0)
-  S <- simulate_sa2(60,
+  S <- simulate_sa2(40,
                     returner = 3,
                     InitialStatus = manual_initial_status,
-                    EpiPars = set_epipars(q_school = 0.01,
+                    EpiPars = set_epipars(q_school = 0.1,
                                           a_schools_rate = 1,
                                           incubation_mean = 100,
                                           incubation_distribution = "dirac",
                                           a_workplace_rate = 1,
-                                          q_workplace = 1,
+                                          q_workplace = 0.5,
                                           supermarket_beta_shape1 = 3,
                                           supermarket_beta_shape2 = 3,
-                                          q_supermarket = 1/500),
+                                          q_supermarket = 1/1000),
                     MultiPolicy = "historical",
-                    .first_day = "2020-06-01")
+                    .first_day = "2020-06-02")
   # very basic: we have school infections
   expect_true(source_school() %in% S$InfectionSource)
 })

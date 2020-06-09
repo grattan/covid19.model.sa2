@@ -19,7 +19,8 @@ void assert_is_monday(const int & day) {
 // [[Rcpp::export]]
 CharacterVector InstallTime() {
   CharacterVector out(1);
-  out[0] = tempo;
+  std::string tempo1 = __TIME__;
+  out[0] = tempo1;
   return out;
 }
 

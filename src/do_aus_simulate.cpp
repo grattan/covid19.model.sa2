@@ -1995,17 +1995,39 @@ List do_au_simulate(IntegerVector StatusOriginal,
   // These are designed to reflect multiple policies throught the simulation period
   validate_multipolicy(MultiPolicy);
   unsigned char n_multipolicies = MultiPolicy.length();
-  const bool use_multipolicy = MultiPolicy.length() > 0;
+  const bool use_multipolicy = MultiPolicy.length() > 1;
   unsigned char multipolicy = 0; // the index of the multipolicy, increments on policy change
   int multipolicy_changes_yday[255] = {};
   for (unsigned char m = 0; m < n_multipolicies; ++m) {
     if (use_multipolicy) {
       List PolicyM = MultiPolicy[m];
-      multipolicy_changes_yday[m] = PolicyM["yday_start"];
+      int yday_startm = PolicyM["yday_start"];
+      multipolicy_changes_yday[m] = yday_startm;
     } else {
       multipolicy_changes_yday[m] = INT_MAX;
     }
   }
+
+  // 3 options:
+  // yday_start <= second multipolicy  --->  nothing to do
+  // second < yday_start < nth some n  ---> go to n - 1
+  // yday_start > all -- > go to n
+  if (use_multipolicy) {
+    if (yday_start >= multipolicy_changes_yday[n_multipolicies - 1]) {
+      multipolicy = n_multipolicies - 1;
+    } else {
+      if (n_multipolicies > 2 && yday_start > multipolicy_changes_yday[1]) {
+        for (unsigned char m = 0; m < n_multipolicies; ++m) {
+          if (yday_start < multipolicy_changes_yday[m]) {
+            multipolicy = m;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+
 //
 //   LogicalVector multi_schools_open =
 //     (use_multipolicy) ? MultiPolicy["schools_open"] : Policy["schools_open"];
@@ -2404,13 +2426,18 @@ List do_au_simulate(IntegerVector StatusOriginal,
     //  1. Is a multipolicy in effect?
     //  2. Is the first date past?
     //  3. Apply changes as required
-    if (use_multipolicy && multipolicy_changes_yday[multipolicy] == yday) {
-      List NewPolicy = MultiPolicy[multipolicy];
-      if (NewPolicy.containsElementNamed("schools_open")) {
-        schools_open = NewPolicy["schools_open"];
+    if (use_multipolicy) {
+      // multipolicy may be after given yday
+
+
+      if (multipolicy_changes_yday[multipolicy] == yday) {
+        List NewPolicy = MultiPolicy[multipolicy];
+        if (NewPolicy.containsElementNamed("schools_open")) {
+          schools_open = NewPolicy["schools_open"];
+        }
+        workplaces_open = NewPolicy["workplaces_open"];
+        ++multipolicy;
       }
-      workplaces_open = NewPolicy["workplaces_open"];
-      ++multipolicy;
     }
 
 

@@ -2,7 +2,9 @@
 
 * Age-based lockdowns work for ages up to 100
 * Default "historical" policy parameters are cumulative, rather than only including 
-  the policies that recently changed.
+  the policies that recently changed.  Multipolicies which start before the first yday
+  are now handled correctly (rather than waiting for the first multipolicy 
+  which never arrives)
 
 
 # 0.23.0
