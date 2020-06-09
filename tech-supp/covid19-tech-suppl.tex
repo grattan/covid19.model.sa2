@@ -336,35 +336,70 @@ is the total number of attendees. This value inflates the threshold below which 
 or not. So the higher the proportion of infected individuals at a large event the more likely each
 susceptible attendee is to be infected.
 
+\section{Contact tracing}
+At the end of each day contact tracing is performed. 
+The effect of contact tracing is that contacts of infected
+persons who would otherwise be susceptible 
+individuals become isolated after successfully being traced.
+
+Asymptomatic individuals have a 1\% chance of seeking a test and 
+100\% of symptomatic individuals seek a test. The algorithm goes
+through each infected individual, who is not in isolation. If the individual has already 
+been tested and the test result was positive, the individual is not
+retested. If the previous test result was a (false) negative, the person
+has a 1/32 chance of being retested on any day while infected. 
+An infected person has an  20\% chance
+of a false negative that is independently generated each day for each person.
+
+For each state, and for Australia overall, the number of tests so performed
+are counted. If for a particular state, or Australia overall,
+the number of tests exceed the user-supplied cap on the number
+of tests, a random fraction of the tested individuals are `untested' 
+so as to lower the count to below the cap. For the remaining tested individuals
+the \code{InfectedOn} column records the date of their test, and is signed
+by the test outcome (positive or negative).
+
+Two parameters affect the delay between showing symptoms of the 
+disease and the day on which contact tracing has effect: 
+\code{days\_before\_test} and \code{days\_to\_notify}. These are set
+relative to the end of each individual's incubation period. Contact 
+tracing can be successful or not, depending on a user-supplied probability
+of success. If contact tracing is modelled to succeed for a particular 
+positive test recipient,
+contact tracing is performed on the following individuals. 
+If the person is a member of a multiperson
+household, all members are isolated. If the person is a school pupil, all
+pupils at that school of the same age are also isolated. (Isolation is permanent.)
+
 
 \onecolumn
-\section{Default epidemiological}
+\section{Default epidemiological parameters}
 
 \begin{longtable}{llp{0.5\linewidth}}
 \toprule
 \textbf{Parameter} & \textbf{Default} & \textbf{Comment} \\
 \midrule
 Incubation distribution & Poisson \\
-Incubation mean & 5 days \\
+Incubation mean & 8 days \\
 Illness distribution & Poisson \\ 
 Illness mean & 15 days \\
-\code{a\_workplace\_rate} & 7\% & Probability that a workplace can support reinfection \\
-\code{a\_household\_rate} & 15\% & \\ %Probability that a household can support reinfection \\
-\code{a\_schools\_rate} & 15\% & \\ %Probability that a school can support reinfection \\ 
+\code{a\_workplace\_rate} & 20\% & Probability that a workplace can support reinfection \\
+\code{a\_household\_rate} & 5\% & \\ %Probability that a household can support reinfection \\
+\code{a\_schools\_rate} & 40\% & \\ %Probability that a school can support reinfection \\ 
 \code{q\_workplace} & 1/100 & Transmission probability: the chance that an individual may be
 infected, given the individual attends a workplace with an infected individual on the same
-day as the infected individual attends work. \\
-\code{q\_household} & 1/20 \\
-\code{q\_school} & 1/3000 & \\
+day as the infected individual attends work \\
+\code{q\_household} & 1/10 \\
+\code{q\_school} & 1/5000 & \\
 \code{q\_supermarket} & 1/1000 & \\
-\code{q\_places} & 1/500 & \\
+\code{q\_places} & 1/1000 & \\
 \code{q\_major\_event} & 1/5000 & \\
 \code{resistance\_threshold} & 400 & The number of people out of 1000 who are naturally resistant to the virus\\
-\code{p\_asympto} & 48\% & The proportion of cases that do not develop symptoms \\
-\code{p\_critical} & 2\% & The proportion of symptomatic cases that become critical.\\
-\code{p\_death} & 1\% & The proportion of critical cases that die. \\
+\code{p\_asympto} & 35\% & The proportion of cases that do not develop symptoms \\
+\code{p\_critical} & 1.7/4.5/7.4\% & The proportion of symptomatic cases that become critical, ages 0-49/50-64/65+\\
+\code{p\_death} & 2.94/4.44/17.57\% & The proportion of critical cases that die, ages 0-49/50-64/65+ \\
 \code{supermarket\_beta\_shape1,2} & 3, 1 & Parameters to the beta distribution that govern how 
-frequently individual visits a supermarket. \\
+frequently individual visits a supermarket\\
 \bottomrule
 \end{longtable}
 
