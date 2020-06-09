@@ -426,7 +426,7 @@ update_policypars <- function(Policy,
       max(x, na.rm = TRUE) <= 100) {
     # interpret as the ages to lockdown
     out <- integer(101)
-    out[x] <- 1L
+    out[x + 1L] <- 1L
     return(out)
   }
   stop(vname(x), " unfixable at this time.")
