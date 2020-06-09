@@ -1,4 +1,4 @@
-test_that("lockdown triggers work", {
+test_that(paste(as.character(Sys.time()), "lockdown triggers work"), {
   skip_if(is32bit())
   skip_on_travis()
   skip_on_cran()

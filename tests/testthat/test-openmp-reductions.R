@@ -1,6 +1,6 @@
 
 
-test_that("openmp reduces with count_by", {
+test_that(paste(as.character(Sys.time()), "openmp reduces with count_by"), {
   skip_if_not(.Platform$GUI == "RTerm")
 
   # Determine 32 bit or 64 bit

@@ -1,4 +1,4 @@
-test_that("simulate_cache validates and invalidates", {
+test_that(paste(as.character(Sys.time()), "simulate_cache validates and invalidates"), {
   skip_on_cran()
   skip_if(is32bit())
   skip_if_not_installed("withr")

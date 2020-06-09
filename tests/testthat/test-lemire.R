@@ -1,4 +1,4 @@
-test_that("lemire works", {
+test_that(paste(as.character(Sys.time()), "lemire works"), {
   skip_on_cran()
   skip_if(is32bit())
 
@@ -33,7 +33,7 @@ test_that("lemire works", {
 })
 
 
-test_that("lemire_char", {
+test_that(paste(as.character(Sys.time()), "lemire_char"), {
 
   library(data.table)
   if (Sys.getenv("USERNAME") == "hughp") {

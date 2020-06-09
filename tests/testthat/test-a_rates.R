@@ -1,4 +1,4 @@
-test_that("a_household_rate", {
+test_that(paste(as.character(Sys.time()), "a_household_rate"), {
   if (Sys.getenv("USERNAME") == "hughp") {
     cat(as.character(Sys.time()),
         "\ta_rates\t",

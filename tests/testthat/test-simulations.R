@@ -1,4 +1,4 @@
-test_that("simulation works", {
+test_that(paste(as.character(Sys.time()), "simulation works"), {
   skip_on_cran()
   skip_if_not(identical(.Platform$r_arch, "x64"))
   skip_if_not(is64bit())
@@ -27,7 +27,7 @@ test_that("simulation works", {
       COVID_CLOUD_ID <- Sys.getenv("COVID_CLOUD_ID")
       if (COVID_CLOUD_ID != "") {
 
-        if (COVID_CLOUD_ID == "A")
+        if (COVID_CLOUD_ID == "A") {
           if (thr == 1L) {
             next
           } else {
@@ -35,6 +35,7 @@ test_that("simulation works", {
           }
         }
       }
+
 
 
       expect_true(is.logical(env_opt))
@@ -151,7 +152,7 @@ test_that("simulation works", {
 
 })
 
-test_that("prev segfaulting", {
+test_that(paste(as.character(Sys.time()), "prev segfaulting"), {
   skip_on_cran()
   skip_if(is32bit())
   skip_on_travis()
@@ -180,7 +181,7 @@ test_that("prev segfaulting", {
   expect_true(hasName(S[[2]], "V35"))
 })
 
-test_that("a_household_infections", {
+test_that(paste(as.character(Sys.time()), "a_household_infections"), {
   skip_on_cran()
   skip_if_not_installed("data.table")
   skip_if(is32bit())
@@ -203,7 +204,7 @@ test_that("a_household_infections", {
 })
 
 
-test_that("returner 3 no race condition", {
+test_that(paste(as.character(Sys.time()), "returner 3 no race condition"), {
   skip_on_cran()
   skip_on_travis()
   skip_if_not(is64bit())
@@ -215,7 +216,7 @@ test_that("returner 3 no race condition", {
 })
 
 
-test_that("workplaces/schools infect", {
+test_that(paste(as.character(Sys.time()), "workplaces/schools infect"), {
   skip_if_not(is64bit())
   skip_on_travis()
   skip_if_not_installed('covr')
@@ -286,7 +287,7 @@ test_that("workplaces/schools infect", {
   }
 })
 
-test_that("other SA2", {
+test_that(paste(as.character(Sys.time()), "other SA2"), {
   skip_if_not(is64bit())
   S <- simulate_sa2(40,
                     returner = 4L,
@@ -300,7 +301,7 @@ test_that("other SA2", {
 })
 
 
-test_that("contact tracing tests can be capped", {
+test_that(paste(as.character(Sys.time()), "contact tracing tests can be capped"), {
   skip_if_not(is64bit())
   skip_if_not_installed("withr")
   skip_if_not_installed("data.table")
@@ -351,6 +352,18 @@ test_that("contact tracing tests can be capped", {
 
 })
 
+test_that(paste(as.character(Sys.time()), "age-based lockdown"), {
+  skip_if_not(is64bit())
+  skip_if_not_installed("data.table")
+  library(data.table)
+  S <- simulate_sa2(4,
+                    PolicyPars = set_policypars(age_based_lockdown = 65:100,
+                                                do_contact_tracing = FALSE),
+                    EpiPars = set_epipars(q_supermarket = 0.1))
+  a <- S$Statuses[magrittr::and(Age < 65, Status == 32), .N]
 
+  #
+  expect_equal(a, 0)
+})
 
 

@@ -1,4 +1,4 @@
-test_that("Able to model partial return to school", {
+test_that(paste(as.character(Sys.time()), "Able to model partial return to school"), {
   skip_if_not(identical(.Platform$r_arch, "x64"))  # i386 too small memory-wise
 
 
@@ -65,7 +65,7 @@ test_that("Able to model partial return to school", {
 
 })
 
-test_that("coverage of school attendance", {
+test_that(paste(as.character(Sys.time()), "coverage of school attendance"), {
   skip_if_not_installed("withr")
   skip_if_not_installed("data.table")
   library(data.table)
