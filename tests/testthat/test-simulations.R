@@ -24,6 +24,17 @@ test_that("simulation works", {
         }
         options(covid19.model.sa2_nThread = 10L)
       }
+      COVID_CLOUD_ID <- Sys.getenv("COVID_CLOUD_ID")
+      if (COVID_CLOUD_ID != "") {
+
+        if (COVID_CLOUD_ID == "A")
+          if (thr == 1L) {
+            next
+          } else {
+            thr <- 16L
+          }
+        }
+      }
 
 
       expect_true(is.logical(env_opt))
@@ -207,9 +218,13 @@ test_that("returner 3 no race condition", {
 test_that("workplaces/schools infect", {
   skip_if_not(is64bit())
   skip_on_travis()
+  skip_if_not_installed('covr')
   library(hutilscpp)
 
   for (pw in c(0.5, 0.6, 0.7, 0.8, 0.9, 1.0)) {
+    if (covr::in_covr() && ps != 0.9) {
+      next
+    }
     W <- simulate_sa2(100,
                       .first_day = "2020-03-23",
                       returner = 4,
@@ -235,6 +250,9 @@ test_that("workplaces/schools infect", {
   new_infected <- integer(6)
   i <- 1L
   for (ps in c(0.5, 0.6, 0.7, 0.8, 0.9, 1.0)) {
+    if (covr::in_covr() && ps != 0.9) {
+      next
+    }
     S <-
       simulate_sa2(100,
                    .first_day = "2020-04-23",
@@ -263,7 +281,9 @@ test_that("workplaces/schools infect", {
     # The more likely school transmission, the more infections
 
   }
-  expect_false(do_is_unsorted_pint(new_infected))
+  if (covr::in_covr()) {
+    expect_false(do_is_unsorted_pint(new_infected))
+  }
 })
 
 test_that("other SA2", {
