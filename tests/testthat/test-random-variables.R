@@ -1,4 +1,4 @@
-test_that("do_one_unif works", {
+test_that(paste(as.character(Sys.time()), "do_one_unif works"), {
   skip_if(is32bit())
   skip_if_not_installed("withr")
   a <- sapply(1:1e4, function(x) do_one_unif(1L, 1e2L, x %% 2L))

@@ -1,4 +1,4 @@
-test_that("distr2status works", {
+test_that(paste(as.character(Sys.time()), "distr2status works"), {
   ans <- distr2status(N = 1e6L,
                       dead = 10L,
                       healed = 20L,

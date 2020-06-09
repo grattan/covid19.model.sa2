@@ -1,4 +1,4 @@
-test_that("test_array4k works", {
+test_that(paste(as.character(Sys.time()), "test_array4k works"), {
   skip_if_not_installed("data.table")
   library(data.table)
 

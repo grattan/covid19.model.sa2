@@ -1,4 +1,4 @@
-test_that("returners", {
+test_that(paste(as.character(Sys.time()), "returners"), {
   skip_if_not(is64bit())
   library(data.table)
   # Do a large one to test everything

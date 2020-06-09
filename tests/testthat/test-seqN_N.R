@@ -1,4 +1,4 @@
-test_that("seqN_N works", {
+test_that(paste(as.character(Sys.time()), "seqN_N works"), {
   skip_if_not_installed("data.table")
   skip_if_not_installed("magrittr")
   library(data.table)

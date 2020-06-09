@@ -1,4 +1,4 @@
-test_that("set_initial_by_state works", {
+test_that(paste(as.character(Sys.time()), "set_initial_by_state works"), {
   skip_if_not_installed("data.table")
   library(data.table)
   aus <- read_sys("australia.fst")
@@ -19,7 +19,7 @@ test_that("set_initial_by_state works", {
 })
 
 
-test_that("set_initial retrospectively", {
+test_that(paste(as.character(Sys.time()), "set_initial retrospectively"), {
   skip_if(is32bit())
   skip_if_not_installed("data.table")
   library(data.table)
@@ -41,7 +41,7 @@ test_that("set_initial retrospectively", {
 })
 
 
-test_that("Set initial by state using a wide tribble", {
+test_that(paste(as.character(Sys.time()), "Set initial by state using a wide tribble"), {
   skip_on_cran()
   skip_if(is32bit())
   skip_if_not_installed("withr")

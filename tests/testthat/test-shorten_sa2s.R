@@ -1,4 +1,4 @@
-test_that("shorten_sa2 works", {
+test_that(paste(as.character(Sys.time()), "shorten_sa2 works"), {
   skip_if_not_installed("data.table")
   library(data.table)
   aus <- read_sys("australia.fst", columns = c("state", "sa2", "hid", "pid"))
@@ -13,7 +13,7 @@ test_that("shorten_sa2 works", {
   expect_equal(aus[, min(diff(short_sa2))], 0L)
 })
 
-test_that("sa2_firsts_finals", {
+test_that(paste(as.character(Sys.time()), "sa2_firsts_finals"), {
   library(data.table)
   aus <- read_sys("australia.fst", columns = c("sa2"))
   aus[, short_sa2 := shorten_sa2s_ordered(sa2)]

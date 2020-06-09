@@ -1,4 +1,4 @@
-test_that("set_epipars works", {
+test_that(paste(as.character(Sys.time()), "set_epipars works"), {
   ans <- set_epipars()
   expect_true(all(c("CHECKED", "illness_distribution",
                     "illness_mean", "illness_sigma",
