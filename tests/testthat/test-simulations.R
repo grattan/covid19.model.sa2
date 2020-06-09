@@ -367,34 +367,39 @@ test_that(paste(as.character(Sys.time()), "age-based lockdown"), {
 })
 
 test_that(paste(as.character(Sys.time()), "Multipolicy-historical"), {
+  skip("NYI")
   skip_if_not(is64bit())
   skip_if_not_installed("tibble")
   manual_initial_status <-
     tibble::tribble(
       ~state, ~active, ~critical, ~dead, ~healed,
-      "NSW",     1000,         9,     6,      30,
-      "VIC",      1000,         5,     4,      20,
-      "QLD",      1000,         2,     3,      10,
-      "SA",      10,         0,     0,      10,
-      "WA",      12,         0,     0,      10,
-      "TAS",      20,         0,     0,       1,
-      "NT",       1,         0,     0,       3,
-      "ACT",    2000,         0,     0,       1,
-      "OTH",     100,         0,     0,       0)
-  S <- simulate_sa2(40,
+      "NSW",     0,         9,     6,      30,
+      "VIC",     0,         5,     4,      20,
+      "QLD",     0,         2,     3,      10,
+      "SA",      0,         0,     0,      10,
+      "WA",      0,         0,     0,      10,
+      "TAS",     0,         0,     0,       1,
+      "NT",      0,         0,     0,       3,
+      "ACT",  8000,         0,     0,       1,
+      "OTH",    00,         0,     0,       0)
+  S <- simulate_sa2(99,
                     returner = 3,
                     InitialStatus = manual_initial_status,
-                    EpiPars = set_epipars(q_school = 0.1,
+                    EpiPars = set_epipars(q_school = 1,
                                           a_schools_rate = 1,
                                           incubation_mean = 100,
                                           incubation_distribution = "dirac",
                                           a_workplace_rate = 1,
-                                          q_workplace = 0.5,
+                                          q_workplace = 0.001,
+                                          p_asympto = 1,
                                           supermarket_beta_shape1 = 3,
                                           supermarket_beta_shape2 = 3,
-                                          q_supermarket = 1/1000),
-                    MultiPolicy = "historical",
-                    .first_day = "2020-06-02")
+                                          resistance_threshold = 1000,
+                                          q_supermarket = 3/10000),
+                    Policy = set_policypars(schools_open = FALSE,
+                                            school_days_per_wk = 5L),
+                    MultiPolicy = set_multipolicy(),
+                    .first_day = "2020-01-01")
   # very basic: we have school infections
   expect_true(source_school() %in% S$InfectionSource)
 })
@@ -410,6 +415,8 @@ test_that(paste(as.character(Sys.time()), "early return"), {
 test_that(paste(as.character(Sys.time()), "workplace caps bind"), {
   skip_if_not(is64bit())
   skip_if_not_installed("tibble")
+  skip_if_not_installed("hutilscpp")
+  library(hutilscpp)
   skip_on_travis()  # too much memory required
   skip_on_cran()  # nThread
   manual_initial_status <-
@@ -436,7 +443,7 @@ test_that(paste(as.character(Sys.time()), "workplace caps bind"), {
                     Policy = set_policypars(workplaces_open = 1,
                                             workplace_size_max = 8),
                     nThread = 10)
-  sw <- status_workplaces()
+  sw <- source_workplace()
   expect_equal(S$Statuses[and3s(nColleagues >= 10, Source == sw), .N], 0)
   expect_gt(S$Statuses[and3s(nColleagues < 8, Source == sw), .N], 0)
 })

@@ -201,7 +201,7 @@ void contact_tracing(IntegerVector Status,
   // IntegerVector TestedOn = no_init(N);
   const int test_array[3] = {0, ptest_per_mille_asympto, ptest_per_mille_sympto};
   const int yday_tested = yday + days_before_test;
-  const int yday_result = yday + days_to_notify + days_to_notify;
+  const int yday_result = yday + days_before_test + days_to_notify;
   const int NSTATES1 = NSTATES + 1;
 
   int tests_avbl[NSTATES1] = {0};
@@ -1010,6 +1010,7 @@ void infect_school(IntegerVector Status,
                    IntegerVector School,
                    IntegerVector Age,
                    IntegerVector AttendsWday,
+                   const int &days_since_new_policy,
                    const int &day,
                    const int &wday,
                    const int &yday,
@@ -1154,7 +1155,7 @@ void infect_school(IntegerVector Status,
   }
 
 
-  if (day < 7 && wday < 6) {
+  if ((day < 7 && wday < 6) || (days_since_new_policy < 7)) {
 #pragma omp parallel for num_threads(nThread)
     for (int k = 0; k < NPUPILS; ++k) {
       int k5 = wday0 + (5 * k);
@@ -2018,14 +2019,19 @@ List do_au_simulate(IntegerVector StatusOriginal,
     } else {
       if (n_multipolicies > 2 && yday_start > multipolicy_changes_yday[1]) {
         for (unsigned char m = 0; m < n_multipolicies; ++m) {
-          if (yday_start < multipolicy_changes_yday[m]) {
-            multipolicy = m;
+          if (yday_start > multipolicy_changes_yday[m]) {
+            multipolicy = m - 1;
             break;
           }
         }
       }
     }
   }
+
+  // Some policies use precalculated values (like the days of attendance of a
+  // school). If policy chances (as through a multipolicy) we need to track
+  // this occurrence
+  int days_since_new_policy = 0;
 
 
 //
@@ -2426,19 +2432,25 @@ List do_au_simulate(IntegerVector StatusOriginal,
     //  1. Is a multipolicy in effect?
     //  2. Is the first date past?
     //  3. Apply changes as required
+    ++days_since_new_policy;
     if (use_multipolicy) {
       // multipolicy may be after given yday
-
-
       if (multipolicy_changes_yday[multipolicy] == yday) {
+        days_since_new_policy = 0;
         List NewPolicy = MultiPolicy[multipolicy];
         if (NewPolicy.containsElementNamed("schools_open")) {
           schools_open = NewPolicy["schools_open"];
         }
+        if (NewPolicy.containsElementNamed("school_days_per_wk")) {
+          school_days_per_wk = NewPolicy["school_days_per_wk"];
+        }
         workplaces_open = NewPolicy["workplaces_open"];
+        workplace_size_max = NewPolicy["workplace_size_max"];
+        max_persons_per_event = NewPolicy["max_persons_per_event"];
         ++multipolicy;
       }
     }
+
 
 
 
@@ -2677,10 +2689,10 @@ List do_au_simulate(IntegerVector StatusOriginal,
               areSchoolsLockedDown[s] = schools_lockdown_until[s] > yday;
             }
           }
-
           infect_school(Status, InfectedOn, Source,
                         School, Age,
                         AttendsWday,
+                        days_since_new_policy,
                         day, wday, yday,
                         N,
                         SA2,
