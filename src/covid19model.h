@@ -20,8 +20,6 @@
 #endif
 using namespace Rcpp;
 
-const std::string tempo = __TIME__;
-
 
 const int NSTATES = 9;
 const int NSTATES1 = 10;

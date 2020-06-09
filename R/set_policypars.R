@@ -243,7 +243,7 @@ set_multipolicy <- function() {
 
        set_policypars(yday_start = "2020-06-01",
                       schools_open = TRUE,
-                      school_days_per_wk = c("ACT" = 0L,
+                      school_days_per_wk = c("ACT" = 5L,
                                              "NSW" = 5L,
                                              "VIC" = 0L,
                                              "QLD" = 5L,
@@ -251,7 +251,8 @@ set_multipolicy <- function() {
                                              "WA" = 5L,
                                              "TAS" = 5L,
                                              "NT" = 5L),
-                      workplaces_open = 0.9))
+                      workplaces_open = 0.9,
+                      workplace_size_max = 100L))
 }
 
 
