@@ -1,3 +1,9 @@
+# 0.28.0
+
+* Age-based lockdowns work for ages up to 100
+* Default "historical" policy parameters are cumulative, rather than only including 
+  the policies that recently changed.
+
 
 # 0.23.0
 

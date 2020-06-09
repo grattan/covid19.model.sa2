@@ -366,4 +366,41 @@ test_that(paste(as.character(Sys.time()), "age-based lockdown"), {
   expect_equal(a, 0)
 })
 
+test_that(paste(as.character(Sys.time()), "Multipolicy-historical"), {
+  skip_if_not(is64bit())
+  skip_if_not_installed("tibble")
+  manual_initial_status <-
+    tibble::tribble(
+      ~state, ~active, ~critical, ~dead, ~healed,
+      "NSW",     1000,         9,     6,      30,
+      "VIC",      1000,         5,     4,      20,
+      "QLD",      1000,         2,     3,      10,
+      "SA",      10,         0,     0,      10,
+      "WA",      12,         0,     0,      10,
+      "TAS",      20,         0,     0,       1,
+      "NT",       1,         0,     0,       3,
+      "ACT",    2000,         0,     0,       1,
+      "OTH",     100,         0,     0,       0)
+  S <- simulate_sa2(60,
+                    returner = 3,
+                    InitialStatus = manual_initial_status,
+                    EpiPars = set_epipars(q_school = 0.01,
+                                          a_schools_rate = 1,
+                                          incubation_mean = 100,
+                                          incubation_distribution = "dirac",
+                                          a_workplace_rate = 1,
+                                          q_workplace = 1,
+                                          supermarket_beta_shape1 = 3,
+                                          supermarket_beta_shape2 = 3,
+                                          q_supermarket = 1/500),
+                    MultiPolicy = "historical",
+                    .first_day = "2020-06-01")
+  # very basic: we have school infections
+  expect_true(source_school() %in% S$InfectionSource)
+})
+
+test_that(paste(as.character(Sys.time()), "early return"), {
+  S <- simulate_sa2(100, returner = 1L, PolicyPars = set_policypars(supermarkets_open = FALSE))
+})
+
 

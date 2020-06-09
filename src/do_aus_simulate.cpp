@@ -2438,9 +2438,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
     if (returner == 0) {
       Statuses.push_back(clone(Status));
     }
-    if (optionz == 3) {
-      continue;
-    }
 
     // Exit point.
     // We have aggregated "today's" information above so if we are on the final
@@ -2796,24 +2793,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
   return Statuses;
 }
 
-
-// [[Rcpp::export]]
-IntegerVector Next(IntegerVector x, int k = 0) {
-  int o = 0;
-  int N = x.length();
-  std::vector<int> xo;
-  xo.reserve(N);
-#pragma omp parallel for reduction(+:o)
-  for (int i = 0; i < N; ++i) {
-    if (k) {
-      int j = (i + k) % N;
-      xo[i] = x[j];
-    } else {
-      xo[i] = x[i];
-    }
-  }
-  return o;
-}
 
 
 

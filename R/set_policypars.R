@@ -229,10 +229,28 @@ set_multipolicy <- function() {
 
        # Easing
        set_policypars(yday_start = "2020-05-15",
+                      schools_open = TRUE,
+                      school_days_per_wk = c("ACT" = 0L,
+                                             "NSW" = 5L,
+                                             "VIC" = 0L,
+                                             "QLD" = 5L,
+                                             "SA" = 5L,
+                                             "WA" = 5L,
+                                             "TAS" = 5L,
+                                             "NT" = 5L),
                       workplaces_open = 0.5,
                       max_persons_per_event = 100L),
 
        set_policypars(yday_start = "2020-06-01",
+                      schools_open = TRUE,
+                      school_days_per_wk = c("ACT" = 0L,
+                                             "NSW" = 5L,
+                                             "VIC" = 0L,
+                                             "QLD" = 5L,
+                                             "SA" = 5L,
+                                             "WA" = 5L,
+                                             "TAS" = 5L,
+                                             "NT" = 5L),
                       workplaces_open = 0.9))
 }
 
