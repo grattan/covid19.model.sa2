@@ -1983,8 +1983,8 @@ List do_au_simulate(IntegerVector StatusOriginal,
   IntegerVector AgesLockdown(100);
   if (Policy.containsElementNamed("age_based_lockdown")) {
     AgesLockdown = Policy["age_based_lockdown"];
-    if (AgesLockdown.length() == 100) {
-      for (int i = 0; i < 100; ++i) {
+    if (AgesLockdown.length() == 101) {
+      for (int i = 0; i < 101; ++i) {
         if (AgesLockdown[i] != 0) {
           age_based_lockdown = true;
           break;
