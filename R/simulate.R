@@ -138,55 +138,79 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
   updateLemireSeedFromR()
 
-  aus <- generate_static_aus(use_dataEnv, nThread = nThread)
+  if (is.null(myaus)) {
+    aus <- generate_static_aus(use_dataEnv, nThread = nThread)
 
-  Incubation <-
-    with(EpiPars, {
-      m <- incubation_mean
-      s <- incubation_sigma
-      switch(distrs()[incubation_distribution],
-             "pois" = rep_len(rpois(131059, m), nrow(aus)),
-             "lnorm" = rep_len(as.integer(rlnorm(131059, m, s), nrow(aus))),
-             "dirac" = rep_len(as.integer(m, s), nrow(aus)),
-             "cauchy" = RCauchy(do_lemire_rand_par(nrow(aus),
-                                                   nThread = pmin.int(20L, nThread)),
-                                location = m,
-                                scale = s,
-                                nThread = pmin.int(20L, nThread)),
-             stop("Internal error(Incubation): ", distrs()[.subset2(Epi, "incubation_distribution")],
-                  " was unexpected at this time."))
-    })
+    if (hasName(aus, "Incubation")) {
+      aus[, "Incubation" := NULL]
+    }
+    if (hasName(aus, "Illness")) {
+      aus[, "Illness" := NULL]
+    }
 
-  Illness <-
-    with(EpiPars, {
-      m <- illness_mean
-      s <- illness_sigma
-      switch(distrs()[illness_distribution],
-             "pois" = rep_len(rpois(131063, m), nrow(aus)),
-             "lnorm" = rep_len(as.integer(rlnorm(131063, m, s), nrow(aus))),
-             "dirac" = rep_len(as.integer(m, s), nrow(aus)),
-             "cauchy" = RCauchy(do_lemire_rand_par(nrow(aus), nThread = pmin.int(20L, nThread)),
-                                location = m,
-                                scale = s,
-                                nThread = pmin.int(20L, nThread)),
-             stop("Internal error(Illness): ", distrs()[.subset2(Epi, "illness_distribution")],
-                  " was unexpected at this time."))
-    })
+    Incubation <-
+      with(EpiPars, {
+        m <- incubation_mean
+        s <- incubation_sigma
+        switch(distrs()[incubation_distribution],
+               "pois" = rep_len(rpois(131059, m), nrow(aus)),
+               "lnorm" = rep_len(as.integer(rlnorm(131059, m, s), nrow(aus))),
+               "dirac" = rep_len(as.integer(m, s), nrow(aus)),
+               "cauchy" = RCauchy(do_lemire_rand_par(nrow(aus),
+                                                     nThread = pmin.int(20L, nThread)),
+                                  location = m,
+                                  scale = s,
+                                  nThread = pmin.int(20L, nThread)),
+               stop("Internal error(Incubation): ", distrs()[.subset2(Epi, "incubation_distribution")],
+                    " was unexpected at this time."))
+      })
 
-  aus[, Incubation := Incubation]
-  aus[, Illness := Illness]
+    Illness <-
+      with(EpiPars, {
+        m <- illness_mean
+        s <- illness_sigma
+        switch(distrs()[illness_distribution],
+               "pois" = rep_len(rpois(131063, m), nrow(aus)),
+               "lnorm" = rep_len(as.integer(rlnorm(131063, m, s), nrow(aus))),
+               "dirac" = rep_len(as.integer(m, s), nrow(aus)),
+               "cauchy" = RCauchy(do_lemire_rand_par(nrow(aus), nThread = pmin.int(20L, nThread)),
+                                  location = m,
+                                  scale = s,
+                                  nThread = pmin.int(20L, nThread)),
+               stop("Internal error(Illness): ", distrs()[.subset2(Epi, "illness_distribution")],
+                    " was unexpected at this time."))
+      })
 
 
-  mutate_Status_InfectedOn(aus,
-                           InitialStatus = InitialStatus,
-                           yday_initial = .first_day)
+    aus[, "Incubation" := Incubation]
+    aus[, "Illness" := Illness]
+
+
+    mutate_Status_InfectedOn(aus,
+                             InitialStatus = InitialStatus,
+                             yday_initial = .first_day)
+  } else {
+    stopifnot(is.data.table(myaus),
+              hasName(myaus, "Status"),
+              hasName(myaus, "InfectedOn"),
+              hasName(myaus, "sa2"),
+              hasName(myaus, "short_dzn"),
+              hasName(myaus, "nColleagues"),
+              hasName(myaus, "Incubation"),
+              hasName(myaus, "Illness"),
+              hasName(myaus, "state"),
+              hasName(myaus, "hid"),
+              hasName(myaus, "pid"),
+              hasName(myaus, "Age"))
+    aus <- myaus
+  }
 
   if (length(MultiPolicy) >= 255) {
     stop(g("`length(MultiPolicy) = {length(MultiPolicy)}`, which exceeds 255, ",
            "the largest supported number of policies."))
   }
-  if (identical(MultiPolicy, "historical")) {
-    MultiPolicy <- set_multipolicy()
+  if (isTRUE(MultiPolicy) || identical(MultiPolicy, "historical")) {
+    MultiPolicy <- set_multipolicy(.first_day)
   }
 
   copied_Status <- (.subset2(aus, "Status"))
@@ -353,7 +377,12 @@ generate_static_aus <- function(use_dataEnv = TRUE, nThread = 1L) {
   aus[AusByDZN, wid := i.wid, on = "pid"]
   aus[AusByDZN, nColleagues := i.nColleagues, on = "pid"]
 
-  assign("aus", value = aus, envir = getOption("covid19.model.sa2_dataEnv"))
+  aus[, "school_id" := NULL]
+  aus[, "work_dzn" := NULL]
+
+  assign("aus",
+         value = copy(aus),
+         envir = getOption("covid19.model.sa2_dataEnv"))
 
 
   aus
@@ -371,6 +400,8 @@ mutate_Status_InfectedOn <- function(aus,
             hasName(aus, "Illness"),
             is.integer(aus[["state"]]),
             !hutilscpp::anyOutside(aus[["state"]], 1L, 9L))
+
+  hutils::drop_cols(aus, c("Status", "InfectedOn"))
 
   if (is.null(InitialStatus)) {
     set_initial_stochastic(aus, yday_initial)

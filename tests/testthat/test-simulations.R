@@ -190,9 +190,9 @@ test_that(paste(as.character(Sys.time()), "a_household_infections"), {
   # Policy to expose household effects
   PolicyH <- set_policypars(do_contact_tracing = FALSE, workplaces_open = FALSE)
   withr::with_seed(10, {
-    SH000 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.00), returner = 1)
-    SH005 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.05), returner = 1)
-    SH025 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.25), returner = 1)
+    SH000 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.00), returner = 1, .first_day = "2020-05-01")
+    SH005 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.05), returner = 1, .first_day = "2020-05-01")
+    SH025 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.25), returner = 1, .first_day = "2020-05-01")
     s000 <- SH000[Status == "Suscep"][["N"]]
     s005 <- SH005[Status == "Suscep"][["N"]]
     s025 <- SH025[Status == "Suscep"][["N"]]
@@ -367,7 +367,6 @@ test_that(paste(as.character(Sys.time()), "age-based lockdown"), {
 })
 
 test_that(paste(as.character(Sys.time()), "Multipolicy-historical"), {
-  skip("NYI")
   skip_if_not(is64bit())
   skip_if_not_installed("tibble")
   manual_initial_status <-
@@ -382,7 +381,7 @@ test_that(paste(as.character(Sys.time()), "Multipolicy-historical"), {
       "NT",      0,         0,     0,       3,
       "ACT",  8000,         0,     0,       1,
       "OTH",    00,         0,     0,       0)
-  S <- simulate_sa2(99,
+  S <- simulate_sa2(49,
                     returner = 3,
                     InitialStatus = manual_initial_status,
                     EpiPars = set_epipars(q_school = 1,
@@ -390,16 +389,17 @@ test_that(paste(as.character(Sys.time()), "Multipolicy-historical"), {
                                           incubation_mean = 100,
                                           incubation_distribution = "dirac",
                                           a_workplace_rate = 1,
+                                          a_household_rate = 1,
                                           q_workplace = 0.001,
                                           p_asympto = 1,
                                           supermarket_beta_shape1 = 3,
                                           supermarket_beta_shape2 = 3,
                                           resistance_threshold = 1000,
                                           q_supermarket = 3/10000),
-                    Policy = set_policypars(schools_open = FALSE,
-                                            school_days_per_wk = 5L),
-                    MultiPolicy = set_multipolicy(),
-                    .first_day = "2020-01-01")
+                    # Policy = set_policypars(schools_open = TRUE,
+                    #                         school_days_per_wk = 5L),
+                    MultiPolicy = "historical",
+                    .first_day = "2020-05-25")
   # very basic: we have school infections
   expect_true(source_school() %in% S$InfectionSource)
 })
@@ -408,8 +408,13 @@ test_that(paste(as.character(Sys.time()), "early return"), {
   skip_if_not(is64bit())
   skip_if_not_installed("data.table")
   library(data.table)
-  S <- simulate_sa2(100, returner = 1L, PolicyPars = set_policypars(supermarkets_open = FALSE))
-  expect_equal( S[Day == 100][Status %in% c("NoSymp", "InSymp"), sum(N)], 0L)
+  S <- simulate_sa2(100,
+                    EpiPars = set_epipars(incubation_mean = 2,
+                                          illness_mean = 5),
+                    returner = 1L,
+                    .first_day = "2020-06-01",
+                    PolicyPars = set_policypars(supermarkets_open = FALSE, cafes_open = FALSE))
+  expect_equal(S[Day == 100][Status %in% c("NoSymp", "InSymp"), sum(N)], 0L)
 })
 
 test_that(paste(as.character(Sys.time()), "workplace caps bind"), {
@@ -419,33 +424,32 @@ test_that(paste(as.character(Sys.time()), "workplace caps bind"), {
   library(hutilscpp)
   skip_on_travis()  # too much memory required
   skip_on_cran()  # nThread
-  manual_initial_status <-
-    tibble::tribble(
-      ~state, ~active, ~critical, ~dead, ~healed,
-      "NSW",     10000,         9,     6,      30,
-      "VIC",      10000,         5,     4,      20,
-      "QLD",      1000,         2,     3,      10,
-      "SA",      10,         0,     0,      10,
-      "WA",      12,         0,     0,      10,
-      "TAS",      20,         0,     0,       1,
-      "NT",       1,         0,     0,       3,
-      "ACT",    2000,         0,     0,       1,
-      "OTH",     100,         0,     0,       0)
+  aus <- read_typical()
+  aus[, Status := 0L]
+  aus[which_first(nColleagues == 11L), Status := 1L]
+  aus[which_first(nColleagues == 5L), Status := 1L]
+  aus[or3s(Status == 1L), InfectedOn := yday("2020-06-01")]
+  aus[, Incubation := 10L]
+  aus[, Illness := 10L]
 
   S <- simulate_sa2(55,
                     returner = 0,
+                    .first_day = "2020-06-02",
                     InitialStatus = manual_initial_status,
-                    EpiPars = set_epipars(q_workplace = 0.1,
+                    EpiPars = set_epipars(q_workplace = 1,
                                           a_workplace_rate = 1,
-                                          q_supermarket = 1/550,
+                                          q_supermarket = 0,
                                           incubation_mean = 25,
+                                          resistance_threshold = 1000,
                                           incubation_distribution = "dirac"),
                     Policy = set_policypars(workplaces_open = 1,
-                                            workplace_size_max = 8),
-                    nThread = 10)
+                                            workplace_size_max = 7,
+                                            do_contact_tracing = FALSE),
+                    nThread = 10,
+                    myaus = aus)
   sw <- source_workplace()
   expect_equal(S$Statuses[and3s(nColleagues >= 10, Source == sw), .N], 0)
-  expect_gt(S$Statuses[and3s(nColleagues < 8, Source == sw), .N], 0)
+  expect_gt(S$Statuses[and3s(nColleagues < 6, Source == sw), .N], 0)
 })
 
 

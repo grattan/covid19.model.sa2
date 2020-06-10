@@ -192,67 +192,80 @@ set_policy_no_restrictions <- function(...) {
 }
 
 
-set_multipolicy <- function() {
-  list(set_policy_no_restrictions(yday_start = "2020-01-01"),
-       set_policypars(yday_start = "2020-03-22",
-                      max_persons_per_event = 5L,
-                      workplaces_open = 0.1,
-                      schools_open = FALSE,
-                      travel_outside_sa2 = FALSE),
+set_multipolicy <- function(.first_yday = NULL) {
+  out <-
+    list(set_policy_no_restrictions(yday_start = "2020-01-01"),
+         set_policypars(yday_start = "2020-03-22",
+                        max_persons_per_event = 5L,
+                        workplaces_open = 0.1,
+                        schools_open = FALSE,
+                        travel_outside_sa2 = FALSE),
 
-       # Tas quarantine,
-       # NT borders close on 21st,
-       # WA, SA 24th
-       set_policypars(yday_start = "2020-03-20",
-                      max_persons_per_event = 10L,
-                      schools_open = TRUE,
-                      school_days_per_wk = c("ACT" = 0L,
-                                             "VIC" = 1L)),
+         # Tas quarantine,
+         # NT borders close on 21st,
+         # WA, SA 24th
+         set_policypars(yday_start = "2020-03-20",
+                        max_persons_per_event = 10L,
+                        schools_open = TRUE,
+                        school_days_per_wk = c("ACT" = 0L,
+                                               "VIC" = 1L)),
 
-       # VIC stage 3
-       set_policypars(yday_start = "2020-03-30",
-                      schools_open = FALSE),
+         # VIC stage 3
+         set_policypars(yday_start = "2020-03-30",
+                        schools_open = FALSE),
 
-       # WA/QLD/NT easing of restriction
-       ## QLD: Recreation permitted, within 50km of home only
+         # WA/QLD/NT easing of restriction
+         ## QLD: Recreation permitted, within 50km of home only
 
-       set_policypars(yday_start = "2020-04-26",
-                      schools_open = TRUE,
-                      school_days_per_wk = c("ACT" = 0L,
-                                             "NSW" = 5L,
-                                             "VIC" = 0L,
-                                             "QLD" = 5L,
-                                             "SA" = 5L,
-                                             "WA" = 5L,
-                                             "TAS" = 5L,
-                                             "NT" = 5L)),
+         set_policypars(yday_start = "2020-04-26",
+                        schools_open = TRUE,
+                        school_days_per_wk = c("ACT" = 0L,
+                                               "NSW" = 5L,
+                                               "VIC" = 0L,
+                                               "QLD" = 5L,
+                                               "SA" = 5L,
+                                               "WA" = 5L,
+                                               "TAS" = 5L,
+                                               "NT" = 5L)),
 
-       # Easing
-       set_policypars(yday_start = "2020-05-15",
-                      schools_open = TRUE,
-                      school_days_per_wk = c("ACT" = 0L,
-                                             "NSW" = 5L,
-                                             "VIC" = 0L,
-                                             "QLD" = 5L,
-                                             "SA" = 5L,
-                                             "WA" = 5L,
-                                             "TAS" = 5L,
-                                             "NT" = 5L),
-                      workplaces_open = 0.5,
-                      max_persons_per_event = 100L),
+         # Easing
+         set_policypars(yday_start = "2020-05-15",
+                        schools_open = TRUE,
+                        school_days_per_wk = c("ACT" = 0L,
+                                               "NSW" = 5L,
+                                               "VIC" = 0L,
+                                               "QLD" = 5L,
+                                               "SA" = 5L,
+                                               "WA" = 5L,
+                                               "TAS" = 5L,
+                                               "NT" = 5L),
+                        workplaces_open = 0.5,
+                        max_persons_per_event = 100L),
 
-       set_policypars(yday_start = "2020-06-01",
-                      schools_open = TRUE,
-                      school_days_per_wk = c("ACT" = 5L,
-                                             "NSW" = 5L,
-                                             "VIC" = 0L,
-                                             "QLD" = 5L,
-                                             "SA" = 5L,
-                                             "WA" = 5L,
-                                             "TAS" = 5L,
-                                             "NT" = 5L),
-                      workplaces_open = 0.9,
-                      workplace_size_max = 100L))
+         set_policypars(yday_start = "2020-06-01",
+                        schools_open = TRUE,
+                        school_days_per_wk = c("ACT" = 5L,
+                                               "NSW" = 5L,
+                                               "VIC" = 0L,
+                                               "QLD" = 5L,
+                                               "SA" = 5L,
+                                               "WA" = 5L,
+                                               "TAS" = 5L,
+                                               "NT" = 5L),
+                        workplaces_open = 0.9,
+                        workplace_size_max = 100L))
+  if (is.null(.first_yday)) {
+    return(out)
+  }
+  yday_std <- function(x) {
+    if (is.integer(x)) {
+      x
+    } else {
+      yday(x)
+    }
+  }
+
+  out[vapply(out, function(e) yday_std(e[["yday_start"]]) >= yday_std(.first_yday), FALSE)]
 }
 
 
