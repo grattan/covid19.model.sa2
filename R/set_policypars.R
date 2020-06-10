@@ -206,18 +206,25 @@ set_multipolicy <- function(.first_yday = NULL) {
          # WA, SA 24th
          set_policypars(yday_start = "2020-03-20",
                         max_persons_per_event = 10L,
+                        workplaces_open = 0.2,
+                        workplace_size_max = 10,
                         schools_open = TRUE,
                         school_days_per_wk = c("ACT" = 0L,
                                                "VIC" = 1L)),
 
          # VIC stage 3
          set_policypars(yday_start = "2020-03-30",
-                        schools_open = FALSE),
+                        workplaces_open = 0.2,
+                        workplace_size_max = 10,
+                        schools_open = TRUE,
+                        school_days_per_wk = c("VIC" = 0L)),
 
          # WA/QLD/NT easing of restriction
          ## QLD: Recreation permitted, within 50km of home only
 
          set_policypars(yday_start = "2020-04-26",
+                        workplaces_open = 0.2,
+                        workplace_size_max = 10,
                         schools_open = TRUE,
                         school_days_per_wk = c("ACT" = 0L,
                                                "NSW" = 5L,

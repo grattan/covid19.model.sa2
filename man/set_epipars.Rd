@@ -16,20 +16,20 @@ See also AceMOD
 \usage{
 set_epipars(
   incubation_distribution = c("pois", "lnorm", "dirac", "cauchy"),
-  incubation_mean = 5,
+  incubation_mean = 8,
   incubation_sigma = 0.44,
   illness_distribution = c("pois", "lnorm", "dirac"),
   illness_mean = 15,
   illness_sigma = 1,
-  a_workplace_rate = 0.07,
-  a_household_rate = 0.15,
-  a_schools_rate = 0.07,
+  a_workplace_rate = 0.2,
+  a_household_rate = 0.05,
+  a_schools_rate = 0.4,
   q_workplace = 0.01,
-  q_household = 0.05,
-  q_school = 1/3000,
+  q_household = 0.1,
+  q_school = 1/5000,
   q_school_grade = 1/500,
-  q_supermarket = 1/500,
-  q_places = 1/500,
+  q_supermarket = 1/1000,
+  q_places = 1/1000,
   q_major_event = 1/5000,
   resistance_threshold = 400L,
   p_asympto = 0.35,
@@ -72,11 +72,18 @@ means no-one will be infected; a value of 1000 means everyone will.}
 \item{p_asympto}{A number in \code{[0, 1]}, the proportion of cases that
 are asymptomatic.}
 
-\item{p_critical}{A number in \code{[0, 1]}, the proportion of
-\strong{symptomatic} patients that require ICU.}
+\item{p_critical}{\describe{
+\item{\code{double(3)}}{A vector with each element in \code{[0, 1]}, the proportion of
+\strong{symptomatic} patients that require ICU, by age. The first element
+is the proportion aged 0-49, the second 50-64, and the third, 65+.}
+}}
 
-\item{p_death}{A number in \code{[0, 1]}, the proportion of
-\strong{critical cases} that die.}
+\item{p_death}{\describe{
+\item{\code{double(3)}}{A vector with each element in \code{[0, 1]}, the proportion of
+\strong{critical cases} that die, by age.
+The first element
+is the proportion aged 0-49, the second 50-64, and the third, 65+.}
+}}
 
 \item{p_visit_major_event}{Probability a person attends a major event on a given day.}
 
