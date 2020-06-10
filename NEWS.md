@@ -5,6 +5,8 @@
   the policies that recently changed.  Multipolicies which start before the first yday
   are now handled correctly (rather than waiting for the first multipolicy 
   which never arrives)
+* Argument `myaus` is now used again after being silently dropped
+* Fixed an error where a length-one `multipolicy' (i.e. a single change) was ignored 
 
 
 # 0.23.0

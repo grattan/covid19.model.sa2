@@ -1996,7 +1996,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
   // These are designed to reflect multiple policies throught the simulation period
   validate_multipolicy(MultiPolicy);
   unsigned char n_multipolicies = MultiPolicy.length();
-  const bool use_multipolicy = MultiPolicy.length() > 1;
+  const bool use_multipolicy = MultiPolicy.length() > 0;
   unsigned char multipolicy = 0; // the index of the multipolicy, increments on policy change
   int multipolicy_changes_yday[255] = {};
   for (unsigned char m = 0; m < n_multipolicies; ++m) {
