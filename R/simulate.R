@@ -188,7 +188,8 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
     mutate_Status_InfectedOn(aus,
                              InitialStatus = InitialStatus,
-                             yday_initial = .first_day)
+                             yday_initial = .first_day,
+                             nThread = nThread)
   } else {
     stopifnot(is.data.table(myaus),
               hasName(myaus, "Status"),
@@ -404,7 +405,7 @@ mutate_Status_InfectedOn <- function(aus,
   hutils::drop_cols(aus, c("Status", "InfectedOn"))
 
   if (is.null(InitialStatus)) {
-    set_initial_stochastic(aus, yday_initial)
+    set_initial_stochastic(aus, yday_initial, nThread = nThread)
     return(aus)
   } else {
     if (!is.integer(yday_initial)) {
