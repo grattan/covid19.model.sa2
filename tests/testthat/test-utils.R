@@ -40,3 +40,12 @@ test_that(paste(as.character(Sys.time()), "rep_each"), {
   expect_identical(do_rep(2:5), rep(2:5, 2:5))
 })
 
+test_that(paste(as.character(Sys.time()), "dollars"), {
+  out <- list(a = 1, ba = 2)
+  b. <- "ba"
+  expect_error(dollars(out, b), regexp = "subelement")
+  expect_error(dollars(out, b.), regexp = "subelement")
+
+  expect_equal(dollars(out, b., TRY_EVAL = TRUE), 2)
+})
+

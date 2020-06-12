@@ -188,7 +188,10 @@ test_that(paste(as.character(Sys.time()), "a_household_infections"), {
   skip_if_not(identical(.Platform$r_arch, "x64"))
   library(data.table)
   # Policy to expose household effects
-  PolicyH <- set_policypars(do_contact_tracing = FALSE, workplaces_open = FALSE)
+  PolicyH <- set_policypars(do_contact_tracing = FALSE,
+                            supermarkets_open = FALSE,
+                            cafes_open = FALSE,
+                            workplaces_open = FALSE)
   withr::with_seed(10, {
     SH000 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.00), returner = 1, .first_day = "2020-05-01")
     SH005 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.05), returner = 1, .first_day = "2020-05-01")
@@ -197,7 +200,7 @@ test_that(paste(as.character(Sys.time()), "a_household_infections"), {
     s005 <- SH005[Status == "Suscep"][["N"]]
     s025 <- SH025[Status == "Suscep"][["N"]]
 
-    expect_lt(mean(tail(s000, 10) <  tail(s005, 10)), 0.5)
+    expect_lt(mean(tail(s000, 10) < tail(s005, 10)), 0.5)
   })
 
 

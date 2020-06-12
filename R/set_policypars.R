@@ -415,29 +415,29 @@ update_policypars <- function(Policy,
       if (hasName(x, s)) {
         xs <- x[[s]]
         if (!is.atomic(xs)) {
-          stop(glue("Element '{s}' of `{vname(x)}` was not atomic.",
+          stop(glue("Element '{s}' of `{vname(x)}` was not atomic. ",
                     "`{vname(x)}` must be a named vector or named ",
                     "list of atomic integers."))
         }
 
         if (length(xs) != 1L && length(xs) != NAGES) {
-          stop(glue("`{vname(x)}` contained an element",
+          stop(glue("`{vname(x)}` contained an element ",
                     "of length {length(xs)} for state '{s}'. ",
                     "The only permissible lengths for state subelements are 1 or {NAGES}."))
         }
 
         if (anyNA(xs)) {
-          stop(glue("`{vname(x)}` contained an element",
+          stop(glue("`{vname(x)}` contained an element ",
                     "with missing values for state '{s}'. ",
                     "Only integer values from 0 to 5 are permitted for states' days per week."))
         }
         if (min(xs) < 0 || max(xs) > 5) {
-          stop(glue("`{vname(x)}` contained an element",
+          stop(glue("`{vname(x)}` contained an element ",
                     "with values outside [0, 5]  for state '{s}'. ",
                     "Only integer values from 0 to 5 are permitted for states' days per week."))
         }
         if (is.double(xs) && any(xs != as.integer(xs))) {
-          stop(glue("`{vname(x)}` contained an element",
+          stop(glue("`{vname(x)}` contained an element ",
                     "with non-integer values for state '{s}'. ",
                     "Only integer values from 0 to 5 are permitted for states' days per week."))
         }
@@ -642,7 +642,7 @@ dollars <- function(x, .name, ..., .x = vname(x), TRY_EVAL = FALSE) {
   # equiv to x$name$..1$..2 but safer if name is misspelled
   name <- as.character(substitute(.name))
   if (!hasName(x, name)) {
-    if (!hasName(x, .name) && isFALSE(TRY_EVAL)) {
+    if (isFALSE(TRY_EVAL) || !hasName(x, .name)) {
       stop(.x, " did not contain a subelement '", name, "'.")
     }
     name <- .name

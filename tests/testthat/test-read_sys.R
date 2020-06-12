@@ -1,0 +1,10 @@
+test_that("read_sys", {
+  skip_if_not_installed("fst")
+  out <- read_sys("time_series_nsw_sources.fst", pattern = "local", to = 101)
+  expect_true(all(grepl("local", names(out))))
+  Sys.setenv("COVID19MODELSA2_TEST" = provide.dir(tempf <- tempfile()))
+  fst::write_fst(out, provide.file(file.path(tempf, "a.fst")))
+  expect_equal(ncol(read_sys("COVID19MODELSA2_TEST:/a.fst")), 2)
+  expect_equal(ncol(read_sys(file.path(tempf, "/a.fst"))), 2)
+  Sys.unsetenv("COVID19MODELSA2_TEST")
+})
