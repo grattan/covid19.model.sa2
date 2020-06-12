@@ -28,3 +28,6 @@ script:
 
 after_success:
     - travis_wait 55 Rscript -e 'covr::codecov(quiet = FALSE)'
+
+after_failure:
+  -  travis_wait 25 Rscript -e "devtools::test()"
