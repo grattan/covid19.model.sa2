@@ -68,9 +68,6 @@ S_ages_lockdown <-
   simulate_sa2(PolicyPars = set_policypars(age_based_lockdown = 65:100))
 ```
 
-Further detail on policy and epidemiological parameters and the defaults
-are given below.
-
 ### Performance
 
 Two arguments are available to improve the performance of the model, as well 
