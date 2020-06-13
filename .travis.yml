@@ -30,4 +30,5 @@ after_success:
     - travis_wait 55 Rscript -e 'covr::codecov(quiet = FALSE)'
 
 after_failure:
-  -  travis_wait 25 Rscript -e "devtools::test()"
+  - Rscript -e "devtools::load_all(); cat('\n', file_fst('SA2_by_POSTCODE.fst'), system.file('extdata', 'SA2_by_POSTCODE.fst', package = 'covid19.model.sa2'), sep = '\n')"
+  - travis_wait 25 Rscript -e "devtools::test()"
