@@ -212,7 +212,7 @@ test_that(paste(as.character(Sys.time()), "returner 3 no race condition"), {
   skip_on_travis()
   skip_if_not(is64bit())
   library(data.table)
-  S <- simulate_sa2(10, nThread = parallel::detectCores(), returner = 3)
+  S <- simulate_sa2(10, nThread = parallel::detectCores() - 1L, returner = 3)
   pop <- data.table(S3 = S$Status12)[, Day := rep_each(1:10, .N)][, .(N3 = sum(S3)), by = .(Day)]
   expect_true(is_constant(pop[["N3"]]))
   expect_equal(pop[["N3"]][1], fst_rows("australia.fst"))
