@@ -114,7 +114,7 @@ set_initial_by_state <- function(state_id,
         first_yday <- yday(first_yday)
       }
       if (!is.atomic(first_yday)) {
-        stop(g("`first_yday` was class {toString(yday)}, but must be atomic."))
+        stop(g("`first_yday` was class {toString(class(orig_first_yday))}, but must be atomic."))
       }
       if (length(first_yday) != 1) {
         stop(g("`first_yday` had length {length(first_yday)}, but must be length-one."))
@@ -133,8 +133,8 @@ set_initial_by_state <- function(state_id,
                "given available data, is {earliest_allowed_yday}."))
       }
       if (first_yday > max_allowed_yday) {
-        stop(g("`first_yday = {orig_first_yday}`, but the earliest allowed yday, ",
-               "given available data, is {earliest_allowed_yday}."))
+        stop(g("`first_yday = {orig_first_yday}`, but the latest allowed yday, ",
+               "given available data, is {max_allowed_yday}."))
       }
 
 

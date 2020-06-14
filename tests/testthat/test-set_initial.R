@@ -77,7 +77,15 @@ test_that(paste(as.character(Sys.time()), "Set initial by state using a wide tri
 
 })
 
-
+test_that(paste(as.character(Sys.time()), "error handling"), {
+  expect_error(set_initial_by_state(), "missing.*no default")
+  expect_error(set_initial_by_state("NSW", first_yday = list(5, 5)), "atomic")
+  expect_error(set_initial_by_state("NSW", first_yday = c(5, 5)), "length.one")
+  expect_error(set_initial_by_state("NSW", first_yday = c(NA_real_)), "NA")
+  expect_error(set_initial_by_state("NSW", first_yday = c(5.5)), "whole number")
+  expect_error(set_initial_by_state("NSW", first_yday = c(-1)), "earliest")
+  expect_error(set_initial_by_state("NSW", first_yday = c(9999)), "latest allowed")
+})
 
 
 

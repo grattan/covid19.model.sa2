@@ -27,6 +27,7 @@ script:
 - travis_wait 25 R CMD check *tar.gz --no-manual
 
 after_success:
+    - Rscript -e "cat(crayon::green(as.character(Sys.time())), '\n')"
     - travis_wait 55 Rscript -e 'covr::codecov(quiet = FALSE)'
 
 after_failure:
