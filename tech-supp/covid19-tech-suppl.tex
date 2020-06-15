@@ -29,9 +29,27 @@
 \begin{document}
 \contentspage
 
-\chapter{Overview}\label{chap:tech-supp-overview}
+\chapter{Overview and scope}\label{chap:tech-supp-overview}
 Our model, \crema, is a dynamic microsimulation model of Australia.
 The model is written in R and Rcpp.
+
+The purpose of the model is to show the effect of policy changes on the spread of infections 
+throughout Australia, under a flexible 
+set of epidemiological assumptions about the disease. By necessity, the model also
+`nowcasts' the number of active cases from official reports of new infections and
+their sources. 
+
+\crema\ does not model the effect of overseas arrivals, only new infections
+arising from local transmission. It also does not estimate new infections arising
+from breaches of quarantine.  While a large majority of Australia's COVID-19 cases 
+arose from these sources, the policy response to these threats was not contentious.
+
+\begin{figure}
+\caption{Most new infections were from new arrivals, or coincided with the peak in overseas cases}\label{fig:nsw-sources}
+\units{New cases, by source}
+\includegraphics{atlas/nsw-sources.pdf}
+\source{(pappubahry)}
+\end{figure}
 
 \section{Static data}
 The model runs on a static data table, each row a person in Australia,
@@ -266,7 +284,7 @@ transmission probability.
 
 \subsection{Places}
 
-Infection of `places',\footnote{Currently, the only places are caf\'{e}s.}
+Infection of `places'\footnote{Currently, the only places are caf\'{e}s.}
 takes place in a manner similar to that of supermarket infections.
 
 All persons above the age of 12 visit caf\'es \(n\)
