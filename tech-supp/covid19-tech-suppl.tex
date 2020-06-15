@@ -31,6 +31,7 @@
 
 \chapter{Overview}\label{chap:tech-supp-overview}
 Our model, \crema, is a dynamic microsimulation model of Australia.
+The model is written in R and Rcpp.
 
 \section{Static data}
 The model runs on a static data table, each row a person in Australia,
@@ -40,8 +41,8 @@ which identifies each person's
 	\item state and SA2,
 	\item age,
 	\item household,
-	\item school,
-	\item labour force status,
+	\item school, and
+	\item labour force status.
 \end{enumerate}
 
 For performance reasons, data is cached before being passed to the dynamic model.
@@ -57,12 +58,10 @@ For implementation convenience,%
 	on the basis of research, because it was necessary to do so and was not considered
 	sufficiently important to make more than an arbitrary decision. In this case,
 	the choice of 8 was made to avoid stack overflow.}
-If the individual's SA2 contains more than eight supermarket we
-exclude all but eight supermarkets. We then assign to each person a random integer
-from 1 to \(N_S = {}\) the number of supermarkets in each SA2 to represent the
-`typical' supermarket a person visits.
+if the individual's SA2 contains more than eight supermarket we
+exclude all but eight supermarkets. We then randomly assign each person to 
+a `typical' supermarket for the person to visit during the model run.
 
-For technical reasons, we shorten variables so that they are a sequence.
 
 \subsection{Assignment of individuals to workplaces}
 While we are confident about the distribution of labour force status among
@@ -222,10 +221,11 @@ performance or technical reasons.%
 	\footnote{For some sites infections can be recorded on the stack, whereas for others this would
 	overflow the stack. The default ordering of the data groups SA2s together, so some sites
 	(like supermarkets and households) can use this assumption whereas others cannot.}
-All infection site work in the same essential way. 
+All infection sites work in the same essential way. 
 A person is \defi{infectious} if the current day is between the date of infection and the
-end of the person's incubation period. People whose incubation period has passed; 
-during the illness period, individuals do not infect others.
+end of the person's incubation period. 
+Individuals do not infect others once their incubation period is over.
+
 A site can be visited by an infectious
 individual or not.
 If the site is infected, parameters prefixed with \code{a\_} determine
@@ -348,7 +348,7 @@ through each infected individual, who is not in isolation. If the individual has
 been tested and the test result was positive, the individual is not
 retested. If the previous test result was a (false) negative, the person
 has a 1/32 chance of being retested on any day while infected. 
-An infected person has an  20\% chance
+An infected person has a  20\% chance
 of a false negative that is independently generated each day for each person.
 
 For each state, and for Australia overall, the number of tests so performed
