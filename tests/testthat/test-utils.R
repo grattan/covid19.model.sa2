@@ -49,3 +49,22 @@ test_that(paste(as.character(Sys.time()), "dollars"), {
   expect_equal(dollars(out, b., TRY_EVAL = TRUE), 2)
 })
 
+test_that(paste(as.character(Sys.time()), "minmax"), {
+  x <- do_lemire_rand(100e3)
+  min_max_b <- c(min(x), max(x))
+  min_max_a <- do_minmax_par(x)
+  expect_identical(min_max_a, min_max_b)
+
+  skip_on_cran()
+  min_max_p <- do_minmax_par(x, nThread = 2)
+  expect_identical(min_max_p, min_max_b)
+})
+
+test_that(paste(as.character(Sys.time()), "Modulo"), {
+  ax <- c(0:99, 0:99)
+  expect_equal(do_ModuloIndex(ax, 4, 100), ax %% 4)
+  skip_on_cran()
+  expect_equal(do_ModuloIndex(ax, 4, 100, nThread = 2), ax %% 4)
+})
+
+
