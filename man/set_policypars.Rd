@@ -111,10 +111,7 @@ applied to symptomatic cases?}
 }}
 
 \item{tests_by_state}{\code{integer(10)} The number of tests per day that states
-perform. First entry is the total tests available across Australia.
-If any entry is negative,
-or \code{NA}, the most recent day's number of tests performed are
-used.}
+perform. First entry is the total tests available across Australia.}
 
 \item{max_persons_per_event, n_major_events_weekday, n_major_events_weekend}{Policies around major events. Maximum of 255 major events per day and
 values of `max_persons_per_event` below 1000 are rounded to zero.}

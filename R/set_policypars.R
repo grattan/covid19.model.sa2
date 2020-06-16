@@ -49,10 +49,6 @@
 #'
 #' @param tests_by_state \code{integer(10)} The number of tests per day that states
 #' perform. First entry is the total tests available across Australia.
-#' If any entry is negative,
-#' or \code{NA}, the most recent day's number of tests performed are
-#' used.
-#'
 #'
 #' @param max_persons_per_supermarket Maximum number of people allowed in a
 #' supermarket (within one hour i.e. concurrently).
@@ -322,9 +318,7 @@ update_policypars <- function(Policy,
 
   out <- integer(10)  # will be zero for every 'non state'
 
-  if (is.null(tests_by_state) ||
-      anyNA(tests_by_state) ||
-      min(tests_by_state) < 0) {
+  if (is.null(tests_by_state)) {
     time_series_tests <- read_sys("time_series_tests.fst")
     for (s in states()) {
       if (hasName(time_series_tests, s)) {
@@ -334,37 +328,7 @@ update_policypars <- function(Policy,
         set(time_series_tests, i = i, j = s, value = v[i])
       }
     }
-    last_tests <- last(time_series_tests[, lapply(.SD, diff)])
-
-    for (i in seq_along(out)) {
-      # honour non-NA entries
-      if (is.numeric(tests_by_state) &&
-          length(tests_by_state) == 1 &&
-          !anyNA(tests_by_state)) {
-        # Assume to be Australia
-        if (is.double(tests_by_state)) {
-          if (tests_by_state < 0) {
-            next
-          }
-          if (tests_by_state > .Machine$integer.max) {
-            out[1] <- .Machine$integer.max
-          } else {
-            out[1] <- as.integer(tests_by_state)
-          }
-        }
-        out[1] <- tests_by_state
-        next
-      }
-
-      if (hasName(last_tests, states()[i])) {
-        out[i] <- last_tests[[states()[i]]]
-      }
-    }
-    if (is.na(out[1]) || out[1] == 0) {
-      # Note even if out[1] == 0 is intended,
-      # it is only allowed if all of out is zero.
-      out[1] <- sum(out[-1])
-    }
+    tests_by_state <- last(time_series_tests[, lapply(.SD, diff)])
   }
   if (length(tests_by_state) == 9) {
     # Assume it doesn't include Australia -- shove to the front
@@ -474,169 +438,7 @@ update_policypars <- function(Policy,
 
 
 
-read_yaml_config <- function(config.yaml) {
-  config <- yaml::read_yaml(config.yaml)
-  if (!hasName(config, "policy")) {
-    stop(vname(config.yaml), " did not have a field 'policy:' at top level.")
-  }
-  Policy <- config[["policy"]]
 
-
-}
-
-write_yaml_config <- function(Epi, Policies) {
-
-  # if we have a number that has been converted to an integer [0,1000]
-  # convert it back for yaml
-  ki2dbl <- function(x) if (is.integer(x)) x / 1000 else x
-
-  illness_distribution <-
-    illness_mean <-
-    illness_sigma <-
-    incubation_distribution <-
-    incubation_mean <-
-    incubation_sigma <-
-    p_critical <-
-    p_death <-
-    r_distribution <- r_location <- r_supermarket_location <-
-    r_scale <- r_supermarket_scale <- resistance_threshold <-  NULL
-
-  config <- list(
-    epidemiology = list(
-      illness = list(
-        distribution = dollars(Epi, illness_distribution),
-                mean = dollars(Epi, illness_mean),
-               sigma = dollars(Epi, illness_sigma)
-      ),
-      incubation = list(
-        distribution = dollars(Epi, incubation_distribution),
-                mean = dollars(Epi, incubation_mean),
-               sigma = dollars(Epi, incubation_sigma)
-      ),
-      prognosis = list(
-        critical = ki2dbl(dollars(Epi, p_critical)),
-           death = ki2dbl(dollars(Epi, p_death))
-
-      ),
-      reinfection = list(
-        distribution = decode_distr(dollars(Epi, r_distribution)),
-        location = list(
-          default = dollars(Epi, r_location),
-          supermarket = dollars(Epi, r_supermarket_location)
-        ),
-        scale = list(
-          default = dollars(Epi, r_scale),
-          supermarket = dollars(Epi, r_supermarket_scale)
-        )
-      ),
-      resistance = list(
-        default = dollars(Epi, resistance_threshold),
-        work = dollars(Epi, resistance_threshold)
-      )
-    ),
-    policy = unpack_multipolicy(Policies))
-}
-
-unpack_multipolicy <- function(MultiPolicy) {
-  if (length(MultiPolicy) == 1) {
-    ki2dbl <- function(x) if (is.integer(x)) x / 1000 else x
-
-    Policy <- MultiPolicy[[1L]]
-
-
-    .start_date <- Policy[["start_date"]] %||% "2020-01-01"
-
-    schools_all_full_time <-
-      hasName(Policy, "school_days_per_wk") &&
-      hasName(Policy[["school_days_per_wk"]], "all_full_time") &&
-      isTRUE(dollars(Policy, school_days_per_wk, all_full_time))
-
-    .schools <-
-      if (schools_all_full_time) {
-        list(aus = list(open = dollars(Policy, schools_open),
-                        only_Year12 = dollars(Policy, only_Year12),
-                        all_full_time = TRUE))
-      } else {
-        days_per_wk2_list <- function(state) {
-          x <- dollars(Policy, school_days_per_wk)[[state]]
-          if (is_constant(x)) {
-            x <- x[1L]
-            if (x == 5L) {
-              x <- NA_integer_  # i.e. erase
-            }
-          }
-          x
-        }
-        list(aus = list(open = dollars(Policy, schools_open),
-                        only_Year12 = dollars(Policy, only_Year12),
-                        all_full_time = FALSE),
-             aus = list(days_per_wk = days_per_wk2_list('AUS')),
-             nsw = list(days_per_wk = days_per_wk2_list('NSW')),
-             vic = list(days_per_wk = days_per_wk2_list('VIC')),
-             qld = list(days_per_wk = days_per_wk2_list('QLD')),
-              wa = list(days_per_wk = days_per_wk2_list('WA')),
-              sa = list(days_per_wk = days_per_wk2_list('SA')),
-             tas = list(days_per_wk = days_per_wk2_list('TAS')),
-             act = list(days_per_wk = days_per_wk2_list('ACT')),
-              nt = list(days_per_wk = days_per_wk2_list('NT')),
-             oth = list(days_per_wk = days_per_wk2_list('OTH')))
-      }
-    .schools <- .schools[!vapply(.schools, function(x) length(x[[1]]) == 1 && is.na(x[[1]]), FALSE)]
-
-    .age_lockdown <- dollars(Policy, age_based_lockdown)
-    .age_lockdown_in_force <- any(as.logical(.age_lockdown))
-    if (.age_lockdown_in_force) {
-      .age_lockdown <- list(in_force = TRUE,
-                            age_lwr = which_first(.age_lockdown > 0L),
-                            age_upr = which_last(.age_lockdown > 0L))
-    } else {
-      .age_lockdown <- list(in_force = FALSE)
-    }
-
-
-    tests_by_state_was_null <- dollars(Policy, tests_by_state_was_null)
-    .tests_by_state <-
-      if (tests_by_state_was_null) {
-        "auto"
-      } else {
-        dollars(Policy, tests_by_state)
-      }
-
-
-    # workplace_size_max <- resistance_threshold <- NULL
-    workplace_size_max <- resistance_threshold <- NULL
-
-    # assume
-    list(start_date = "2020-01-01",
-         schools = .schools,
-         places = list(
-           default = list(
-             max_visitors = dollars(Policy, max_persons_per_event)
-           ),
-           supermarkets = list(
-             max_visitors = dollars(Policy, max_persons_per_supermarket)
-           )
-         ),
-         work = list(
-           prop_open = dollars(Policy, workplaces_open),
-           workplace_size = list(
-             max = dollars(Policy, workplace_size_max),
-             beta = dollars(Policy, workplace_size_beta),
-             lmu = dollars(Policy, workplace_size_lmu),
-             lsi = dollars(Policy, workplace_size_lsi)
-           )),
-         age_lockdown = .age_lockdown,
-         contact_tracing = list(
-           tests_by_state = .tests_by_state,
-           aus = list(
-             in_force = dollars(Policy, "do_contact_tracing"),
-             days_before_test = dollars(Policy, "contact_tracing_days_before_test"),
-             days_until_result = dollars(Policy, "contact_tracing_days_until_result"),
-             p_asympto_cases = 0.5 * as.double(dollars(Policy, "contact_tracing_only_sympto")))))
-  } else {
-    lapply(MultiPolicy, unpack_multipolicy)
-  }
-}
 
 dollars <- function(x, .name, ..., .x = vname(x), TRY_EVAL = FALSE) {
   # equiv to x$name$..1$..2 but safer if name is misspelled
