@@ -37,6 +37,7 @@ test_that(paste(as.character(Sys.time()), "rep_each"), {
   expect_identical(rep_each(1:3, 15),
                    rep(1:3, each = 5))
 
+
   expect_identical(do_rep(2:5), rep(2:5, 2:5))
 })
 
@@ -54,6 +55,7 @@ test_that(paste(as.character(Sys.time()), "minmax"), {
   min_max_b <- c(min(x), max(x))
   min_max_a <- do_minmax_par(x)
   expect_identical(min_max_a, min_max_b)
+
 
   skip_on_cran()
   min_max_p <- do_minmax_par(x, nThread = 2)
