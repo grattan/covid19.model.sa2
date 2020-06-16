@@ -74,6 +74,7 @@ test_that(paste(as.character(Sys.time()), "Set initial by state using a wide tri
   # Account for quarantine
   n_act_active <- n_act_active / (1 - p_quarantine_by_date("2020-06-01"))
   expect_true(n_act_active %between% c(900, 1100))
+})
 
 test_that(paste(as.character(Sys.time()), "Set initial by state using a wide tribble"), {
   skip_on_cran()
