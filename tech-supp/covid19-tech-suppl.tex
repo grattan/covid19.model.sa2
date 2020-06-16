@@ -108,10 +108,11 @@ and the size of their workplace.
 Assignment of workplace information completes the data generated at cache time. All other personal
 features are constructed anew at runtime.
 
-\section{Assignment of candidate incubation and illness }
+\section{Modelling length of communicable period and illness}
 
-Our next step is to construct vectors to reflect user-supplied epidemiological parameters.
-We construct for each person the duration of their incubation period and illness should they
+Our next step is to construct vectors to reflect the user-supplied epidemiological parameters
+governing the duration an infected person may be infectious and the duration of their illness.
+We construct for each person the duration of their communicable period and illness should they
 be infected when the model starts. Although it would seem wasteful to generate these values
 for every person, even if only a fraction of a percent of the rows are likely to be used, it
 so happens that this is more efficient than constructing them `just-in-time', mostly because
@@ -153,7 +154,7 @@ Hence we are only able to \emph{estimate} the number of active cases at a point 
 even if we take the data at face value. We assume that the cumulative number of cases
 by date is correct, and we use the day-on-day difference of this number to reckon the
 number of new cases. To each new case we assign a random member of the state's population and,
-using the incubation and illness vectors allocated previously, determine the dates on which
+using the communicable and illness vectors allocated previously, determine the dates on which
 the case was active.
 
 Since a large number of new cases were from overseas arrivals, and since such individuals are more
@@ -221,11 +222,10 @@ in intensive care. A status of zero indicates the person is susceptible to infec
 in isolation). Negative values indicate the person had been infected previously. Individuals with
 negative statuses cannot be reinfected.
 
-
 If an age-based lockdown is selected, the status of  all individuals of the ages requested have their
 status flagged as isolated.
 
-All infected individuals are then moved either from an incubation period to one of
+All infected individuals are then moved either from a communicable period to one of
 `symptomatic' or `critical', or from one of those status to `healed' or `killed', based
 on the precomputed prognosis.
 
@@ -244,8 +244,8 @@ performance or technical reasons.%
 	(like supermarkets and households) can use this assumption whereas others cannot.}
 All infection sites work in the same essential way. 
 A person is \defi{infectious} if the current day is between the date of infection and the
-end of the person's incubation period. 
-Individuals do not infect others once their incubation period is over.
+end of the person's communicable period. 
+Individuals do not infect others once their communicable period is over.
 
 A site can be visited by an infectious
 individual or not.
@@ -319,7 +319,8 @@ not exceed the cap. Put another way, if a person is infectious but not symptomat
 the first to remain home in the presence of a cap on the number of workers. While individuals
 who are totally asymptomatic may go into work as often as uninfected people, we assume that
 `asymptomatic', in this context, means `less symptomatic' or `lacking sufficiently obvious
-or severe symptoms to self-identify as symptomatic'.
+or severe symptoms to self-identify as symptomatic'. Hence, especially in the presence
+of an epidemic, are, despite the mildness of their symptoms, much less likely to attend work.
 
 \subsection{Schools}
 
@@ -366,9 +367,9 @@ is calculated and, if it exceeds the maximum number allowed, is ignored. Otherwi
 infected attendees is calculated. We then calculate, for each event, the value
 \[p_e = q_m(1 + \sqrt{(n_i / N)}) \]
 where \(q_m\) is a user-supplied parameter, \(n_i\) is the number of infected individuals, and \(N\)
-is the total number of attendees. This value inflates the threshold below which a person is infected
-or not. So the higher the proportion of infected individuals at a large event the more likely each
-susceptible attendee is to be infected.
+is the total number of attendees. The value \(p_e\) inflates the threshold below which a person is infected
+or not. So the higher the proportion of infected individuals at a large event the probability of 
+transmission increases 
 
 \section{Contact tracing}
 At the end of each day contact tracing is performed. 
@@ -400,7 +401,7 @@ by the test outcome (positive or negative).
 Two parameters affect the delay between showing symptoms of the 
 disease and the day on which contact tracing has effect: 
 \code{days\_before\_test} and \code{days\_to\_notify}. These are set
-relative to the end of each individual's incubation period. Contact 
+relative to the end of each individual's communicable period. Contact 
 tracing can be successful or not, depending on a user-supplied probability
 of success. If contact tracing is modelled to succeed for a particular 
 positive test recipient,
@@ -417,8 +418,8 @@ pupils at that school of the same age are also isolated. (Isolation is permanent
 \toprule
 \textbf{Parameter} & \textbf{Default} & \textbf{Comment} \\
 \midrule
-Incubation distribution & Poisson \\
-Incubation mean & 8 days \\
+Communicable distribution & Poisson \\
+Communicable mean & 8 days \\
 Illness distribution & Poisson \\ 
 Illness mean & 15 days \\
 \code{a\_workplace\_rate} & 20\% & Probability that a workplace can support reinfection \\
