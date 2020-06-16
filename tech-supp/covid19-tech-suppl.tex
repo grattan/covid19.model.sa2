@@ -348,13 +348,16 @@ Policy parameters are limited for households.
 \subsection{Other SA2s}
 
 To model movement out of SA2s (though likely within the same state),
-we generate an exponentially distributed random variable
+we generate an exponentially distributed random variable with parameter \(\beta = 1\)
 for each individual to represent the maximum allowable distance that person
 travels. If the distance is less than the distance to the nearest SA2, the person
 does not travel outside the SA2; otherwise, the SA2 is chosen through that distribution
 (close SA2s are more likely to be visited than those farther away).
- If an infected person does go to a different SA2, they visit a random individual in the SA2 and
- infect them (with certainty).
+On each day, a person visits another SA2 with probability 1\%.
+If an infected person does go to a different SA2, they visit a random individual in the SA2 and
+infect them (with certainty).\footnote{The parameters \(\beta = 1\), 
+the independent probability of travelling outside an SA2, and the certainty of an infected visitor
+infecting someone were all chosen arbitrarily.}
 
 \subsection{Major events}
 For each individual we construct an integer, drawn from a beta distribution ranging from zero
