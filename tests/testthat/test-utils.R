@@ -67,4 +67,18 @@ test_that(paste(as.character(Sys.time()), "Modulo"), {
   expect_equal(do_ModuloIndex(ax, 4, 100, nThread = 2), ax %% 4)
 })
 
+test_that(paste(as.character(Sys.time()), "lag"), {
+  x <- c(101:151, 101:151)
+  skip_if_not_installed("data.table")
+  expect_equal(do_lag_int(x), shift(x))
+  skip_on_cran()
+  expect_equal(do_lag_int(x, nThread = 2), shift(x))
+})
 
+test_that("do_exp_dbl2int", {
+  xxx <- c(0, 0.5, 1, 1.5)
+  out <- do_exp_dbl2int(xxx)
+  expect_equal(out, as.integer(exp(xxx)))
+  out2 <- do_exp_dbl2int(c(0, 0.5, 1, 1.5), nThread = 2)
+  expect_equal(out2, as.integer(exp(xxx)))
+})
