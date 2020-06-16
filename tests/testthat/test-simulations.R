@@ -455,4 +455,23 @@ test_that(paste(as.character(Sys.time()), "workplace caps bind"), {
   expect_gt(S$Statuses[and3s(nColleagues < 6, Source == sw), .N], 0)
 })
 
+test_that(paste(as.character(Sys.time()), "only_Year12"), {
+  withr::with_seed(55, {
+  S <- simulate_sa2(8,
+                    returner = 4,
+                    .first_day = as.Date("2020-04-09"),
+                    PolicyPars = set_policypars(supermarkets_open = FALSE,
+                                                schools_open = TRUE,
+                                                only_Year12 = TRUE,
+                                                school_days_per_wk = c("NSW" = 3L),
+                                                do_contact_tracing = FALSE,
+                                                cafes_open = FALSE),
+                    EpiPars = set_epipars(incubation_mean = 24,
+                                          incubation_distribution = "lnorm",
+                                          a_schools_rate = 1,
+                                          q_school = 1/2))
+  })
+
+  expect_true(source_school() %in% S$InfectionSource)
+})
 
