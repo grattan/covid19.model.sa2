@@ -328,12 +328,15 @@ There are a few differences.
 First, schools have school terms and no infection is possible through schools outside school terms.
 Similarly, schools open only on school days (or on fewer days if set by policy).
 
-Secondly, there is a dynamic element specific to schools. Schools infections can trigger school
-lockdowns. If a (user-supplied) threshold of schools have at least a (user-supplied) number of
+Secondly, there is a dynamic element specific to schools.
+We assume that state governments are sensitive to outbreaks in schools.
+So, independently of contact tracing, school infections can trigger school lockdowns. 
+If a (user-supplied) threshold of schools have at least a (user-supplied) number of
 infected students, the state's school system is shut down for a (user-supplied) number of days.
 Independently, if any student's illness becomes critical, the school system is shut down for
 a (possibly different) number of days.  While the condition for triggering such lockdowns can occur
 on any school day, the lockdown is only enforced over the weekend or the following week.
+
 
 \subsection{Households}
 
