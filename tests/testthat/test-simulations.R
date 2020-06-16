@@ -455,6 +455,7 @@ test_that(paste(as.character(Sys.time()), "workplace caps bind"), {
   expect_gt(S$Statuses[and3s(nColleagues < 6, Source == sw), .N], 0)
 })
 
+
 test_that(paste(as.character(Sys.time()), "only_Year12"), {
   withr::with_seed(55, {
   S <- simulate_sa2(8,
@@ -471,6 +472,7 @@ test_that(paste(as.character(Sys.time()), "only_Year12"), {
                                           a_schools_rate = 1,
                                           q_school = 1/2))
   })
+
 
   expect_true(source_school() %in% S$InfectionSource)
 })
