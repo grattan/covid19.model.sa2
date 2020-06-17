@@ -154,7 +154,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
         s <- incubation_sigma
         switch(distrs()[incubation_distribution],
                "pois" = rep_len(rpois(131059, m), nrow(aus)),
-               "lnorm" = rep_len(as.integer(rlnorm(131059, m, s), nrow(aus))),
+               "lnorm" = rep_len(as.integer(rlnorm(131059, m2mu(m, s), s)), nrow(aus)),
                "dirac" = rep_len(as.integer(m, s), nrow(aus)),
                "cauchy" = RCauchy(do_lemire_rand_par(nrow(aus),
                                                      nThread = pmin.int(20L, nThread)),
@@ -171,7 +171,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
         s <- illness_sigma
         switch(distrs()[illness_distribution],
                "pois" = rep_len(rpois(131063, m), nrow(aus)),
-               "lnorm" = rep_len(as.integer(rlnorm(131063, m, s), nrow(aus))),
+               "lnorm" = rep_len(as.integer(rlnorm(131059, m2mu(m, s), s)), nrow(aus)),
                "dirac" = rep_len(as.integer(m, s), nrow(aus)),
                "cauchy" = RCauchy(do_lemire_rand_par(nrow(aus), nThread = pmin.int(20L, nThread)),
                                   location = m,
@@ -188,7 +188,8 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
     mutate_Status_InfectedOn(aus,
                              InitialStatus = InitialStatus,
-                             yday_initial = .first_day)
+                             yday_initial = .first_day,
+                             nThread = nThread)
   } else {
     stopifnot(is.data.table(myaus),
               hasName(myaus, "Status"),
@@ -404,7 +405,7 @@ mutate_Status_InfectedOn <- function(aus,
   hutils::drop_cols(aus, c("Status", "InfectedOn"))
 
   if (is.null(InitialStatus)) {
-    set_initial_stochastic(aus, yday_initial)
+    set_initial_stochastic(aus, yday_initial, nThread = nThread)
     return(aus)
   } else {
     if (!is.integer(yday_initial)) {

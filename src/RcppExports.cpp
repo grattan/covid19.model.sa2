@@ -84,6 +84,15 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// source_stadia
+int source_stadia();
+RcppExport SEXP _covid19_model_sa2_source_stadia() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    rcpp_result_gen = Rcpp::wrap(source_stadia());
+    return rcpp_result_gen;
+END_RCPP
+}
 // isolated_plus
 int isolated_plus();
 RcppExport SEXP _covid19_model_sa2_isolated_plus() {
@@ -686,6 +695,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_status_nosymp", (DL_FUNC) &_covid19_model_sa2_status_nosymp, 0},
     {"_covid19_model_sa2_status_insymp", (DL_FUNC) &_covid19_model_sa2_status_insymp, 0},
     {"_covid19_model_sa2_status_critic", (DL_FUNC) &_covid19_model_sa2_status_critic, 0},
+    {"_covid19_model_sa2_source_stadia", (DL_FUNC) &_covid19_model_sa2_source_stadia, 0},
     {"_covid19_model_sa2_isolated_plus", (DL_FUNC) &_covid19_model_sa2_isolated_plus, 0},
     {"_covid19_model_sa2_supermarket_weekday_hrs", (DL_FUNC) &_covid19_model_sa2_supermarket_weekday_hrs, 0},
     {"_covid19_model_sa2_supermarket_weekend_hrs", (DL_FUNC) &_covid19_model_sa2_supermarket_weekend_hrs, 0},

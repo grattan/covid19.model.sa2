@@ -78,7 +78,7 @@ const int INSYMP_MINUS_NOSYMP = 1;
 const int CRITIC_MINUS_INSYMP = 1;
 
 const int SPECIFICITY = 992;
-const int SENSITIVITY = 800;
+const int SENSITIVITY = 620;
 
 // LFS = Labour force status
 const int LFS_NOTINLFS = -1;

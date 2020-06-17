@@ -32,6 +32,10 @@ int status_critic() {
   return STATUS_CRITIC;
 }
 // [[Rcpp::export(rng = false)]]
+int source_stadia() {
+  return SOURCE_STADIA;
+}
+// [[Rcpp::export(rng = false)]]
 int isolated_plus() {
   return ISOLATED_PLUS;
 }
@@ -1540,6 +1544,10 @@ void infect_major_event(IntegerVector Status,
                         int nThread,
                         int N,
                         int optionz = 0) {
+  if (n_major_events_today <= 0) {
+    return;
+  }
+
   IntegerVector Event = do_lemire_rand_par(N, nThread);
   DoubleVector miniTypicalEvent = Rcpp::rbeta(262144, 1, 2.5);
   IntegerVector TypicalEvent = no_init(N); // If a person attends an event, which one?
@@ -1576,9 +1584,6 @@ void infect_major_event(IntegerVector Status,
 #pragma omp parallel for num_threads(nThread) reduction(+:n_attendees[:255]) reduction(+:i_attendees[:255])
 #endif
   for (int i = 0; i < N; ++i) {
-
-
-
     int eventi = Event[i];
 
     // pint is reversed (i.e. 1% -> 99%)
@@ -1596,7 +1601,7 @@ void infect_major_event(IntegerVector Status,
     eventi = (eventi % n_major_events_today);
     Event[i] = eventi;
 
-    i_attendees[ei] += (Status[i] == STATUS_NOSYMP) || (Status[i] == STATUS_INSYMP);
+    i_attendees[ei] += 1;
 
   }
 

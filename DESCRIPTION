@@ -33,6 +33,7 @@ Imports:
     magrittr,
     stats,
     utils,
+    withr,
     yaml
 Encoding: UTF-8
 LazyData: true
@@ -40,7 +41,6 @@ RoxygenNote: 7.1.0
 Suggests: 
     testthat (>= 2.1.0),
     parallel,
-    withr,
     covr
 Depends: 
     R (>= 2.10)

@@ -74,10 +74,53 @@ test_that(paste(as.character(Sys.time()), "Set initial by state using a wide tri
   # Account for quarantine
   n_act_active <- n_act_active / (1 - p_quarantine_by_date("2020-06-01"))
   expect_true(n_act_active %between% c(900, 1100))
+})
+
+test_that(paste(as.character(Sys.time()), "Set initial by state using a wide tribble"), {
+  skip_on_cran()
+  skip_if(is32bit())
+  skip_if_not_installed("withr")
+  skip_if_not_installed("tibble")
+  skip_if_not_installed("data.table")
+
+  manual_initial_status <-
+    tibble::tribble(
+      ~state, ~active, ~critical, ~dead, ~healed,
+      "NSW",     100,         9,     6,      30,
+      "VIC",      40,         5,     4,      20,
+      "QLD",      30,         2,     3,      10,
+       "SA",      10,         0,     0,      10,
+       "WA",      12,         0,     0,      10,
+      "TAS",      20,         0,     0,       1,
+       "NT",       1,         0,     0,       3,
+      "ACT",    1000,         0,     0,       1,
+      "OTH",     100,         0,     0,       0)
+
+  library(data.table)
+  clear_dataEnv()
+  S <- simulate_sa2(5,
+                    .first_day = "2020-06-01",
+                    InitialStatus = manual_initial_status,
+                    EpiPars = set_epipars(incubation_distribution = "dirac",
+                                          incubation_mean = 100L),
+                    PolicyPars = set_policy_no_restrictions(),
+                    use_dataEnv = FALSE)
+  n_act_active <- S$Statuses[and3s(state == 8, V1 == status_insymp()), .N]
+  # Account for quarantine
+  n_act_active <- n_act_active / (1 - p_quarantine_by_date("2020-06-01"))
+  expect_true(n_act_active %between% c(900, 1100))
 
 })
 
-
+test_that(paste(as.character(Sys.time()), "error handling"), {
+  expect_error(set_initial_by_state(), "missing.*no default")
+  expect_error(set_initial_by_state("NSW", first_yday = list(5, 5)), "atomic")
+  expect_error(set_initial_by_state("NSW", first_yday = c(5, 5)), "length.one")
+  expect_error(set_initial_by_state("NSW", first_yday = c(NA_real_)), "NA")
+  expect_error(set_initial_by_state("NSW", first_yday = c(5.5)), "whole number")
+  expect_error(set_initial_by_state("NSW", first_yday = c(-1)), "earliest")
+  expect_error(set_initial_by_state("NSW", first_yday = c(9999)), "latest allowed")
+})
 
 
 

@@ -29,8 +29,27 @@
 \begin{document}
 \contentspage
 
-\chapter{Overview}\label{chap:tech-supp-overview}
+\chapter{Overview and scope}\label{chap:tech-supp-overview}
 Our model, \crema, is a dynamic microsimulation model of Australia.
+The model is written in R and Rcpp.
+
+The purpose of the model is to show the effect of policy changes on the spread of infections 
+throughout Australia, under a flexible 
+set of epidemiological assumptions about the disease. By necessity, the model also
+`nowcasts' the number of active cases from official reports of new infections and
+their sources. 
+
+\crema\ does not model the effect of overseas arrivals, only new infections
+arising from local transmission. It also does not estimate new infections arising
+from breaches of quarantine.  While a large majority of Australia's COVID-19 cases 
+arose from these sources, the policy response to these threats was not contentious.
+
+\begin{figure}
+\caption{Most new infections were from new arrivals, or coincided with the peak in overseas cases}\label{fig:nsw-sources}
+\units{New cases, by source}
+\includegraphics{atlas/nsw-sources.pdf}
+\source{(pappubahry)}
+\end{figure}
 
 \section{Static data}
 The model runs on a static data table, each row a person in Australia,
@@ -40,8 +59,8 @@ which identifies each person's
 	\item state and SA2,
 	\item age,
 	\item household,
-	\item school,
-	\item labour force status,
+	\item school, and
+	\item labour force status.
 \end{enumerate}
 
 For performance reasons, data is cached before being passed to the dynamic model.
@@ -51,25 +70,23 @@ also cached (or ``generated at cache time'').
 The other cache time variables are \code{SupermarketTypical} and the workplace variables.
 For \code{SupermarketTypical},
 if an individual's SA2 contains zero supermarkets,
-a value of zero.
+a value of zero (meaning the person does not visit a supermarket).
 For implementation convenience,%
 	\footnote{By \defi{implementation convenience}, I mean that the choice was not made
 	on the basis of research, because it was necessary to do so and was not considered
 	sufficiently important to make more than an arbitrary decision. In this case,
 	the choice of 8 was made to avoid stack overflow.}
-If the individual's SA2 contains more than eight supermarket we
-exclude all but eight supermarkets. We then assign to each person a random integer
-from 1 to \(N_S = {}\) the number of supermarkets in each SA2 to represent the
-`typical' supermarket a person visits.
+if the individual's SA2 contains more than eight supermarket we
+exclude all but eight supermarkets. We then randomly assign each person to 
+a `typical' supermarket for the person to visit during the model run.
 
-For technical reasons, we shorten variables so that they are a sequence.
 
 \subsection{Assignment of individuals to workplaces}
 While we are confident about the distribution of labour force status among
 the population we assign in the static data, we do not know how large each
 worker's workplace is. To model this, for each destination zone we construct
 a sequence of geometrically distributed random variables with parameters
-\(1/\beta = 1/15\).
+\(1/\beta = 1/15\), where \(\beta\) is the rate parameter.
 
 \begin{figure}[!htbp]
 \caption{The geometric distribution with mean 15 over [0, 50]}\label{fig:geom-distr}
@@ -79,8 +96,11 @@ a sequence of geometrically distributed random variables with parameters
 % }
 \end{figure}
 
+Note that the geometric distribution is used to model the number of businesses of a given
+size. Larger businesses are less common but hold more workers.
+
 The number of random variables to generate is determined algorithmically: if the next random variable
-would overflow into the next DZN, we fill the rest of the sequences with 2, which has the useful
+would overflow into the next destination zone (DZN), we fill the rest of the sequences with 2, which has the useful
 side-effect of inflating the number of partnerships to a number consistent with observation.
 With this sequence we obtain, for each working person, a group of workers associated with each person
 and the size of their workplace.
@@ -88,10 +108,11 @@ and the size of their workplace.
 Assignment of workplace information completes the data generated at cache time. All other personal
 features are constructed anew at runtime.
 
-\section{Assignment of candidate incubation and illness }
+\section{Modelling length of communicable period and illness}
 
-Our next step is to construct vectors to reflect user-supplied epidemiological parameters.
-We construct for each person the duration of their incubation period and illness should they
+Our next step is to construct vectors to reflect the user-supplied epidemiological parameters
+governing the duration an infected person may be infectious and the duration of their illness.
+We construct for each person the duration of their communicable period and illness should they
 be infected when the model starts. Although it would seem wasteful to generate these values
 for every person, even if only a fraction of a percent of the rows are likely to be used, it
 so happens that this is more efficient than constructing them `just-in-time', mostly because
@@ -133,7 +154,7 @@ Hence we are only able to \emph{estimate} the number of active cases at a point 
 even if we take the data at face value. We assume that the cumulative number of cases
 by date is correct, and we use the day-on-day difference of this number to reckon the
 number of new cases. To each new case we assign a random member of the state's population and,
-using the incubation and illness vectors allocated previously, determine the dates on which
+using the communicable and illness vectors allocated previously, determine the dates on which
 the case was active.
 
 Since a large number of new cases were from overseas arrivals, and since such individuals are more
@@ -201,11 +222,10 @@ in intensive care. A status of zero indicates the person is susceptible to infec
 in isolation). Negative values indicate the person had been infected previously. Individuals with
 negative statuses cannot be reinfected.
 
-
 If an age-based lockdown is selected, the status of  all individuals of the ages requested have their
 status flagged as isolated.
 
-All infected individuals are then moved either from an incubation period to one of
+All infected individuals are then moved either from a communicable period to one of
 `symptomatic' or `critical', or from one of those status to `healed' or `killed', based
 on the precomputed prognosis.
 
@@ -222,10 +242,11 @@ performance or technical reasons.%
 	\footnote{For some sites infections can be recorded on the stack, whereas for others this would
 	overflow the stack. The default ordering of the data groups SA2s together, so some sites
 	(like supermarkets and households) can use this assumption whereas others cannot.}
-All infection site work in the same essential way. 
+All infection sites work in the same essential way. 
 A person is \defi{infectious} if the current day is between the date of infection and the
-end of the person's incubation period. People whose incubation period has passed; 
-during the illness period, individuals do not infect others.
+end of the person's communicable period. 
+Individuals do not infect others once their communicable period is over.
+
 A site can be visited by an infectious
 individual or not.
 If the site is infected, parameters prefixed with \code{a\_} determine
@@ -245,7 +266,11 @@ already been infected.
 
 \subsection{Supermarket infections}
 
-Supermarkets are used to model basic interactions among people in the same suburb.
+Supermarkets are used to model basic interactions among people in the same suburb. While 
+supermarkets themselves have not been sites of known infections, they were used as a convenient
+tool for clustering individuals by their place of residence. For this reason, we allow more
+frequent visits to supermarkets than might be expected and allow the rate of transmission to be 
+higher than might be expected from transmission from supermarkets alone.
 
 Each person has a `typical' supermarket drawn from the static data.
 
@@ -266,7 +291,7 @@ transmission probability.
 
 \subsection{Places}
 
-Infection of `places',\footnote{Currently, the only places are caf\'{e}s.}
+Infection of `places'\footnote{Currently, the only places are caf\'{e}s.}
 takes place in a manner similar to that of supermarket infections.
 
 All persons above the age of 12 visit caf\'es \(n\)
@@ -291,7 +316,11 @@ and each person the probability that that person will be infected, given an infe
 attends their workplace. If a cap of the number of individuals is enforced via a policy
 parameter, infected individuals only attend work if the number of uninfected workers does
 not exceed the cap. Put another way, if a person is infectious but not symptomatic they are
-the first to remain home in the presence of a cap on the number of workers.
+the first to remain home in the presence of a cap on the number of workers. While individuals
+who are totally asymptomatic may go into work as often as uninfected people, we assume that
+`asymptomatic', in this context, means `less symptomatic' or `lacking sufficiently obvious
+or severe symptoms to self-identify as symptomatic'. Hence, especially in the presence
+of an epidemic, are, despite the mildness of their symptoms, much less likely to attend work.
 
 \subsection{Schools}
 
@@ -300,12 +329,15 @@ There are a few differences.
 First, schools have school terms and no infection is possible through schools outside school terms.
 Similarly, schools open only on school days (or on fewer days if set by policy).
 
-Secondly, there is a dynamic element specific to schools. Schools infections can trigger school
-lockdowns. If a (user-supplied) threshold of schools have at least a (user-supplied) number of
+Secondly, there is a dynamic element specific to schools.
+We assume that state governments are sensitive to outbreaks in schools.
+So, independently of contact tracing, school infections can trigger school lockdowns. 
+If a (user-supplied) threshold of schools have at least a (user-supplied) number of
 infected students, the state's school system is shut down for a (user-supplied) number of days.
 Independently, if any student's illness becomes critical, the school system is shut down for
 a (possibly different) number of days.  While the condition for triggering such lockdowns can occur
 on any school day, the lockdown is only enforced over the weekend or the following week.
+
 
 \subsection{Households}
 
@@ -317,13 +349,16 @@ Policy parameters are limited for households.
 \subsection{Other SA2s}
 
 To model movement out of SA2s (though likely within the same state),
-we generate an exponentially distributed random variable
+we generate an exponentially distributed random variable with parameter \(\beta = 1\)
 for each individual to represent the maximum allowable distance that person
 travels. If the distance is less than the distance to the nearest SA2, the person
 does not travel outside the SA2; otherwise, the SA2 is chosen through that distribution
 (close SA2s are more likely to be visited than those farther away).
- If an infected person does go to a different SA2, they visit a random individual in the SA2 and
- infect them (with certainty).
+On each day, a person visits another SA2 with probability 1\%.
+If an infected person does go to a different SA2, they visit a random individual in the SA2 and
+infect them (with certainty).\footnote{The parameters \(\beta = 1\), 
+the independent probability of travelling outside an SA2, and the certainty of an infected visitor
+infecting someone were all chosen arbitrarily.}
 
 \subsection{Major events}
 For each individual we construct an integer, drawn from a beta distribution ranging from zero
@@ -332,9 +367,9 @@ is calculated and, if it exceeds the maximum number allowed, is ignored. Otherwi
 infected attendees is calculated. We then calculate, for each event, the value
 \[p_e = q_m(1 + \sqrt{(n_i / N)}) \]
 where \(q_m\) is a user-supplied parameter, \(n_i\) is the number of infected individuals, and \(N\)
-is the total number of attendees. This value inflates the threshold below which a person is infected
-or not. So the higher the proportion of infected individuals at a large event the more likely each
-susceptible attendee is to be infected.
+is the total number of attendees. The value \(p_e\) inflates the threshold below which a person is infected
+or not. So the higher the proportion of infected individuals at a large event the probability of 
+transmission increases 
 
 \section{Contact tracing}
 At the end of each day contact tracing is performed. 
@@ -348,8 +383,13 @@ through each infected individual, who is not in isolation. If the individual has
 been tested and the test result was positive, the individual is not
 retested. If the previous test result was a (false) negative, the person
 has a 1/32 chance of being retested on any day while infected. 
-An infected person has an  20\% chance
-of a false negative that is independently generated each day for each person.
+An infected person has a  38\% chance
+of a false negative that is independently generated each day for each person.%
+	\footnote{See \url{https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7240870/} for 
+	estimates of the false negative rate. The 95\% credible interval was for the false
+	negative rate was 18\% to
+	65\% (at the onset of symptoms).}
+
 
 For each state, and for Australia overall, the number of tests so performed
 are counted. If for a particular state, or Australia overall,
@@ -362,7 +402,7 @@ by the test outcome (positive or negative).
 Two parameters affect the delay between showing symptoms of the 
 disease and the day on which contact tracing has effect: 
 \code{days\_before\_test} and \code{days\_to\_notify}. These are set
-relative to the end of each individual's incubation period. Contact 
+relative to the end of each individual's communicable period. Contact 
 tracing can be successful or not, depending on a user-supplied probability
 of success. If contact tracing is modelled to succeed for a particular 
 positive test recipient,
@@ -379,8 +419,8 @@ pupils at that school of the same age are also isolated. (Isolation is permanent
 \toprule
 \textbf{Parameter} & \textbf{Default} & \textbf{Comment} \\
 \midrule
-Incubation distribution & Poisson \\
-Incubation mean & 8 days \\
+Communicable distribution & Poisson \\
+Communicable mean & 8 days \\
 Illness distribution & Poisson \\ 
 Illness mean & 15 days \\
 \code{a\_workplace\_rate} & 20\% & Probability that a workplace can support reinfection \\

@@ -6,7 +6,8 @@
   are now handled correctly (rather than waiting for the first multipolicy 
   which never arrives)
 * Argument `myaus` is now used again after being silently dropped
-* Fixed an error where a length-one `multipolicy' (i.e. a single change) was ignored 
+* Fixed an error where a length-one `multipolicy' (i.e. a single change) was ignored
+* `update_policypars` now inherits `major_events` parameters
 
 
 # 0.23.0

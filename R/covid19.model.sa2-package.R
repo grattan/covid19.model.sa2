@@ -13,6 +13,7 @@
 #' @importFrom fst write_fst
 #' @importFrom glue glue
 #' @importFrom hutils coalesce
+#' @importFrom hutils provide.dir
 #' @importFrom hutils provide.file
 #' @importFrom hutils weight2rows
 #' @importFrom hutils XOR

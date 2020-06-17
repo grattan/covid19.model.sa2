@@ -188,7 +188,10 @@ test_that(paste(as.character(Sys.time()), "a_household_infections"), {
   skip_if_not(identical(.Platform$r_arch, "x64"))
   library(data.table)
   # Policy to expose household effects
-  PolicyH <- set_policypars(do_contact_tracing = FALSE, workplaces_open = FALSE)
+  PolicyH <- set_policypars(do_contact_tracing = FALSE,
+                            supermarkets_open = FALSE,
+                            cafes_open = FALSE,
+                            workplaces_open = FALSE)
   withr::with_seed(10, {
     SH000 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.00), returner = 1, .first_day = "2020-05-01")
     SH005 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.05), returner = 1, .first_day = "2020-05-01")
@@ -197,7 +200,7 @@ test_that(paste(as.character(Sys.time()), "a_household_infections"), {
     s005 <- SH005[Status == "Suscep"][["N"]]
     s025 <- SH025[Status == "Suscep"][["N"]]
 
-    expect_lt(mean(tail(s000, 10) <  tail(s005, 10)), 0.5)
+    expect_lt(mean(tail(s000, 10) < tail(s005, 10)), 0.5)
   })
 
 
@@ -209,7 +212,7 @@ test_that(paste(as.character(Sys.time()), "returner 3 no race condition"), {
   skip_on_travis()
   skip_if_not(is64bit())
   library(data.table)
-  S <- simulate_sa2(10, nThread = parallel::detectCores(), returner = 3)
+  S <- simulate_sa2(10, nThread = parallel::detectCores() - 1L, returner = 3)
   pop <- data.table(S3 = S$Status12)[, Day := rep_each(1:10, .N)][, .(N3 = sum(S3)), by = .(Day)]
   expect_true(is_constant(pop[["N3"]]))
   expect_equal(pop[["N3"]][1], fst_rows("australia.fst"))
@@ -453,3 +456,41 @@ test_that(paste(as.character(Sys.time()), "workplace caps bind"), {
 })
 
 
+test_that(paste(as.character(Sys.time()), "only_Year12"), {
+  withr::with_seed(55, {
+  S <- simulate_sa2(8,
+                    returner = 4,
+                    .first_day = as.Date("2020-04-09"),
+                    PolicyPars = set_policypars(supermarkets_open = FALSE,
+                                                schools_open = TRUE,
+                                                only_Year12 = TRUE,
+                                                school_days_per_wk = c("NSW" = 3L),
+                                                do_contact_tracing = FALSE,
+                                                cafes_open = FALSE),
+                    EpiPars = set_epipars(incubation_mean = 24,
+                                          incubation_distribution = "lnorm",
+                                          a_schools_rate = 1,
+                                          q_school = 1/2))
+  })
+
+
+  expect_true(source_school() %in% S$InfectionSource)
+})
+
+
+test_that(paste(as.character(Sys.time()), "major events (0)"), {
+  skip("Not yet implemented.")
+  S <- simulate_sa2(50,
+                    .first_day = "2020-03-30",
+                    PolicyPars = set_policypars(supermarkets_open = TRUE,
+                                                cafes_open = FALSE,
+                                                do_contact_tracing = FALSE,
+                                                max_persons_per_event = 100e3,
+                                                n_major_events_weekday = 0L,
+                                                n_major_events_weekend = 100L),
+                    EpiPars = set_epipars(q_supermarket = 0.05,
+                                          q_major_event = 0.1,
+                                          p_visit_major_event = 0.1),
+                    returner = 4)
+  expect_true(source_stadia() %in% S$InfectionSource)
+})

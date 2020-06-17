@@ -114,7 +114,7 @@ set_initial_by_state <- function(state_id,
         first_yday <- yday(first_yday)
       }
       if (!is.atomic(first_yday)) {
-        stop(g("`first_yday` was class {toString(yday)}, but must be atomic."))
+        stop(g("`first_yday` was class {toString(class(orig_first_yday))}, but must be atomic."))
       }
       if (length(first_yday) != 1) {
         stop(g("`first_yday` had length {length(first_yday)}, but must be length-one."))
@@ -133,8 +133,8 @@ set_initial_by_state <- function(state_id,
                "given available data, is {earliest_allowed_yday}."))
       }
       if (first_yday > max_allowed_yday) {
-        stop(g("`first_yday = {orig_first_yday}`, but the earliest allowed yday, ",
-               "given available data, is {earliest_allowed_yday}."))
+        stop(g("`first_yday = {orig_first_yday}`, but the latest allowed yday, ",
+               "given available data, is {max_allowed_yday}."))
       }
 
 
@@ -303,7 +303,7 @@ dqsamp_status <- function(dead, healed, nosymp,
 }
 
 
-set_initial_stochastic <- function(aus, .yday, p_asympto = 0.48) {
+set_initial_stochastic <- function(aus, .yday, p_asympto = 0.48, nThread = 1L) {
   # Everything in war is simple, but the simplest thing is hard.
 
   stopifnot(is.data.table(aus), hasName(aus, "state"))
@@ -388,23 +388,25 @@ set_initial_stochastic <- function(aus, .yday, p_asympto = 0.48) {
   #  c = InfectedOn + Incubation + Illness = IllnessEnds
 
 
-  # InfectedOn >= 0L within and3s implies !is.na
-  aus[and3s(InfectedOn >= 0L, InfectedOn >= 0L), IncubationEnds := InfectedOn + Incubation]
-  aus[and3s(InfectedOn >= 0L, InfectedOn >= 0L), IllnessEnds := IncubationEnds + Illness]
-  aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds >= .yday), Status := 1L]
-  aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds %in% 1:.yday, IllnessEnds >= .yday), Status := 2L]
-  aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds %in% 1:.yday, IllnessEnds %in% 1:.yday), Status := -1L]
-  aus[Status == -1L,
-      Status := rep_time(c(-2L, -1L),
-                         times = c(deathss(.BY[[1]]),
-                                   .N - deathss(.BY[[1]])),
-                         .default = Status),
-      by = .(state)]
+  withr::with_options(list("hutilscpp.nThread" = nThread), {
+    # InfectedOn >= 0L within and3s implies !is.na
+    aus[and3s(InfectedOn >= 0L, InfectedOn >= 0L), IncubationEnds := InfectedOn + Incubation]
+    aus[and3s(InfectedOn >= 0L, InfectedOn >= 0L), IllnessEnds := IncubationEnds + Illness]
+    aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds >= .yday), Status := 1L]
+    aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds %in% 1:.yday, IllnessEnds >= .yday), Status := 2L]
+    aus[and3s(InfectedOn %between% c(0L, .yday), IncubationEnds %in% 1:.yday, IllnessEnds %in% 1:.yday), Status := -1L]
+    aus[Status == -1L,
+        Status := rep_time(c(-2L, -1L),
+                           times = c(deathss(.BY[[1]]),
+                                     .N - deathss(.BY[[1]])),
+                           .default = Status),
+        by = .(state)]
 
-  aus[and3s(Status %in% 1:2, Status > 0L),
-      Status := Status + fifelse(runif(.N) < p_quarantine_by_date(.yday),
-                                 isolated_plus(),
-                                 0L)]
+    aus[and3s(Status %in% 1:2, Status > 0L),
+        Status := Status + fifelse(runif(.N) < p_quarantine_by_date(.yday),
+                                   isolated_plus(),
+                                   0L)]
+  })
 
   aus
 }
