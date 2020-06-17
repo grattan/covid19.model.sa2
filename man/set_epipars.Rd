@@ -30,8 +30,8 @@ set_epipars(
   q_school_grade = 1/500,
   q_supermarket = 1/1000,
   q_places = 1/1000,
-  q_major_event = 1/5000,
-  p_resistant = seq(0.9, 0.4, length.out = 101),
+  q_major_event = 1/10000,
+  ResistanceByAge = seq(0.85, 0.4, length.out = 101),
   p_asympto = 0.35,
   p_critical = c(0.017, 0.045, 0.074),
   p_death = c(0.0294, 0.0444, 0.1757),
@@ -65,6 +65,13 @@ grade / workers of the same workplace.}
 
 \item{q_supermarket, q_places, q_major_event}{As above, for supermarket and places.}
 
+\item{ResistanceByAge}{\describe{
+\item{\code{double(101)}}{For each age, the proportion of individuals who are naturally resistant
+to the disease. If a person is naturally resistant then an otherwise successful contact with
+and infected person does not cause an infection. Not only do resistant individuals
+not fall ill, they are also not infectious.}
+}}
+
 \item{p_asympto}{A number in \code{[0, 1]}, the proportion of cases that
 are asymptomatic.}
 
@@ -86,10 +93,6 @@ is the proportion aged 0-49, the second 50-64, and the third, 65+.}
 \item{supermarket_beta_shape1, supermarket_beta_shape2}{Parameters for the
 \code{rbeta} function that determines the distribution of visit frequency
 to supermarkets.}
-
-\item{resistance_threshold}{An integer in \code{[0, 1000]}, the resistance
-required to not be infected. A value of 0
-means no-one will be infected; a value of 1000 means everyone will.}
 }
 \value{
 A list of the components, plus an entry \code{CHECKED} having the
