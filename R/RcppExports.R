@@ -48,6 +48,10 @@ status_critic <- function() {
     .Call(`_covid19_model_sa2_status_critic`)
 }
 
+source_stadia <- function() {
+    .Call(`_covid19_model_sa2_source_stadia`)
+}
+
 isolated_plus <- function() {
     .Call(`_covid19_model_sa2_isolated_plus`)
 }

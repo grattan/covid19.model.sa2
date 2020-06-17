@@ -477,3 +477,20 @@ test_that(paste(as.character(Sys.time()), "only_Year12"), {
   expect_true(source_school() %in% S$InfectionSource)
 })
 
+
+test_that(paste(as.character(Sys.time()), "major events (0)"), {
+  skip("Not yet implemented.")
+  S <- simulate_sa2(50,
+                    .first_day = "2020-03-30",
+                    PolicyPars = set_policypars(supermarkets_open = TRUE,
+                                                cafes_open = FALSE,
+                                                do_contact_tracing = FALSE,
+                                                max_persons_per_event = 100e3,
+                                                n_major_events_weekday = 0L,
+                                                n_major_events_weekend = 100L),
+                    EpiPars = set_epipars(q_supermarket = 0.05,
+                                          q_major_event = 0.1,
+                                          p_visit_major_event = 0.1),
+                    returner = 4)
+  expect_true(source_stadia() %in% S$InfectionSource)
+})
