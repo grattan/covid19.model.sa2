@@ -28,7 +28,7 @@ script:
 
 after_success:
     - Rscript -e "cat(crayon::green(as.character(Sys.time())), '\n')"
-    - travis_wait 55 Rscript -e 'covr::codecov(quiet = FALSE)'
+    - travis_wait 75 Rscript -e 'covr::codecov(quiet = FALSE)'
 
 after_failure:
   - Rscript -e "devtools::load_all(); cat('\n', file_fst('SA2_by_POSTCODE.fst'), system.file('extdata', 'SA2_by_POSTCODE.fst', package = 'covid19.model.sa2'), sep = '\n')"
