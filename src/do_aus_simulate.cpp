@@ -567,16 +567,13 @@ void infect_supermarkets(IntegerVector Status,
         continue;
       }
 
-
-
-
-
       if (Resistant[i]) {
-        // i_supermarkets[sa2i][supermarketi][hr] -= 1;
-        Status[i] = STATUS_NOSYMP;
-        InfectedOn[i] = yday;
-        Source[i] = SOURCE_SUPERM;
+        continue;
       }
+      // i_supermarkets[sa2i][supermarketi][hr] -= 1;
+      Status[i] = STATUS_NOSYMP;
+      InfectedOn[i] = yday;
+      Source[i] = SOURCE_SUPERM;
     }
   }
 }
@@ -797,7 +794,7 @@ void infect_place(int place_id,
 
       if (n_infections_here && Q_Place[i]) {
         // increase resistance asymptotically for more and more infections
-        if (Resistant[i]) {
+        if (!Resistant[i]) {
           Status[i] = STATUS_NOSYMP;
           InfectedOn[i] = yday;
           Source[i] = SOURCE_PLACES;
@@ -953,7 +950,7 @@ void infect_dzn(IntegerVector Status,
     if (Status[i] || no_further_infections) {
       continue;
     }
-    if (Q_Workplace[i] && Resistant[i]) {
+    if (Q_Workplace[i] && !Resistant[i]) {
       Status[i] = STATUS_NOSYMP;
       InfectedOn[i] = yday;
       Source[i] = SOURCE_WORKPL;
@@ -1384,13 +1381,13 @@ void infect_household(IntegerVector Status,
       // the following assignment can occur is if the other thread is
       // skipping
       if (household_infected && Q_Household[i]) {
-        if (Status[i] == 0 && Resistant[i]) {
+        if (Status[i] == 0 && !Resistant[i]) {
           Status[i] = STATUS_NOSYMP;
           InfectedOn[i] = yday + 1;
           Source[i] = SOURCE_HOUSEH;
         }
 
-        if (Status[i + 1] == 0 && Resistant[i + 1]) {
+        if (Status[i + 1] == 0 && !Resistant[i + 1]) {
           Status[i + 1] = STATUS_NOSYMP;
           InfectedOn[i + 1] = yday + 1;
           Source[i + 1] = SOURCE_HOUSEH;
@@ -1417,7 +1414,7 @@ void infect_household(IntegerVector Status,
       // (don't infect already infected)
       for (int j = 0; j < nh; ++j) {
         int ij = i + j;
-        if (Q_Household[ij] && Status[ij] == 0 && Resistant[ij]) {
+        if (Q_Household[ij] && Status[ij] == 0 && !Resistant[ij]) {
           Status[ij] = STATUS_NOSYMP;
           Source[ij] = SOURCE_HOUSEH;
           InfectedOn[ij] = yday + 1;
@@ -1533,8 +1530,7 @@ void infect_other_sa2(IntegerVector Status,
 void infect_major_event(IntegerVector Status,
                         IntegerVector InfectedOn,
                         IntegerVector Source,
-                        double p_visit_major_event,
-                        int n_major_events_today,
+                        IntegerVector nPersonsByEvent,
                         double q_major_event,
                         int max_persons_per_event,
                         int day,
@@ -1663,8 +1659,6 @@ void infect_major_event(IntegerVector Status,
 
 
 
-
-
 void progress_bar(int console_width,
                   int days_to_sim,
                   int day,
@@ -1769,6 +1763,48 @@ void validate_multipolicy(List MultiPolicy) {
 }
 
 
+
+std::vector<unsigned char> do_Resistance(IntegerVector Age,
+                                         DoubleVector ResistanceByAge,
+                                         int nThread = 1) {
+  int N = Age.length();
+  std::vector<unsigned char> out;
+  out.reserve(N);
+  std::fill(out.begin(), out.end(), 0);
+
+  if (ResistanceByAge.length() != 101) {
+    stop("Internal error(do_Resistance): ResistanceByAge.length() != 101.");
+  }
+
+
+  IntegerVector Rand = do_lemire_rand_par(N, nThread);
+
+#pragma omp parallel for num_threads(nThread)
+  for (int i = 0; i < N; ++i) {
+    int agei = Age[i];
+    double r = ResistanceByAge[agei];
+    int p = percentage_to_int(r);
+    out[i] = Rand[i] < p;
+  }
+  return out;
+}
+
+// [[Rcpp::export]]
+LogicalVector test_resistance(IntegerVector Age, DoubleVector ResistanceByAge, int nThread) {
+  std::vector<unsigned char> Resistance = do_Resistance(Age, ResistanceByAge, nThread);
+  int N = Age.length();
+  LogicalVector out = no_init(N);
+#pragma omp parallel for num_threads(nThread)
+  for (int i = 0; i < N; ++i) {
+    out[i] = Resistance[i] != 0;
+  }
+  return out;
+}
+
+
+
+
+
 //' @title do_au_simulate
 //' @name do_au_simulate
 //' @description The internal mechanism of the \code{\link{simulate_sa2}} function
@@ -1866,37 +1902,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
   if (PlaceTypeBySA2.length() > 1) {
     stop("Internal error: PlaceTypeBySA2 not implemented yet."); // # nocov
   }
-
-
-
-
-  /*
-   *
-   school_lockdown_triggers_exist
-   tests_by_state_was_null
-   supermarkets_open
-   schools_open
-   only_Year12
-   school_days_per_wk
-   do_contact_tracing
-   contact_tracing_days_before_test
-   contact_tracing_days_until_result
-   contact_tracing_only_sympto
-   contact_tracing_success
-   tests_by_state
-   max_persons_per_event
-   max_persons_per_supermarket
-   cafes_open
-   age_based_lockdown
-   workplaces_open
-   workplace_size_max
-   workplace_size_beta
-   workplace_size_lmu
-   workplace_size_lsi
-   travel_outside_sa2
-   lockdown_triggers__schools
-   *
-   */
 
 
 
@@ -2164,10 +2169,9 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 
   // Personal epidemiological parameters
-  double resistance_threshold = Epi["resistance_threshold"];
+  DoubleVector ResistanceByAge = Epi["ResistanceByAge"];
 
-  // TODO: Variable is a misnomer, is true when person is *not* resistant (i.e. infectable)
-  const std::vector<unsigned char> Resistant = do_lemire_char_par(N, resistance_threshold, nThread, false);
+  const std::vector<unsigned char> Resistant = do_Resistance(Age, ResistanceByAge, nThread);
 
 
   const double p_asympto = Epi["p_asympto"];
@@ -2743,7 +2747,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
         if (max_persons_per_event > 1000) {
           infect_major_event(Status, InfectedOn, Source,
-                             p_visit_major_event, n_major_events_today,
+                             nPersonsByEvent,
                              q_major_event, max_persons_per_event,
                              day,
                              wday, yday, Resistant, nThread, N, optionz);

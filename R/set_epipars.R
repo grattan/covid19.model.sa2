@@ -29,9 +29,12 @@
 #'
 #' @param q_supermarket,q_places,q_major_event As above, for supermarket and places.
 #'
-#' @param resistance_threshold An integer in \code{[0, 1000]}, the resistance
-#' required to not be infected. A value of 0
-#' means no-one will be infected; a value of 1000 means everyone will.
+#' @param ResistanceByAge \describe{
+#' \item{\code{double(101)}}{For each age, the proportion of individuals who are naturally resistant
+#' to the disease. If a person is naturally resistant then an otherwise successful contact with
+#' and infected person does not cause an infection. Not only do resistant individuals
+#' not fall ill, they are also not infectious.}
+#' }
 #'
 #' @param p_asympto A number in \code{[0, 1]}, the proportion of cases that
 #' are asymptomatic.
@@ -88,7 +91,7 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac", "c
                         q_supermarket = 1/1000,
                         q_places = 1/1000,
                         q_major_event = 1/5000,
-                        resistance_threshold = 400L,
+                        ResistanceByAge = seq(0.9, 0.4, length.out = 101),
                         p_asympto = 0.35,
                         p_critical = c(0.017,
                                        0.045,
@@ -163,10 +166,12 @@ set_epipars <- function(incubation_distribution = c("pois", "lnorm", "dirac", "c
   incubation_distribution <- match_distr(incubation_distribution)
   illness_distribution <- match_distr(illness_distribution)
 
-  checkmate::assert_number(resistance_threshold,
+  checkmate::assert_double(ResistanceByAge,
                            lower = 0,
-                           upper = 1000)
-  resistance_threshold <- resistance_threshold / 1000
+                           upper = 1,
+                           finite = TRUE,
+                           any.missing = FALSE,
+                           len = 101)
 
   checkmate::assert_number(supermarket_beta_shape1, lower = 0, finite = TRUE)
   checkmate::assert_number(supermarket_beta_shape2, lower = 0, finite = TRUE)

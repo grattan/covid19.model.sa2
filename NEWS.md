@@ -1,3 +1,8 @@
+
+# 0.29.0
+* Resistance is now done by age
+
+
 # 0.28.0
 
 * Age-based lockdowns work for ages up to 100
