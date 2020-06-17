@@ -88,6 +88,10 @@ do_rep <- function(r, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_rep`, r, nThread)
 }
 
+test_resistance <- function(Age, ResistanceByAge, nThread) {
+    .Call(`_covid19_model_sa2_test_resistance`, Age, ResistanceByAge, nThread)
+}
+
 do_au_simulate <- function(StatusOriginal, InfectedOnOriginal, SA2, hid, Age, School, DZN, wid, nColleagues, PlaceTypeBySA2, LabourForceStatus, SeedOriginal, Policy, MultiPolicy, nPlacesByDestType, Epi, Incubation, Illness, nSupermarketsAvbl, SupermarketTypical, minPlaceID_nPlacesByDestType, yday_start, days_to_sim, N, display_progress = TRUE, on_terminal = FALSE, returner = 0L, console_width = 80L, optionz = 0L, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_au_simulate`, StatusOriginal, InfectedOnOriginal, SA2, hid, Age, School, DZN, wid, nColleagues, PlaceTypeBySA2, LabourForceStatus, SeedOriginal, Policy, MultiPolicy, nPlacesByDestType, Epi, Incubation, Illness, nSupermarketsAvbl, SupermarketTypical, minPlaceID_nPlacesByDestType, yday_start, days_to_sim, N, display_progress, on_terminal, returner, console_width, optionz, nThread)
 }
