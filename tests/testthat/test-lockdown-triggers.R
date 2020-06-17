@@ -71,7 +71,7 @@ test_that(paste(as.character(Sys.time()), "lockdown triggers work"), {
                 a_household_rate = 0,
                 a_schools_rate = 1,
                 q_school = 0.005,
-                resistance_threshold = 1000L,
+                ResistanceByAge = double(101),
                 p_asympto = 0.5,
                 p_critical = 0,
                 p_death = 0)

@@ -1540,113 +1540,43 @@ void infect_major_event(IntegerVector Status,
                         int nThread,
                         int N,
                         int optionz = 0) {
-  if (n_major_events_today <= 0) {
-    return;
-  }
+  int n_events_today = nPersonsByEvent.length();
 
-  IntegerVector Event = do_lemire_rand_par(N, nThread);
-  DoubleVector miniTypicalEvent = Rcpp::rbeta(262144, 1, 2.5);
-  IntegerVector TypicalEvent = no_init(N); // If a person attends an event, which one?
-#pragma omp parallel for num_threads(nThread)
-  for (int i = 0; i < N; ++i) {
-    TypicalEvent[i] = (int)(n_major_events_today * miniTypicalEvent[i & 262143]);
-  }
-
-
-
-  // use to avoid negative moduli
-  int pint = percentage_to_int(1 - p_visit_major_event);
-
-
-  int n_attendees[255] = {};  // number of attendees of event
-  int i_attendees[255] = {};  // number of infected attendees
-  if (n_major_events_today >= 255) {
-    Rcerr << "Internal error (infect_major_events): "; // # nocov
-    Rcerr << "`n_major_events_today = " << n_major_events_today << "` >= 255"; // # nocov
-    stop("i_attendees exceeded array."); // # nocov
-  }
-
-
-  // Used to reweight events
-  std::vector<int> Beta;
-  Beta.reserve(n_major_events_today);
-  for (int b = 0; b < n_major_events_today; ++b) {
-    double beta_b = R::qbeta((double)b / (double)n_major_events_today, 3, 1, true, false);
-    Beta.push_back((int)(n_major_events_today * beta_b));
-  }
-
-
-#if defined _OPENMP && _OPENMP >= 201511
-#pragma omp parallel for num_threads(nThread) reduction(+:n_attendees[:255]) reduction(+:i_attendees[:255])
-#endif
-  for (int i = 0; i < N; ++i) {
-    int eventi = Event[i];
-
-    // pint is reversed (i.e. 1% -> 99%)
-    if (eventi < pint) {
-      Event[i] = -1;
+  for (int e = 0; e < n_events_today; ++e) {
+    double p_attends_e = ((double) nPersonsByEvent[e] / (double)N);
+    std::vector<unsigned char> Attends = do_lemire_char_par(N, p_attends_e, nThread, false);
+    int i_event = 0;
+#pragma omp parallel for num_threads(nThread) reduction(+:i_event)
+    for (int i = 0; i < N; ++i) {
+      int statusi = Status[i];
+      if (Attends[i] && is_infectious(statusi)) {
+        i_event += 1;
+      }
+    }
+    if (i_event == 0) {
       continue;
     }
-    int ei = TypicalEvent[i]; //Beta[eventi % 255];
-    n_attendees[ei] += 1;
-    int statusi = Status[i];
-    if (!is_infectious(statusi)) {
-      continue;
-    }
-    eventi = std::abs(eventi);
-    eventi = (eventi % n_major_events_today);
-    Event[i] = eventi;
-
-    i_attendees[ei] += 1;
-
-  }
-
-
-  // Make larger proportions of infections slightly more likely
-  // to infect
-  int p_infected[255] = {};
-  for (int ei = 0; ei < 255; ++ei) {
-    if (!i_attendees[ei] || !n_attendees[ei]) {
-      p_infected[ei] = INT_MIN;
-      continue;
-    }
-    double infected = i_attendees[ei];
-    double attended = n_attendees[ei];
-    double q_i_a = q_major_event * (1 + sqrt(infected / attended));
-
-    p_infected[ei] = percentage_to_int(q_i_a);
-  }
-
-  IntegerVector Rand = do_lemire_rand_par(N, nThread);
+    std::vector<unsigned char> GetsInfected = do_lemire_char_par(N, q_major_event, nThread, false);
 
 #pragma omp parallel for num_threads(nThread)
-  for (int i = 0; i < N; ++i) {
-    int ei = Event[i];
-    if (ei <= 0 || ei >= 255) {
-      continue;
+    for (int i = 0; i < N; ++i) {
+      if (!GetsInfected[i]) {
+        continue;
+      }
+      int statusi = Status[i];
+      if (statusi) {
+        continue;
+      }
+      if (Resistant[i]) {
+        continue;
+      }
+      Status[i] = STATUS_NOSYMP;
+      InfectedOn[i] = yday;
+      Source[i] = SOURCE_STADIA;
     }
-    ei = TypicalEvent[i];
-    if (!i_attendees[ei]) {
-      continue;
-    }
-    if (n_attendees[ei] > max_persons_per_event) {
-      continue;
-    }
-
-    if (!Resistant[i]) {
-      continue;
-    }
-    if (Rand[i] >= p_infected[ei]) {
-      continue;
-    }
-    if (Status[i]) {
-      continue;
-    }
-    Status[i] = STATUS_NOSYMP;
-    InfectedOn[i] = yday;
-    Source[i] = SOURCE_STADIA;
   }
-  // void
+
+
 }
 
 
@@ -1996,6 +1926,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
   int n_major_events_weekday = Policy["n_major_events_weekday"];
   int n_major_events_weekend = Policy["n_major_events_weekend"];
 
+  IntegerVector nPersonsByEvent = Policy["nPersonsByEvent"];
   double p_visit_major_event = Epi["p_visit_major_event"];
   if (p_visit_major_event < 0 || p_visit_major_event > 1) {
     stop("p_visit_major_event not (0, 1)");
@@ -2745,7 +2676,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
         int n_major_events_today =
           (is_weekday) ? n_major_events_weekday : n_major_events_weekend;
 
-        if (max_persons_per_event > 1000) {
+        if (n_major_events_today && max_persons_per_event > 1000) {
           infect_major_event(Status, InfectedOn, Source,
                              nPersonsByEvent,
                              q_major_event, max_persons_per_event,
