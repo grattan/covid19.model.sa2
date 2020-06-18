@@ -1579,6 +1579,48 @@ void infect_major_event(IntegerVector Status,
 
 }
 
+void add_unseen_infections(IntegerVector Status,
+                           IntegerVector InfectedOn,
+                           IntegerVector Source,
+                           int day,
+                           int wday,
+                           int yday,
+                           const std::vector<unsigned char> &Resistant,
+                           int nThread,
+                           int N,
+                           int n_unseen_infections) {
+  IntegerVector iNewInfs = Rcpp::sample(N, n_unseen_infections);
+  for (int i = 0; i < n_unseen_infections; ++i) {
+    if (Resistant[i] || Status[i]) {
+      continue;
+    }
+    Status[i] = STATUS_NOSYMP;
+    InfectedOn[i] = yday;
+    Source[i] = SOURCE_UNSEEN;
+  }
+}
+
+void add_overseas_arrivals(IntegerVector Status,
+                           IntegerVector InfectedOn,
+                           IntegerVector Source,
+                           int day,
+                           int wday,
+                           int yday,
+                           const std::vector<unsigned char> &Resistant,
+                           int nThread,
+                           int N,
+                           int n_overseas_arrivals) {
+  IntegerVector iNewInfs = Rcpp::sample(N, n_overseas_arrivals);
+  for (int i = 0; i < n_overseas_arrivals; ++i) {
+    if (Resistant[i] || Status[i]) {
+      continue;
+    }
+    Status[i] = STATUS_NOSYMP + ISOLATED_PLUS;
+    InfectedOn[i] = yday;
+    Source[i] = SOURCE_ABROAD;
+  }
+}
+
 
 
 
@@ -1767,6 +1809,8 @@ List do_au_simulate(IntegerVector StatusOriginal,
                     List MultiPolicy,
                     List nPlacesByDestType,
                     List Epi, /* Epidemiological parameters */
+                    IntegerVector unseen_infections,
+                    IntegerVector overseas_arrivals,
                     IntegerVector Incubation,
                     IntegerVector Illness,
                     IntegerVector nSupermarketsAvbl,
@@ -2196,7 +2240,11 @@ List do_au_simulate(IntegerVector StatusOriginal,
   IntegerVector NewInfections(days_to_sim);
   IntegerVector NewInfectionsByState(days_to_sim * NSTATES);
 
-
+  if (unseen_infections.length() != days_to_sim) {
+    Rcerr << "unseen_infections.length() = " << unseen_infections.length();
+    Rcerr << "but must be equal to days_to_sim " << days_to_sim;
+    stop("unseen_infections.length() != days_to_sim. ");
+  }
 
 
 
@@ -2728,6 +2776,32 @@ List do_au_simulate(IntegerVector StatusOriginal,
                       TestedOn);
     }
 
+    int n_unseen_infections = unseen_infections[day];
+    if (n_unseen_infections) {
+      add_unseen_infections(Status,
+                            InfectedOn,
+                            Source,
+                            day,
+                            wday,
+                            yday,
+                            Resistant,
+                            nThread,
+                            N,
+                            n_unseen_infections);
+    }
+    int n_overseas_arrivals = overseas_arrivals[day];
+    if (n_overseas_arrivals) {
+      add_overseas_arrivals(Status,
+                            InfectedOn,
+                            Source,
+                            day,
+                            wday,
+                            yday,
+                            Resistant,
+                            nThread,
+                            N,
+                            n_overseas_arrivals);
+    }
   }
 
   if (returner == 0) {

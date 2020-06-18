@@ -16,7 +16,9 @@ simulate_sa2(
   use_dataEnv = getOption("covid19.model.sa2_useDataEnv", FALSE),
   nThread = getOption("covid19.model.sa2_nThread", 1L),
   myaus = NULL,
-  returner = 0L
+  returner = 0L,
+  unseen_infections = integer(days_to_simulate),
+  overseas_arrivals = NULL
 )
 }
 \arguments{
@@ -40,7 +42,9 @@ are supported but no others. An empty list corresponds to current settings.)}
 \item{\code{list()}}{If \code{NULL}, the default, the initial status
 is set by the most recent data.
 
-Otherwise,
+Otherwise, a wide table of 5 columns and 9 rows, the first column being the
+state and the other columns giving the corresponding number of active, critical,
+dead, and healed individuals in each state. See examples
 .}
 }}
 
@@ -77,11 +81,37 @@ formal is experimental and may be removed without notice.}
 \item{\code{0}}{The default, return the full data: status of each person, each day.}
 \item{\code{1}}{\code{days} x \code{state} x \code{age} x \code{status}.}
 }}
+
+\item{unseen_infections}{\describe{
+\item{\code{integer(days_to_simulate)}}{For each day simulated, the number of
+spontaneous infections, whose source is unseen.}
+}}
+
+\item{overseas_arrivals}{\describe{
+\item{\code{integer(days_to_simulate)}}{For each day simulated, the number of
+overseas (infected) arrivals. If \code{NULL}, the default, the number is taken
+from the (smoothed) proportion of NSW and Victorian cases known to have
+been infected abroad. Such infections are taken to have started on the day
+of arrival (even if it is more likely they were infected some days prior to
+boarding their flights), and are immediately isolated.
+}
+}}
 }
 \value{
-A list of \code{days_to_simulate + 1} components. The first
-component is the inital status of each individual and
-subsequent components are the statuses of each day simulated.
+For \code{returner = 0} a list of three components:
+the first component is an integer vector of length \code{days_to_simulate},
+giving the number infected on each day. The second component is a
+\code{data.table}, resembling the \code{australia.fst} data, with
+a \code{days_to_simulate} extra columns giving the \code{Status} of each person
+on each day, plus a column \code{Source} which gives the source of infection
+for that person.
+
+For \code{returner = 1} a \code{data.table} of three columns and
+\code{days_to_simulate} \eqn{\times 7} rows, giving the total number
+of individuals of each status on each day, as defined by the \code{Status}
+column.
+
+For \code{returner = 2}, as with \code{returner = 1} but disaggregated by state.
 }
 \description{
 Simulates the spread of COVID-19 given today's condition, and
@@ -100,4 +130,37 @@ The \strong{Status} of an individual is\tabular{rl}{
    32 \tab 0 but isolated \cr
    33 \tab 1 but isolated \cr
 }
+}
+\examples{
+
+if (requireNamespace("tibble", quietly = TRUE)) {
+  manual_initial_status <-
+    tibble::tribble(
+      ~state, ~active, ~critical, ~dead, ~healed,
+      "NSW",     100,         9,     6,      30,
+      "VIC",      40,         5,     4,      20,
+      "QLD",      30,         2,     3,      10,
+      "SA",      10,         0,     0,      10,
+      "WA",      12,         0,     0,      10,
+      "TAS",      20,         0,     0,       1,
+      "NT",       1,         0,     0,       3,
+      "ACT",    1000,         0,     0,       1,
+      "OTH",     100,         0,     0,       0)
+
+S <- simulate_sa2(55,
+                  returner = 0,
+                  .first_day = "2020-06-02",
+                  InitialStatus = manual_initial_status,
+                  EpiPars = set_epipars(q_workplace = 1,
+                                        a_workplace_rate = 1,
+                                        q_supermarket = 0,
+                                        incubation_mean = 25,
+                                        ResistanceByAge = rep(0, 101),
+                                        incubation_distribution = "dirac"),
+                  Policy = set_policypars(workplaces_open = 1,
+                                          workplace_size_max = 7,
+                                          do_contact_tracing = FALSE),
+                  nThread = 10)
+}
+
 }

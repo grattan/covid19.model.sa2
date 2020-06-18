@@ -12,7 +12,9 @@
 #' \item{\code{list()}}{If \code{NULL}, the default, the initial status
 #' is set by the most recent data.
 #'
-#' Otherwise,
+#' Otherwise, a wide table of 5 columns and 9 rows, the first column being the
+#' state and the other columns giving the corresponding number of active, critical,
+#' dead, and healed individuals in each state. See examples
 #' .}
 #' }
 #' @param PolicyPars \describe{
@@ -60,10 +62,36 @@
 #' \item{\code{1}}{\code{days} x \code{state} x \code{age} x \code{status}.}
 #' }
 #'
+#' @param unseen_infections \describe{
+#' \item{\code{integer(days_to_simulate)}}{For each day simulated, the number of
+#' spontaneous infections, whose source is unseen.}
+#' }
+#' @param overseas_arrivals \describe{
+#' \item{\code{integer(days_to_simulate)}}{For each day simulated, the number of
+#' overseas (infected) arrivals. If \code{NULL}, the default, the number is taken
+#' from the (smoothed) proportion of NSW and Victorian cases known to have
+#' been infected abroad. Such infections are taken to have started on the day
+#' of arrival (even if it is more likely they were infected some days prior to
+#' boarding their flights), and are immediately isolated.
+#' }
+#' }
+#'
+#'
 #' @return
-#' A list of \code{days_to_simulate + 1} components. The first
-#' component is the inital status of each individual and
-#' subsequent components are the statuses of each day simulated.
+#' For \code{returner = 0} a list of three components:
+#' the first component is an integer vector of length \code{days_to_simulate},
+#'  giving the number infected on each day. The second component is a
+#'  \code{data.table}, resembling the \code{australia.fst} data, with
+#'  a \code{days_to_simulate} extra columns giving the \code{Status} of each person
+#'  on each day, plus a column \code{Source} which gives the source of infection
+#'  for that person.
+#'
+#' For \code{returner = 1} a \code{data.table} of three columns and
+#' \code{days_to_simulate} \eqn{\times 7} rows, giving the total number
+#' of individuals of each status on each day, as defined by the \code{Status}
+#' column.
+#'
+#' For \code{returner = 2}, as with \code{returner = 1} but disaggregated by state.
 #'
 #' @details
 #' The \strong{Status} of an individual is
@@ -81,6 +109,37 @@
 #'
 #' @md
 #'
+#' @examples
+#'
+#' if (requireNamespace("tibble", quietly = TRUE)) {
+#'   manual_initial_status <-
+#'     tibble::tribble(
+#'       ~state, ~active, ~critical, ~dead, ~healed,
+#'       "NSW",     100,         9,     6,      30,
+#'       "VIC",      40,         5,     4,      20,
+#'       "QLD",      30,         2,     3,      10,
+#'       "SA",      10,         0,     0,      10,
+#'       "WA",      12,         0,     0,      10,
+#'       "TAS",      20,         0,     0,       1,
+#'       "NT",       1,         0,     0,       3,
+#'       "ACT",    1000,         0,     0,       1,
+#'       "OTH",     100,         0,     0,       0)
+#'
+#' S <- simulate_sa2(55,
+#'                   returner = 0,
+#'                   .first_day = "2020-06-02",
+#'                   InitialStatus = manual_initial_status,
+#'                   EpiPars = set_epipars(q_workplace = 1,
+#'                                         a_workplace_rate = 1,
+#'                                         q_supermarket = 0,
+#'                                         incubation_mean = 25,
+#'                                         ResistanceByAge = rep(0, 101),
+#'                                         incubation_distribution = "dirac"),
+#'                   Policy = set_policypars(workplaces_open = 1,
+#'                                           workplace_size_max = 7,
+#'                                           do_contact_tracing = FALSE),
+#'                   nThread = 10)
+#' }
 #'
 #' @export
 
@@ -96,7 +155,9 @@ simulate_sa2 <- function(days_to_simulate = 5,
                          use_dataEnv = getOption("covid19.model.sa2_useDataEnv", FALSE),
                          nThread = getOption("covid19.model.sa2_nThread", 1L),
                          myaus = NULL,
-                         returner = 0L) {
+                         returner = 0L,
+                         unseen_infections = integer(days_to_simulate),
+                         overseas_arrivals = NULL) {
   nThread <- checkmate::assert_int(nThread, lower = 1L, coerce = TRUE)
   fst::threads_fst(nThread)
   data.table::setDTthreads(nThread)
@@ -220,6 +281,10 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
   on_terminal <- identical(.Platform$GUI, "RTerm")
 
+  if (is.null(overseas_arrivals)) {
+    overseas_arrivals <- get_overseas_arrivals(start_date = .first_day, days_to_sim = days_to_simulate)
+  }
+
 
   hh_ss("pre-C++")
   out <-
@@ -239,6 +304,8 @@ simulate_sa2 <- function(days_to_simulate = 5,
                         Policy = Policy,
                         MultiPolicy = MultiPolicy %||% list(),
                         Epi = EpiPars,
+                        unseen_infections = unseen_infections,
+                        overseas_arrivals = overseas_arrivals,
                         Incubation = Incubation,
                         Illness = Illness,
                         nSupermarketsAvbl = nSupermarketsAvbl,
@@ -496,6 +563,45 @@ get_nPlacesByDestType <- function() {
   nPlacesByDestType
 }
 
+
+get_overseas_arrivals <- function(start_date, days_to_sim) {
+
+  if (is.character(start_date) || inherits(start_date, "Date")) {
+    start_date <- yday(start_date)
+  }
+
+  cases <- read_sys("time_series_cases.fst", fst2_progress = FALSE, columns = c("Date", "Total"))
+  new_cases <- cases[, .(NewCases = diff(Total), Date = Date[-1])]
+  pOverseas_by_Date <-
+    lapply(c("nsw", "vic"), function(s) {
+      read_sys(g("time_series_{s}_sources.fst"),
+               fst2_progress = FALSE,
+               columns = c("Date", "overseas", "interstate", "local_contact", "local_unknown"))
+    }) %>%
+    rbindlist(use.names = TRUE, fill = TRUE) %>%
+    .[, lapply(.SD, coalesce, 0L)] %>%
+    melt.data.table(id.vars = c("Date")) %>%
+    .[, .(pOverseas = weighted.mean(variable == "overseas", value)), keyby = "Date"] %>%
+    .[, pOverseas := coalesce(pOverseas, 0)] %>%
+    .[, pOverseas := loess.smooth(.I, pOverseas, evaluation = .N)$y] %>%
+    .[new_cases, on = "Date"] %>%
+    .[, pOverseas := nafill(pOverseas, type = "locf")] %>%
+    .[, nOverseas := as.integer(round(NewCases * pOverseas))] %>%
+    .[]
+
+  last_pOverseas <- pOverseas_by_Date[, last(nOverseas)]
+
+  if (start_date > pOverseas_by_Date[, yday(last(Date))]) {
+    return(pOverseas_by_Date[, rep_len(last_pOverseas, days_to_sim)])
+  }
+
+  out <- pOverseas_by_Date[yday(Date) >= start_date][["nOverseas"]]
+  if (length(out) >= days_to_sim) {
+    return(out[1:days_to_sim])
+  }
+
+  c(out, rep.int(last_pOverseas, days_to_sim - length(out)))
+}
 
 
 

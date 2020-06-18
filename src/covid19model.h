@@ -58,6 +58,7 @@ const int STATUS_CRITIC =  3;
 const int ISOLATED_PLUS = 32;
 
 const int SOURCE_ABROAD =  8;
+const int SOURCE_UNSEEN =  9;
 const int SOURCE_SUPERM = 17;
 const int SOURCE_PLACES = 18;
 const int SOURCE_WORKPL = 19;

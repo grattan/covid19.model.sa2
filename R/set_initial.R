@@ -86,9 +86,10 @@ set_initial_by_state <- function(state_id,
   }
 
   if (is.character(cases_by_state)) {
-    cases_by_state <- read_sys(cases_by_state, fst2_progress = FALSE)
-    deaths_by_state <- read_sys(deaths_by_state, fst2_progress = FALSE)
-    recovered_by_state <- read_sys(recovered_by_state, fst2_progress = FALSE)
+    cc <- function(dt) dt[complete.cases(dt)]
+    cases_by_state <- cc(read_sys(cases_by_state, fst2_progress = FALSE))
+    deaths_by_state <- cc(read_sys(deaths_by_state, fst2_progress = FALSE))
+    recovered_by_state <- cc(read_sys(recovered_by_state, fst2_progress = FALSE))
     impute_time_series(cases_by_state, deaths_by_state, recovered_by_state)
   }
 
@@ -308,6 +309,10 @@ set_initial_stochastic <- function(aus, .yday, p_asympto = 0.48, nThread = 1L) {
 
   stopifnot(is.data.table(aus), hasName(aus, "state"))
   cases <- read_sys("time_series_cases.fst")[yday(Date) <= .yday]
+  if (hasName(cases, "lgl")) {
+    cases[, "lgl" := NULL]
+  }
+  cases <- cases[complete.cases(cases)]
   NewCases_by_Date <-
     cases[, lapply(.SD, function(x) if (inherits(x, "Date")) x[-1] else diff(cummax(x)))]
 
