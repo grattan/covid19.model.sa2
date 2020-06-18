@@ -1,0 +1,11 @@
+test_that("get_overseas_arrivals works", {
+  o <- get_overseas_arrivals("2020-04-01", 1000)
+  expect_equal(o[999], o[1000])
+  expect_true(o[1] %between% c(138, 141))
+  o <- get_overseas_arrivals("2020-04-01", 10)
+  expect_true(o[1] %between% c(138, 141))
+  o <- get_overseas_arrivals(yday("2020-04-01"), 10)
+  expect_true(o[1] %between% c(138, 141))
+  o <- get_overseas_arrivals(as.Date("2020-04-01"), 10)
+  expect_true(o[1] %between% c(138, 141))
+})

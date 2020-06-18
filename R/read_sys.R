@@ -69,6 +69,14 @@ read_sys <- function(file.fst,
 
 
 file_fst <- function(file.fst) {
+
+  # Surprising bottleneck!
+  if (file.fst == "time_series_cases.fst" ||
+      file.fst == "time_series_nsw_sources.fst" ||
+      file.fst == "time_series_vic_sources.fst" ||
+      file.fst == "time_series_tests.fst") {
+    return(system.file("extdata", file.fst, package = packageName()))
+  }
   extdata_empty <- !nzchar(system.file("extdata", "australia.fst", package = packageName()))
   if (extdata_empty && !grepl("/", file.fst, fixed = TRUE)) {
     ExDest <- hutils::provide.dir(file.path(tempdir(), "extdata"))
