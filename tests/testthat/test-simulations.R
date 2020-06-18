@@ -457,6 +457,7 @@ test_that(paste(as.character(Sys.time()), "workplace caps bind"), {
 
 
 test_that(paste(as.character(Sys.time()), "only_Year12"), {
+  skip_if_not(is64bit())
   withr::with_seed(55, {
   S <- simulate_sa2(8,
                     returner = 4,
@@ -479,6 +480,7 @@ test_that(paste(as.character(Sys.time()), "only_Year12"), {
 
 
 test_that(paste(as.character(Sys.time()), "major events (0)"), {
+  skip_if_not(is64bit())
   S <- simulate_sa2(50,
                     .first_day = "2020-03-30",
                     PolicyPars = set_policypars(supermarkets_open = TRUE,

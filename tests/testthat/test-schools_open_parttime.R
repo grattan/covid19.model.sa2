@@ -68,6 +68,7 @@ test_that(paste(as.character(Sys.time()), "Able to model partial return to schoo
 test_that(paste(as.character(Sys.time()), "coverage of school attendance"), {
   skip_if_not_installed("withr")
   skip_if_not_installed("data.table")
+  skip_if_not(is64bit())
   library(data.table)
   no_school_ld <- set_lockdown_triggers__schools(do_school_lockdown = FALSE)
 
