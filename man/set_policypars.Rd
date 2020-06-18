@@ -117,6 +117,8 @@ perform. First entry is the total tests available across Australia.}
 \item{max_persons_per_event, n_major_events_weekday, n_major_events_weekend}{Policies around major events. Maximum of 255 major events per day and
 values of `max_persons_per_event` below 1000 are rounded to zero.}
 
+\item{nPersonsByEvent}{The number of persons to attend each event.}
+
 \item{max_persons_per_supermarket}{Maximum number of people allowed in a
 supermarket (within one hour i.e. concurrently).}
 
