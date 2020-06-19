@@ -138,7 +138,7 @@
 #'                   Policy = set_policypars(workplaces_open = 1,
 #'                                           workplace_size_max = 7,
 #'                                           do_contact_tracing = FALSE),
-#'                   nThread = 10)
+#'                   nThread = 1)
 #' }
 #'
 #' @export
