@@ -236,6 +236,10 @@ do_pminCppp <- function(x, a = 0L, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_pminCppp`, x, a, nThread)
 }
 
+sum_le_eq <- function(x, x1, y, y1) {
+    .Call(`_covid19_model_sa2_sum_le_eq`, x, x1, y, y1)
+}
+
 do_is_unsorted_pint <- function(x, nThread = 1L) {
     .Call(`_covid19_model_sa2_do_is_unsorted_pint`, x, nThread)
 }

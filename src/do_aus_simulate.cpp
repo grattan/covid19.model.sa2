@@ -1590,7 +1590,8 @@ void add_unseen_infections(IntegerVector Status,
                            int N,
                            int n_unseen_infections) {
   IntegerVector iNewInfs = Rcpp::sample(N, n_unseen_infections);
-  for (int i = 0; i < n_unseen_infections; ++i) {
+  for (int k = 0; k < n_unseen_infections; ++k) {
+    int i = iNewInfs[k];
     if (Resistant[i] || Status[i]) {
       continue;
     }
@@ -1611,7 +1612,8 @@ void add_overseas_arrivals(IntegerVector Status,
                            int N,
                            int n_overseas_arrivals) {
   IntegerVector iNewInfs = Rcpp::sample(N, n_overseas_arrivals);
-  for (int i = 0; i < n_overseas_arrivals; ++i) {
+  for (int k = 0; k < n_overseas_arrivals; ++k) {
+    int i = iNewInfs[k];
     if (Resistant[i] || Status[i]) {
       continue;
     }

@@ -689,6 +689,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sum_le_eq
+int sum_le_eq(IntegerVector x, int x1, IntegerVector y, int y1);
+RcppExport SEXP _covid19_model_sa2_sum_le_eq(SEXP xSEXP, SEXP x1SEXP, SEXP ySEXP, SEXP y1SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::traits::input_parameter< IntegerVector >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int >::type x1(x1SEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type y(ySEXP);
+    Rcpp::traits::input_parameter< int >::type y1(y1SEXP);
+    rcpp_result_gen = Rcpp::wrap(sum_le_eq(x, x1, y, y1));
+    return rcpp_result_gen;
+END_RCPP
+}
 // do_is_unsorted_pint
 bool do_is_unsorted_pint(IntegerVector x, int nThread);
 RcppExport SEXP _covid19_model_sa2_do_is_unsorted_pint(SEXP xSEXP, SEXP nThreadSEXP) {
@@ -757,6 +770,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_covid19_model_sa2_do_modulo_16", (DL_FUNC) &_covid19_model_sa2_do_modulo_16, 2},
     {"_covid19_model_sa2_do_lag_in_place", (DL_FUNC) &_covid19_model_sa2_do_lag_in_place, 1},
     {"_covid19_model_sa2_do_pminCppp", (DL_FUNC) &_covid19_model_sa2_do_pminCppp, 3},
+    {"_covid19_model_sa2_sum_le_eq", (DL_FUNC) &_covid19_model_sa2_sum_le_eq, 4},
     {"_covid19_model_sa2_do_is_unsorted_pint", (DL_FUNC) &_covid19_model_sa2_do_is_unsorted_pint, 2},
     {NULL, NULL, 0}
 };
