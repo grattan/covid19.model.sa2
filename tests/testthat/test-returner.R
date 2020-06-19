@@ -12,5 +12,5 @@ test_that(paste(as.character(Sys.time()), "returners"), {
                       PolicyPars = set_policy_no_restrictions(),
                       .first_day = yday("2020-03-25"),
                       returner = 2L)
-  expect_equal(SR1[, sum(N)], 41 * fst_rows("australia.fst"))
+  expect_equal(SR2[, sum(N)], 41 * fst_rows("australia.fst"))
  })

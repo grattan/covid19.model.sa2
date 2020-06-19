@@ -202,32 +202,36 @@ test_that(paste(as.character(Sys.time()), "a_household_infections"), {
                                                 q_household = 1),
                           returner = 1,
                           .first_day = "2020-05-01",
-                          unseen_infections = rep(10L, 40),
+                          unseen_infections = rep(100L, 40),
                           overseas_arrivals = integer(40))
+  })
+  withr::with_seed(10, {
     SH005 <- simulate_sa2(40,
                           Policy = PolicyH,
                           EpiPars = set_epipars(a_household_rate = 0.05,
                                                 q_household = 1),
                           returner = 1,
                           .first_day = "2020-05-01",
-                          unseen_infections = rep(10L, 40),
+                          unseen_infections = rep(100L, 40),
                           overseas_arrivals = integer(40))
+  })
+  withr::with_seed(10, {
     SH025 <- simulate_sa2(40,
                           Policy = PolicyH,
                           EpiPars = set_epipars(a_household_rate = 0.25,
                                                 q_household = 1),
                           returner = 1,
                           .first_day = "2020-05-01",
-                          unseen_infections = rep(10L, 40),
+                          unseen_infections = rep(100L, 40),
                           overseas_arrivals = integer(40))
-    s000 <- SH000[Status == "Suscep"][["N"]]
-    s005 <- SH005[Status == "Suscep"][["N"]]
-    s025 <- SH025[Status == "Suscep"][["N"]]
-
-    expect_lt(mean(tail(s000, 10) < tail(s005, 10)), 0.5)
-    expect_lt(mean(tail(s005, 10) < tail(s025, 10)), 0.5)
   })
 
+  s000 <- SH000[Status == "Suscep"][["N"]]
+  s005 <- SH005[Status == "Suscep"][["N"]]
+  s025 <- SH025[Status == "Suscep"][["N"]]
+
+  expect_lt(mean(tail(s000, 10) < tail(s005, 10)), 0.5)
+  expect_lt(mean(tail(s005, 10) < tail(s025, 10)), 0.5)
 
 })
 
@@ -389,7 +393,7 @@ test_that(paste(as.character(Sys.time()), "age-based lockdown"), {
                     PolicyPars = set_policypars(age_based_lockdown = 65:100,
                                                 do_contact_tracing = FALSE),
                     EpiPars = set_epipars(q_supermarket = 0.1))
-  a <- S$Statuses[magrittr::and(Age < 65, Status == 32), .N]
+  a <- S$Statuses[, sum_le_eq(Age, 65L, V2, 32L)]
 
   #
   expect_equal(a, 0)
@@ -443,7 +447,7 @@ test_that(paste(as.character(Sys.time()), "early return"), {
                     returner = 1L,
                     .first_day = "2020-06-01",
                     PolicyPars = set_policypars(supermarkets_open = FALSE, cafes_open = FALSE))
-  expect_equal(S[Day == 100][Status %in% c("NoSymp", "InSymp"), sum(N)], 0L)
+  expect_equal(S[Day == 100, .(Status, N)][Status %in% c("NoSymp", "InSymp"), sum(N)], 0L)
 })
 
 test_that(paste(as.character(Sys.time()), "workplace caps bind"), {
@@ -485,19 +489,19 @@ test_that(paste(as.character(Sys.time()), "workplace caps bind"), {
 test_that(paste(as.character(Sys.time()), "only_Year12"), {
   skip_if_not(is64bit())
   withr::with_seed(55, {
-  S <- simulate_sa2(8,
-                    returner = 4,
-                    .first_day = as.Date("2020-04-09"),
-                    PolicyPars = set_policypars(supermarkets_open = FALSE,
-                                                schools_open = TRUE,
-                                                only_Year12 = TRUE,
-                                                school_days_per_wk = c("NSW" = 3L),
-                                                do_contact_tracing = FALSE,
-                                                cafes_open = FALSE),
-                    EpiPars = set_epipars(incubation_mean = 24,
-                                          incubation_distribution = "lnorm",
-                                          a_schools_rate = 1,
-                                          q_school = 1/2))
+    S <- simulate_sa2(8,
+                      returner = 4,
+                      .first_day = as.Date("2020-04-09"),
+                      PolicyPars = set_policypars(supermarkets_open = FALSE,
+                                                  schools_open = TRUE,
+                                                  only_Year12 = TRUE,
+                                                  school_days_per_wk = c("NSW" = 3L),
+                                                  do_contact_tracing = FALSE,
+                                                  cafes_open = FALSE),
+                      EpiPars = set_epipars(incubation_mean = 24,
+                                            incubation_distribution = "lnorm",
+                                            a_schools_rate = 1,
+                                            q_school = 1/2))
   })
 
 

@@ -84,3 +84,10 @@ test_that("do_exp_dbl2int", {
   out2 <- do_exp_dbl2int(c(0, 0.5, 1, 1.5), nThread = 2)
   expect_equal(out2, as.integer(exp(xxx)))
 })
+
+
+test_that("sum_le_eq", {
+  X <- 1:100
+  Y <- rep_len(1:2, 100)
+  expect_equal(sum_le_eq(X, 50L, Y, 1L), 25L)
+})

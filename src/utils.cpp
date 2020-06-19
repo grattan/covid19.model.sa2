@@ -128,6 +128,19 @@ bool yday2monday(const int & yday) {
 }
 
 
+// [[Rcpp::export(rng = false)]]
+int sum_le_eq(IntegerVector x, int x1, IntegerVector y, int y1) {
+  int n = x.length();
+  int o = 0;
+  for (int i = 0; i < n; ++i) {
+    if (x[i] < x1 && y[i] == y1) {
+      ++o;
+    }
+  }
+  return o;
+}
+
+
 
 
 
