@@ -377,6 +377,7 @@ test_that(paste(as.character(Sys.time()), "contact tracing tests can be capped")
                    label = paste0("@id,Day ", .BY[["id2"]], ",", .BY[["Day"]],
                                   " = ", first(N))),
       by = .(id2, Day)]
+  clear_dataEnv()
 
 })
 
@@ -409,7 +410,7 @@ test_that(paste(as.character(Sys.time()), "Multipolicy-historical"), {
       "NT",      0,         0,     0,       3,
       "ACT",  8000,         0,     0,       1,
       "OTH",    00,         0,     0,       0)
-  S <- simulate_sa2(49,
+  S <- simulate_sa2(19,
                     returner = 3,
                     InitialStatus = manual_initial_status,
                     EpiPars = set_epipars(q_school = 1,
@@ -506,7 +507,7 @@ test_that(paste(as.character(Sys.time()), "only_Year12"), {
 
 test_that(paste(as.character(Sys.time()), "major events (0)"), {
   skip_if_not(is64bit())
-  S <- simulate_sa2(50,
+  S <- simulate_sa2(47,
                     .first_day = "2020-03-30",
                     PolicyPars = set_policypars(supermarkets_open = TRUE,
                                                 cafes_open = FALSE,
