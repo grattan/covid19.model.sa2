@@ -111,7 +111,7 @@
 #'
 #' @examples
 #'
-#' if (requireNamespace("tibble", quietly = TRUE)) {
+#' if (run_covid19_example()) {
 #'   manual_initial_status <-
 #'     tibble::tribble(
 #'       ~state, ~active, ~critical, ~dead, ~healed,
