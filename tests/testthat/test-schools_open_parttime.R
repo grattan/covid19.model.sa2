@@ -69,31 +69,34 @@ test_that(paste(as.character(Sys.time()), "coverage of school attendance"), {
   skip_if_not_installed("withr")
   skip_if_not_installed("data.table")
   skip_if_not(is64bit())
+  clear_dataEnv()
   library(data.table)
   no_school_ld <- set_lockdown_triggers__schools(do_school_lockdown = FALSE)
 
   withr::with_seed(28, {
-    S1 <- simulate_sa2(100,
+    S1 <- simulate_sa2(80,
                        returner = 1,
                        .first_day = "2020-05-01",
-                       EpiPars = set_epipars(q_school = 1/100),
+                       EpiPars = set_epipars(q_school = 1/50, a_schools_rate = 1, q_household = 0),
                        PolicyPars = set_policypars(schools_open = TRUE,
                                                    do_contact_tracing = FALSE,
                                                    school_days_per_wk = 1L,
-                                                   lockdown_triggers__schools = no_school_ld))
+                                                   lockdown_triggers__schools = no_school_ld),
+                       overseas_arrivals = integer(100))
   })
   withr::with_seed(28, {
-    S4 <- simulate_sa2(100,
+    S4 <- simulate_sa2(80,
                        returner = 1,
                        .first_day = "2020-05-01",
-                       EpiPars = set_epipars(q_school = 1/100),
+                       EpiPars = set_epipars(q_school = 1/50, a_schools_rate = 1, q_household = 0),
                        PolicyPars = set_policypars(schools_open = TRUE,
                                                    do_contact_tracing = FALSE,
                                                    school_days_per_wk = 4L,
-                                                   lockdown_triggers__schools = no_school_ld))
+                                                   lockdown_triggers__schools = no_school_ld),
+                       overseas_arrivals = integer(100))
   })
   merge.data.table(S1, S4, by = c("Day", "Status")) %>%
     .[Status == "NoSymp"] %>%
-    tail %>%
+    tail(10) %>%
     .[, expect_lte(N.x, N.y), by = .(Day)]
 })

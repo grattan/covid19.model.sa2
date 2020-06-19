@@ -31,7 +31,9 @@
 #'
 #' @param ... Arguments passed to \code{read_fst}.
 #'
-#'
+#' @examples
+#' read_sys("time_series_cases.fst")
+#' read_sys("time_series_cases.fst", pattern = "^[A-Z]+$", columns = "Date")
 #'
 #'
 #' @export read_sys

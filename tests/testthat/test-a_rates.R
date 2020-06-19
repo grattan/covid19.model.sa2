@@ -81,6 +81,8 @@ test_that(paste(as.character(Sys.time()), "a_household_rate"), {
                    nPlacesByDestType = nPlacesByDestType,
                    # FreqsByDestType = FreqsByDestType,
                    Epi = epi,
+                   unseen_infections = integer(days_to_sim),
+                   overseas_arrivals = integer(days_to_sim),
                    Incubation = rep(4L, nrow(aus)),
                    Illness = rep(4L, nrow(aus)),
                    nSupermarketsAvbl = integer(nrow(aus)),
