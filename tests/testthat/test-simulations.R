@@ -352,8 +352,10 @@ test_that(paste(as.character(Sys.time()), "contact tracing tests can be capped")
       "OTH",     100,         0,     0,       0)
   library(magrittr)
   library(data.table)
+  each. <- if (identical(Sys.getenv("TRAVIS"), "true")) 1L else 5L
+
   S_by_tests <-
-    lapply(rep(c(10L, 1000L), each = 5), function(tests) {
+    lapply(rep(c(10L, 1000L), each = each.), function(tests) {
       withr::with_seed(1, {
         simulate_sa2(60,
                      returner = 2,
@@ -363,7 +365,9 @@ test_that(paste(as.character(Sys.time()), "contact tracing tests can be capped")
                                            incubation_distribution = "dirac",
                                            incubation_mean = 8L),
                      PolicyPars = set_policypars(tests_by_state = rep(tests, 10L),
-                                                 cafes_open = FALSE)) %>%
+                                                 cafes_open = FALSE),
+                     unseen_infections = integer(60),
+                     overseas_arrivals = integer(60)) %>%
           .[, n_tests := tests] %>%
           .[]
       })
@@ -371,7 +375,7 @@ test_that(paste(as.character(Sys.time()), "contact tracing tests can be capped")
     rbindlist(idcol = "id")
 
   S_by_tests %>%
-    .[, id2 := (id - 1L) %% 5L] %>%
+    .[, id2 := (id - 1L) %% each.] %>%
     .[]
 
   S_by_tests %>%
@@ -511,7 +515,7 @@ test_that(paste(as.character(Sys.time()), "only_Year12"), {
 
 test_that(paste(as.character(Sys.time()), "major events (0)"), {
   skip_if_not(is64bit())
-  S <- simulate_sa2(47,
+  S <- simulate_sa2(25,
                     .first_day = "2020-03-30",
                     PolicyPars = set_policypars(supermarkets_open = TRUE,
                                                 cafes_open = FALSE,
