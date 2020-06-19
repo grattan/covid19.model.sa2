@@ -4,7 +4,7 @@ test_that(paste(as.character(Sys.time()), "simulation works"), {
   skip_if_not(is64bit())
   skip_if_not_installed("data.table")
   library(data.table)
-  DAYS <- 18L
+  DAYS <- 17L
   for (env_opt in c(getOption("covid19.model.sa2_useDataEnv", TRUE),
                     !getOption("covid19.model.sa2_useDataEnv", TRUE))) {
     for (thr in c(1L, 2L)) {
@@ -48,6 +48,21 @@ test_that(paste(as.character(Sys.time()), "simulation works"), {
                                                a_schools_rate = 0,
                                                a_workplace_rate = 0),
                          use_dataEnv = env_opt)[["nInfected"]]
+      S5 <- simulate_sa2(DAYS,
+                         PolicyPars = set_policypars(supermarkets_open = TRUE,
+                                                     workplaces_open = 0.1,
+                                                     schools_open = TRUE,
+                                                     only_Year12 = FALSE,
+                                                     school_days_per_wk = 3L,
+                                                     max_persons_per_supermarket = 50),
+                         EpiPars = set_epipars(q_supermarket = 1/10,
+                                               a_household_rate = 0,
+                                               a_schools_rate = 1,
+                                               a_workplace_rate = 0),
+                         nThread = thr)[["nInfected"]]
+      expect_true(is.atomic(S5))
+      skip_on_travis()
+
       S1 <- simulate_sa2(DAYS,
                          PolicyPars = set_policypars(supermarkets_open = TRUE,
                                                      max_persons_per_supermarket = 25,
@@ -89,23 +104,7 @@ test_that(paste(as.character(Sys.time()), "simulation works"), {
                                                a_workplace_rate = 0))[["nInfected"]]
       expect_true(is.atomic(S4))
 
-      if (!identical(thr, 1L)) {
-        skip_on_cran()
-        skip_on_travis()
-      }
-      invisible(gc())
-      S5 <- simulate_sa2(DAYS,
-                         PolicyPars = set_policypars(supermarkets_open = TRUE,
-                                                     workplaces_open = 0.1,
-                                                     schools_open = TRUE,
-                                                     only_Year12 = FALSE,
-                                                     school_days_per_wk = 3L,
-                                                     max_persons_per_supermarket = 50),
-                         EpiPars = set_epipars(q_supermarket = 1/10,
-                                               a_household_rate = 0,
-                                               a_schools_rate = 1,
-                                               a_workplace_rate = 0),
-                         nThread = thr)[["nInfected"]]
+
 
       S6 <- simulate_sa2(DAYS,
                          PolicyPars = set_policypars(supermarkets_open = TRUE,
@@ -254,7 +253,7 @@ test_that(paste(as.character(Sys.time()), "workplaces/schools infect"), {
   skip_if_not_installed('covr')
   library(hutilscpp)
 
-  for (pw in c(0.5, 0.6, 0.7, 0.8, 0.9, 1.0)) {
+  for (pw in c(0.5, 0.6, 0.7, 0.9, 1.0)) {
     if (covr::in_covr() && ps != 0.9) {
       next
     }
@@ -282,7 +281,7 @@ test_that(paste(as.character(Sys.time()), "workplaces/schools infect"), {
 
   new_infected <- integer(6)
   i <- 1L
-  for (ps in c(0.5, 0.6, 0.7, 0.8, 0.9, 1.0)) {
+  for (ps in c(0.5, 0.6, 0.7, 0.9, 1.0)) {
     if (covr::in_covr() && ps != 0.9) {
       next
     }
@@ -492,7 +491,7 @@ test_that(paste(as.character(Sys.time()), "workplace caps bind"), {
 
 test_that(paste(as.character(Sys.time()), "only_Year12"), {
   skip_if_not(is64bit())
-  withr::with_seed(55, {
+  withr::with_seed(53, {
     S <- simulate_sa2(8,
                       returner = 4,
                       .first_day = as.Date("2020-04-09"),
