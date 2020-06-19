@@ -96,6 +96,8 @@ test_that(paste(as.character(Sys.time()), "lockdown triggers work"), {
                    MultiPolicy = list(),
                    nPlacesByDestType = nPlacesByDestType,
                    Epi = Epi,
+                   unseen_infections = integer(days_to_sim),
+                   overseas_arrivals = integer(days_to_sim),
                    Incubation = rep(14L, nrow(aus)),
                    Illness = rep(1L, nrow(aus)),
                    nSupermarketsAvbl = integer(nrow(aus)),

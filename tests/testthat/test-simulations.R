@@ -103,7 +103,7 @@ test_that(paste(as.character(Sys.time()), "simulation works"), {
                                                      max_persons_per_supermarket = 50),
                          EpiPars = set_epipars(q_supermarket = 1/10,
                                                a_household_rate = 0,
-                                               a_schools_rate = 0,
+                                               a_schools_rate = 1,
                                                a_workplace_rate = 0),
                          nThread = thr)[["nInfected"]]
 
@@ -113,10 +113,11 @@ test_that(paste(as.character(Sys.time()), "simulation works"), {
                                                      schools_open = TRUE,
                                                      only_Year12 = FALSE,
                                                      school_days_per_wk = 5L,
-                                                     max_persons_per_supermarket = 60),
+                                                     max_persons_per_supermarket = 60,
+                                                     lockdown_triggers__schools = FALSE),
                          EpiPars = set_epipars(q_supermarket = 1/10,
                                                a_household_rate = 0,
-                                               a_schools_rate = 0,
+                                               a_schools_rate = 1,
                                                a_workplace_rate = 0))[["nInfected"]]
 
       stopifnot(is.atomic(S0),
@@ -192,15 +193,39 @@ test_that(paste(as.character(Sys.time()), "a_household_infections"), {
                             supermarkets_open = FALSE,
                             cafes_open = FALSE,
                             workplaces_open = FALSE)
+
+
   withr::with_seed(10, {
-    SH000 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.00), returner = 1, .first_day = "2020-05-01")
-    SH005 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.05), returner = 1, .first_day = "2020-05-01")
-    SH025 <- simulate_sa2(40, Policy = PolicyH, EpiPars = set_epipars(a_household_rate = 0.25), returner = 1, .first_day = "2020-05-01")
+    SH000 <- simulate_sa2(40,
+                          Policy = PolicyH,
+                          EpiPars = set_epipars(a_household_rate = 0.00,
+                                                q_household = 1),
+                          returner = 1,
+                          .first_day = "2020-05-01",
+                          unseen_infections = rep(10L, 40),
+                          overseas_arrivals = integer(40))
+    SH005 <- simulate_sa2(40,
+                          Policy = PolicyH,
+                          EpiPars = set_epipars(a_household_rate = 0.05,
+                                                q_household = 1),
+                          returner = 1,
+                          .first_day = "2020-05-01",
+                          unseen_infections = rep(10L, 40),
+                          overseas_arrivals = integer(40))
+    SH025 <- simulate_sa2(40,
+                          Policy = PolicyH,
+                          EpiPars = set_epipars(a_household_rate = 0.25,
+                                                q_household = 1),
+                          returner = 1,
+                          .first_day = "2020-05-01",
+                          unseen_infections = rep(10L, 40),
+                          overseas_arrivals = integer(40))
     s000 <- SH000[Status == "Suscep"][["N"]]
     s005 <- SH005[Status == "Suscep"][["N"]]
     s025 <- SH025[Status == "Suscep"][["N"]]
 
     expect_lt(mean(tail(s000, 10) < tail(s005, 10)), 0.5)
+    expect_lt(mean(tail(s005, 10) < tail(s025, 10)), 0.5)
   })
 
 

@@ -43,3 +43,9 @@ If \code{NULL}, the default, no additional columns are selected.
 \description{
 Read package system file
 }
+\examples{
+read_sys("time_series_cases.fst")
+read_sys("time_series_cases.fst", pattern = "^[A-Z]+$", columns = "Date")
+
+
+}

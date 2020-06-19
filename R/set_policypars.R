@@ -165,7 +165,13 @@ set_policypars <- function(yday_start = 0L,
 
   school_lockdown_triggers_exist <-
     !is.null(lockdown_triggers__schools) &&
+    !isFALSE(lockdown_triggers__schools) &&
     !isFALSE(lockdown_triggers__schools[["do_school_lockdown"]])
+
+  if (is.null(lockdown_triggers__schools) || isFALSE(lockdown_triggers__schools)) {
+    lockdown_triggers__schools <-
+      set_lockdown_triggers__schools(do_school_lockdown = FALSE)
+  }
 
 
   out <- mget(ls(sorted = FALSE))

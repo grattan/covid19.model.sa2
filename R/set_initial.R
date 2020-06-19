@@ -86,7 +86,12 @@ set_initial_by_state <- function(state_id,
   }
 
   if (is.character(cases_by_state)) {
-    cc <- function(dt) dt[complete.cases(dt)]
+    cc <- function(dt) {
+      if (hasName(dt, "lgl")) {
+        dt[, "lgl" := NULL]
+      }
+      dt[complete.cases(dt)]
+    }
     cases_by_state <- cc(read_sys(cases_by_state, fst2_progress = FALSE))
     deaths_by_state <- cc(read_sys(deaths_by_state, fst2_progress = FALSE))
     recovered_by_state <- cc(read_sys(recovered_by_state, fst2_progress = FALSE))
