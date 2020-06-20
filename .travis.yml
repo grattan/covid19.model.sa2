@@ -24,13 +24,12 @@ script:
 - Rscript -e "if (!requireNamespace('hutilscpp', quietly = TRUE) || packageVersion('hutilscpp') < '0.4.0') remotes::install_github('hughparsonage/hutilscpp', quick = FALSE, args = '')"
 - Rscript -e "devtools::install(quiet = TRUE)"
 - R CMD build .
-- travis_wait 25 R CMD check *tar.gz --no-manual
+- travis_wait 80 R CMD check *tar.gz --no-manual
 
 after_success:
     - Rscript -e "cat(crayon::green(as.character(Sys.time())), '\n')"
-    - travis_wait 75 Rscript -e 'covr::codecov(quiet = FALSE)'
+    - travis_wait 80 Rscript -e 'covr::codecov(quiet = FALSE)'
 
 after_failure:
-  - Rscript -e "devtools::load_all(); cat('\n', file_fst('SA2_by_POSTCODE.fst'), system.file('extdata', 'SA2_by_POSTCODE.fst', package = 'covid19.model.sa2'), sep = '\n')"
-  - travis_wait 25 Rscript -e "devtools::test()"
+  - travis_wait 80 Rscript -e "devtools::test()"
 
