@@ -45,7 +45,7 @@
   }
 
   if (is.null(getOption("covid19.model.sa2_useDataEnv"))) {
-    options(covid19.model.sa2_useDataEnv = FALSE)
+    options(covid19.model.sa2_useDataEnv = TRUE)
   }
 
   if (is64bit()) {

@@ -444,13 +444,19 @@ test_that(paste(as.character(Sys.time()), "early return"), {
   skip_if_not(is64bit())
   skip_if_not_installed("data.table")
   library(data.table)
-  S <- simulate_sa2(100,
+  options(datatable.auto.index = FALSE)
+  options(datatable.use.index = FALSE)
+  DAYS_TO_SIM <- 45
+  S <- simulate_sa2(DAYS_TO_SIM,
                     EpiPars = set_epipars(incubation_mean = 2,
                                           illness_mean = 5),
                     returner = 1L,
                     .first_day = "2020-06-01",
-                    PolicyPars = set_policypars(supermarkets_open = FALSE, cafes_open = FALSE))
-  expect_equal(S[Day == 100, .(Status, N)][Status %in% c("NoSymp", "InSymp"), sum(N)], 0L)
+                    PolicyPars = set_policypars(supermarkets_open = FALSE,
+                                                cafes_open = FALSE),
+                    overseas_arrivals = integer(DAYS_TO_SIM))
+  expect_equal(S[Day == DAYS_TO_SIM, .(Status, N)][Status %in% c("NoSymp", "InSymp"), sum(N)], 0L)
+  S <- NULL
 })
 
 test_that(paste(as.character(Sys.time()), "workplace caps bind"), {
@@ -458,6 +464,10 @@ test_that(paste(as.character(Sys.time()), "workplace caps bind"), {
   skip_if_not_installed("tibble")
   skip_if_not_installed("hutilscpp")
   library(hutilscpp)
+  skip_if_not_installed("data.table")
+  library(data.table)
+  options(datatable.auto.index = FALSE)
+  options(datatable.use.index = FALSE)
   skip_on_travis()  # too much memory required
   skip_on_cran()  # nThread
   aus <- read_typical()
