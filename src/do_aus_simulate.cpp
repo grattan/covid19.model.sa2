@@ -2224,7 +2224,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
   IntegerVector SA2_firsts = FirstFinalsSA2[0];
   IntegerVector SA2_finals = FirstFinalsSA2[1];
 
-  NumericVector notUsed = {1,2};
   // returner 0: Data frame of statuses
   DataFrame Statuses = DataFrame::create(Named("InitialStatus") = clone(Status));
 
