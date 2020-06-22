@@ -91,3 +91,7 @@ test_that("sum_le_eq", {
   Y <- rep_len(1:2, 100)
   expect_equal(sum_le_eq(X, 50L, Y, 1L), 25L)
 })
+
+test_that(paste(as.character(Sys.time()), "state_population()"), {
+  expect_equal(state_population("NSW"), state_population(1L))
+})

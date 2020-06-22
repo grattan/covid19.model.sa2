@@ -16,7 +16,7 @@ IntegerVector get_nColleagues(int nr, int N,
   // nr intermediate estimate for number of lognormal draws
   // plausibly the number of 'workplaces'
   if (N != LabourForceStatus.length()) {
-    stop("Internal error: get_nColleagues(): N != LabourForceStatus.length().");
+    stop("Internal error: get_nColleagues(): N != LabourForceStatus.length()."); // # nocov
   }
 
   IntegerVector r = no_init(nr);
@@ -50,7 +50,7 @@ IntegerVector get_nColleagues(int nr, int N,
     }
     break;
   default:
-    stop("Internal error: unsupported c_d.");
+    stop("Internal error: unsupported c_d."); // # nocov
   }
 
   IntegerVector out = no_init(N);
@@ -113,14 +113,14 @@ List do_workplaces(List AusByDZN,
   IntegerVector NDz = AusByDZN["NDz"]; // number of persons in the dzns
   IntegerVector LabourForceStatus = AusByDZN["LabourForceStatus"];
   if (do_is_unsorted_pint(DZN, nThread)) {
-    stop("Internal error: DZN should have been sorted.");
+    stop("Internal error: DZN should have been sorted."); // # nocov
   }
 
   int N = pid.length();
   int nr = MWORKPLACES + 500e3; // overestimate
 
   if (N != LabourForceStatus.length()) {
-    stop("Internal error: get_nColleagues(): N != LabourForceStatus.length().");
+    stop("Internal error: get_nColleagues(): N != LabourForceStatus.length()."); // # nocov
   }
 
   IntegerVector r = no_init(nr);
@@ -154,7 +154,7 @@ List do_workplaces(List AusByDZN,
     }
     break;
   default:
-    stop("Internal error: unsupported c_d.");
+    stop("Internal error: unsupported c_d."); // # nocov
   }
 
   IntegerVector nColleagues = no_init(N);

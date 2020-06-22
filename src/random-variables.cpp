@@ -256,7 +256,7 @@ IntegerVector do_lemire_rand(int n, bool fill_if_odd = false) {
     if (n > 0 && fill_if_odd) {
       ++n;
     } else {
-      stop("Internal error: (do_lemire_rand): n must be positive and even.");
+      stop("Internal error: (do_lemire_rand): n must be positive and even."); // # nocov
     }
 
   }
@@ -301,7 +301,7 @@ std::vector<unsigned char> do_lemire_char_par(int nn,
                                               int nThread = 1,
                                               bool return_char = false) {
   if (p > 1 || p < 0) {
-    stop("Internal error p must be in [0, 1]");
+    stop("Internal error: p must be in [0, 1]"); // # nocov
   }
   int pint = p * 255;
   unsigned char threshold = 0;
@@ -425,7 +425,7 @@ IntegerVector cf_sample(int n, int m, IntegerVector S, IntegerVector x) {
   int slen = S.length();
   int N = x.length();
   if (N != slen) {
-    stop("N != slen");
+    stop("N != slen"); // # nocov
   }
   IntegerVector out = no_init(N);
   if (m) {

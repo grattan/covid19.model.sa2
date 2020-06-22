@@ -13,7 +13,7 @@
 #' @export
 
 update_pappubahry <- function() {
-
+# nocov start
   # When n > 3 we functionalize
   read_pappu <- function(nom) {
     stopifnot(!endsWith(nom, ".csv"))
@@ -50,6 +50,7 @@ update_pappubahry <- function() {
            "time_series_nsw_sources",
            "time_series_vic_sources"),
          read_pappu)
+  # nocov end
 
 }
 

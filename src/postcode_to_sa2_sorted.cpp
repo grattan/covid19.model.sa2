@@ -14,7 +14,7 @@ IntegerVector postcode_to_sa2_sorted(IntegerVector postcode,
   IntegerVector out = no_init(N);
 
   int t = 0;
-  int i = 0;
+  int i = -1;
   while (++i < N && t < tn) {
     if (postcode[i] < POSTCODE[0] || postcode[i] > POSTCODE[tn - 1]) {
       out[i] = NA_INTEGER;
