@@ -317,7 +317,7 @@ test_that(paste(as.character(Sys.time()), "workplaces/schools infect"), {
     # The more likely school transmission, the more infections
 
   }
-  if (covr::in_covr()) {
+  if (!covr::in_covr()) {
     expect_false(do_is_unsorted_pint(new_infected))
   }
 })
