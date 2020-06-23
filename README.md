@@ -3,8 +3,6 @@
   [![Codecov test coverage](https://codecov.io/gh/grattan/covid19.model.sa2/branch/master/graph/badge.svg)](https://codecov.io/gh/grattan/covid19.model.sa2?branch=master)
   <!-- badges: end -->
 
-This model is free to use but not yet mature enough to be relied upon or cited. Please refrain from attributing this model to Grattan Institute until this advice changes.
-
 # covid19.model.sa2
 
 A model of the COVID-19 pandemic stratified by SA2.
