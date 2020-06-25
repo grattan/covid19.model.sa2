@@ -285,7 +285,7 @@ test_that(paste(as.character(Sys.time()), "workplaces/schools infect"), {
   new_infected <- integer(6)
   i <- 1L
   for (ps in c(0.5, 0.6, 0.7, 0.9, 1.0)) {
-    if (covr::in_covr() && ps != 0.9) {
+    if (covr::in_covr() && ps != 0.6) {
       next
     }
     S <-
@@ -357,7 +357,6 @@ test_that(paste(as.character(Sys.time()), "contact tracing tests can be capped")
   library(magrittr)
   library(data.table)
   each. <- if (identical(Sys.getenv("TRAVIS"), "true") || covr::in_covr()) 1L else 5L
-
   DAYS_TO_SIM <- 47L
 
   S_by_tests <-
