@@ -253,11 +253,13 @@ test_that(paste(as.character(Sys.time()), "workplaces/schools infect"), {
   skip_if_not_installed('covr')
   library(hutilscpp)
 
+  DAYS_TO_SIM <- 60L
+
   for (pw in c(0.5, 0.6, 0.7, 0.9, 1.0)) {
-    if (covr::in_covr() && ps != 0.9) {
+    if (covr::in_covr() && pw != 0.6) {
       next
     }
-    W <- simulate_sa2(100,
+    W <- simulate_sa2(DAYS_TO_SIM,
                       .first_day = "2020-03-23",
                       returner = 4,
                       PolicyPars = set_policypars(supermarkets_open = FALSE,
@@ -269,7 +271,8 @@ test_that(paste(as.character(Sys.time()), "workplaces/schools infect"), {
                       EpiPars = set_epipars(incubation_distribution = "dirac",
                                             incubation_mean = 100,
                                             q_workplace = pw,
-                                            q_household = 0))
+                                            q_household = 0),
+                      overseas_arrivals = integer(DAYS_TO_SIM))
     WSources <- .subset2(W, "InfectionSource")
 
     # Implementation detail
@@ -286,7 +289,7 @@ test_that(paste(as.character(Sys.time()), "workplaces/schools infect"), {
       next
     }
     S <-
-      simulate_sa2(100,
+      simulate_sa2(DAYS_TO_SIM,
                    .first_day = "2020-04-23",
                    returner = 4,
                    PolicyPars = set_policypars(supermarkets_open = TRUE,
@@ -302,7 +305,8 @@ test_that(paste(as.character(Sys.time()), "workplaces/schools infect"), {
                                          a_schools_rate = ps,
                                          q_school = ps/100,
                                          q_supermarket = 1/10000,
-                                         q_household = 1))
+                                         q_household = 1),
+                   overseas_arrivals = integer(DAYS_TO_SIM))
     SSources <- .subset2(S, "InfectionSource")
     new_infected[i] <- sum(S$InfectedOn > yday("2020-04-23"), na.rm = TRUE)
     i <- i + 1L
@@ -313,7 +317,7 @@ test_that(paste(as.character(Sys.time()), "workplaces/schools infect"), {
     # The more likely school transmission, the more infections
 
   }
-  if (covr::in_covr()) {
+  if (!covr::in_covr()) {
     expect_false(do_is_unsorted_pint(new_infected))
   }
 })
@@ -337,6 +341,7 @@ test_that(paste(as.character(Sys.time()), "contact tracing tests can be capped")
   skip_if_not_installed("withr")
   skip_if_not_installed("data.table")
   skip_if_not_installed("magrittr")
+  skip_if_not_installed("covr")
   manual_initial_status <-
     tibble::tribble(
       ~state, ~active, ~critical, ~dead, ~healed,
@@ -351,12 +356,14 @@ test_that(paste(as.character(Sys.time()), "contact tracing tests can be capped")
       "OTH",     100,         0,     0,       0)
   library(magrittr)
   library(data.table)
-  each. <- if (identical(Sys.getenv("TRAVIS"), "true")) 1L else 5L
+  each. <- if (identical(Sys.getenv("TRAVIS"), "true") || covr::in_covr()) 1L else 5L
+
+  DAYS_TO_SIM <- 47L
 
   S_by_tests <-
     lapply(rep(c(10L, 1000L), each = each.), function(tests) {
       withr::with_seed(1, {
-        simulate_sa2(60,
+        simulate_sa2(DAYS_TO_SIM,
                      returner = 2,
                      .first_day = "2020-06-01",
                      InitialStatus = manual_initial_status,
@@ -365,8 +372,8 @@ test_that(paste(as.character(Sys.time()), "contact tracing tests can be capped")
                                            incubation_mean = 8L),
                      PolicyPars = set_policypars(tests_by_state = rep(tests, 10L),
                                                  cafes_open = FALSE),
-                     unseen_infections = integer(60),
-                     overseas_arrivals = integer(60)) %>%
+                     unseen_infections = integer(DAYS_TO_SIM),
+                     overseas_arrivals = integer(DAYS_TO_SIM)) %>%
           .[, n_tests := tests] %>%
           .[]
       })
@@ -377,13 +384,23 @@ test_that(paste(as.character(Sys.time()), "contact tracing tests can be capped")
     .[, id2 := (id - 1L) %% each.] %>%
     .[]
 
-  S_by_tests %>%
-    .[Day >= 24] %>%
-    .[State == "ACT" & Status == "Isolated"] %>%
-    .[, expect_lte(first(N), last(N),
-                   label = paste0("@id,Day ", .BY[["id2"]], ",", .BY[["Day"]],
-                                  " = ", first(N))),
-      by = .(id2, Day)]
+  if (covr::in_covr()) {
+    S_by_tests %>%
+      .[Day %in% c(24L, 25L, 45L)] %>%
+      .[State == "ACT" & Status == "Isolated"] %>%
+      .[, expect_lte(first(N), last(N),
+                     label = paste0("@id,Day ", .BY[["id2"]], ",", .BY[["Day"]],
+                                    " = ", first(N))),
+        by = .(id2, Day)]
+  } else {
+    S_by_tests %>%
+      .[Day >= 24] %>%
+      .[State == "ACT" & Status == "Isolated"] %>%
+      .[, expect_lte(first(N), last(N),
+                     label = paste0("@id,Day ", .BY[["id2"]], ",", .BY[["Day"]],
+                                    " = ", first(N))),
+        by = .(id2, Day)]
+  }
   clear_dataEnv()
 
 })
