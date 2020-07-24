@@ -8,7 +8,9 @@ read_typical <- function() {
     rbindlist(lapply(1:9, function(s) {
       read_sys(paste0("examples/typical-aus-state-", s, ".fst"))
     }),
-    idcol = "state")
+    idcol = "state",
+    use.names = TRUE,
+    fill = TRUE)
   out[, "pid" := seq_len(.N)]
   setkeyv(out, c("state", "sa2", "hid", "pid"))
   out[, c("seqN", "HouseholdSize") := do_seqN_N(hid, pid)]

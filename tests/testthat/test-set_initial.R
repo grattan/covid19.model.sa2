@@ -70,9 +70,8 @@ test_that(paste(as.character(Sys.time()), "Set initial by state using a wide tri
                                           incubation_mean = 100L),
                     PolicyPars = set_policy_no_restrictions(),
                     use_dataEnv = FALSE)
-  n_act_active <- S$Statuses[and3s(state == 8, V1 == status_insymp()), .N]
+  n_act_active <- S$Statuses[and3s(state == 8, V1 %in% c(status_insymp(), status_insymp() + isolated_plus())), .N]
   # Account for quarantine
-  n_act_active <- n_act_active / (1 - p_quarantine_by_date("2020-06-01"))
   expect_true(n_act_active %between% c(900, 1100))
 })
 
@@ -105,9 +104,9 @@ test_that(paste(as.character(Sys.time()), "Set initial by state using a wide tri
                                           incubation_mean = 100L),
                     PolicyPars = set_policy_no_restrictions(),
                     use_dataEnv = FALSE)
-  n_act_active <- S$Statuses[and3s(state == 8, V1 == status_insymp()), .N]
+  n_act_active <- S$Statuses[and3s(state == 8, V1 %in% c(status_insymp(), status_insymp() + isolated_plus())), .N]
   # Account for quarantine
-  n_act_active <- n_act_active / (1 - p_quarantine_by_date("2020-06-01"))
+  # n_act_active <- n_act_active / (1 - p_quarantine_by_date("2020-06-01"))
   expect_true(n_act_active %between% c(900, 1100))
 
 })

@@ -65,7 +65,7 @@ read_sys <- function(file.fst,
 
   ans <- fst::read_fst(file.fst, columns = Columns, as.data.table = TRUE, ...)
   end_progress(start.time, fst2_progress, file.fst = file.fst)
-  ans[]
+  drop_empty_cols(ans[])
 }
 
 

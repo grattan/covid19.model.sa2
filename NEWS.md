@@ -1,3 +1,8 @@
+# 0.31.1
+
+* Data updated to 2020-07-22
+* `read_sys` now drops empty columns (included to avoid spurious CMD check errors)
+
 
 # 0.29.0
 * Resistance is now done by age
