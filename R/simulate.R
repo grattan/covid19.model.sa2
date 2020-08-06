@@ -582,11 +582,11 @@ get_overseas_arrivals <- function(start_date, days_to_sim) {
     .[, lapply(.SD, coalesce, 0L)] %>%
     melt.data.table(id.vars = c("Date")) %>%
     .[, .(pOverseas = weighted.mean(variable == "overseas", value)), keyby = "Date"] %>%
-    .[, pOverseas := coalesce(pOverseas, 0)] %>%
+    .[, pOverseas := hutilscpp::pmax0(coalesce(pOverseas, 0))] %>%
     .[, pOverseas := loess.smooth(.I, pOverseas, evaluation = .N)$y] %>%
     .[new_cases, on = "Date"] %>%
     .[, pOverseas := nafill(pOverseas, type = "locf")] %>%
-    .[, nOverseas := as.integer(round(NewCases * pOverseas))] %>%
+    .[, nOverseas := hutilscpp::pmax0(as.integer(round(NewCases * pOverseas)))] %>%
     .[]
 
   last_pOverseas <- pOverseas_by_Date[, last(nOverseas)]

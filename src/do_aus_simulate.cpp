@@ -2491,9 +2491,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
     // First, examine all individuals infected last night
     // and move them accordingly.
-
-
-
 #if defined _OPENMP && _OPENMP >= 201511
 #pragma omp parallel for num_threads(nThread)
 #endif
@@ -2510,9 +2507,6 @@ List do_au_simulate(IntegerVector StatusOriginal,
         //   1  -->   1   2 -->   2   3 -->  -1
         //   1  -->   2   2 -->   3   3 -->   3
         //
-
-
-
 
         int incubation = Incubation[i];
 
