@@ -421,6 +421,45 @@ set_initial_stochastic <- function(aus, .yday, p_asympto = 0.48, nThread = 1L) {
   aus
 }
 
+set_initial_victoria <- function(aus) {
+  InfectionsByPostcode <-
+    fread(system.file("extdata",
+                      "cases-by-postcode-2020-08-06-SMH.txt",
+                      package = "covid19.model.sa2"),
+          nThread = 1L) %>%
+    .[, Postcode := as.integer(fifelse(grepl("[A-Za-z]", Postcode), "", Postcode))] %>%
+    setkey(Postcode) %>%
+    .[, sa2 := postcode2sa2(Postcode)] %>%
+    .[, sa2 := nafill(nafill(sa2, type = "locf"), type = "nocb")] %>%
+    .[, .(aug06_cases = sum(cases, na.rm = TRUE),
+          aug06_active = sum(active, na.rm = TRUE)),
+      keyby = .(sa2)]
+
+  active_statuses_victoria <- copy(aus[and3s(Status > 0, state == 2), Status])
+  aus[and3s(state == 2L, Status > 0), Status := 0L]
+  aus[InfectionsByPostcode, aug06_cases := i.aug06_cases, on = "sa2"]
+  aus[InfectionsByPostcode, aug06_active := i.aug06_active, on = "sa2"]
+
+  aus[, sa2_pop := .N, by = .(sa2)]
+  aus[, aug06_cases := fcoalesce(aug06_cases, 0L)]
+  aus[, aug06_active := fcoalesce(aug06_active, 0L)]
+  aus[, aug06_concluded := aug06_cases - aug06_active]
+  aus[, aug06_susceptible := sa2_pop - aug06_cases]
+
+
+  aus[and3s(Status >= 0, state == 2),
+      Status := c(dqsample(active_statuses_victoria,
+                           size = first(aug06_active)),
+                  integer(.N - first(aug06_active))),
+      by = "sa2"]
+  aus[and3s(state == 2L, Status %in% c(1L, 33L)),
+      InfectedOn := yday("2020-08-06")]
+  aus[and3s(state == 2L, Status %in% c(2L, 34L)),
+      InfectedOn := yday("2020-08-06") - Incubation]
+}
+
+
+
 
 
 

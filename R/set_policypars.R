@@ -266,7 +266,20 @@ set_multipolicy <- function(.first_yday = NULL) {
                                                "TAS" = 5L,
                                                "NT" = 5L),
                         workplaces_open = 0.9,
-                        workplace_size_max = 100L))
+                        workplace_size_max = 100L),
+         set_policypars(yday_start = "2020-07-10",
+                        schools_open = FALSE,
+                        contact_tracing_success = 0.4,
+                        workplaces_open = 0.7),
+         set_policypars(yday_start = "2020-08-01",
+                        schools_open = FALSE,
+                        workplaces_open = 0.4,
+                        contact_tracing_success = 0.25,
+                        workplace_size_max = 20),
+         set_policypars(yday_start = "2020-09-09",
+                        workplaces_open = 0.7,
+                        schools_open = TRUE,
+                        contact_tracing_success = 0.5))
   if (is.null(.first_yday)) {
     return(out)
   }

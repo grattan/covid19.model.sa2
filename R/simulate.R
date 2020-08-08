@@ -77,6 +77,7 @@
 #' }
 #'
 #'
+#'
 #' @return
 #' For \code{returner = 0} a list of three components:
 #' the first component is an integer vector of length \code{days_to_simulate},
@@ -251,6 +252,7 @@ simulate_sa2 <- function(days_to_simulate = 5,
                              InitialStatus = InitialStatus,
                              yday_initial = .first_day,
                              nThread = nThread)
+
   } else {
     stopifnot(is.data.table(myaus),
               hasName(myaus, "Status"),
@@ -283,6 +285,12 @@ simulate_sa2 <- function(days_to_simulate = 5,
 
   if (is.null(overseas_arrivals)) {
     overseas_arrivals <- get_overseas_arrivals(start_date = .first_day, days_to_sim = days_to_simulate)
+  }
+
+  # impute victoria clustering
+  if (.first_day %between% c(yday("2020-07-05"),
+                             yday("2020-08-20"))) {
+    set_initial_victoria(aus)
   }
 
 
@@ -602,7 +610,6 @@ get_overseas_arrivals <- function(start_date, days_to_sim) {
 
   c(out, rep.int(last_pOverseas, days_to_sim - length(out)))
 }
-
 
 
 

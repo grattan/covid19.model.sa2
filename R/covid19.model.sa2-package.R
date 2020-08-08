@@ -9,6 +9,7 @@
 #' @import data.table
 #' @importFrom Rcpp evalCpp
 #' @importFrom checkmate vname
+#' @importFrom dqrng dqsample
 #' @importFrom fst read_fst
 #' @importFrom fst write_fst
 #' @importFrom glue glue

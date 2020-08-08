@@ -184,7 +184,7 @@ void contact_tracing(IntegerVector Status,
 
   if (day == 0) {
     int n_pupils = schoolsIndex.size();
-    if (n_pupils != NPUPILS) {
+    if (n_pupils != NPUPILS && N == 21364885) {
       stop("Internal error(contact tracing): n_pupils != NPUPILS"); // # nocov
     }
     if (ct_success < 0 || ct_success > 1) {
@@ -1821,9 +1821,9 @@ List do_au_simulate(IntegerVector StatusOriginal,
                     const int yday_start,
                     const int days_to_sim,
                     const int N,
+                    int returner = 0,
                     bool display_progress = true,
                     bool on_terminal = false,
-                    int returner = 0,
                     int console_width = 80,
                     int optionz = 0,
                     int nThread = 1) {
@@ -2104,7 +2104,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
 
 
 
-  if (n_pupils != NPUPILS) {
+  if (n_pupils != NPUPILS && N == 21364885) {
     Rcout << NPUPILS << "\n";
     Rcout << n_pupils << "\n";
     stop("n_pupils much larger than expected: likely an overestimate of schools.");
