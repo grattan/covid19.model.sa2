@@ -51,6 +51,7 @@ test_that(paste(as.character(Sys.time()), "dollars"), {
 })
 
 test_that(paste(as.character(Sys.time()), "minmax"), {
+  skip_if(is32bit())
   x <- do_lemire_rand(100e3)
   min_max_b <- c(min(x), max(x))
   min_max_a <- do_minmax_par(x)

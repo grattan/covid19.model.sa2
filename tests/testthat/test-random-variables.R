@@ -68,20 +68,17 @@ test_that("do_updateLemireSeedFromR error", {
 
 test_that(paste(as.character(Sys.time()), "RCauchy"), {
   skip_if_not_installed("withr")
-  if (is32bit()) {
-    expect_warning(do_lemire_char_par(1600),
-                   regex = 'do_lemire_char_par not available for 32-bit R')
-  } else {
-    withr::with_seed(77, {
-      rc <- as.integer(abs(rcauchy(1600, 10, 1)))
-      updateLemireSeedFromR()
-      RC <- RCauchy(U = do_lemire_rand_par(1600), scale = 10, location = 1)
-    })
-    expect_gte(median(RC), 8)
-    expect_gte(median(rc), 8)
-    expect_lte(median(rc), 13)
-    expect_lte(median(RC), 13)
-  }
+  skip_if(is32bit())
+
+  withr::with_seed(77, {
+    rc <- as.integer(abs(rcauchy(1600, 10, 1)))
+    updateLemireSeedFromR()
+    RC <- RCauchy(U = do_lemire_rand_par(1600), scale = 10, location = 1)
+  })
+  expect_gte(median(RC), 8)
+  expect_gte(median(rc), 8)
+  expect_lte(median(rc), 13)
+  expect_lte(median(RC), 13)
 })
 
 test_that(paste(as.character(Sys.time()), "cf"), {
