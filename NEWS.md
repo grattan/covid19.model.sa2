@@ -1,3 +1,8 @@
+# 0.34.0
+
+* Include set_initial Victoria, to account for known clustering by postcode
+* Include `isol_compliance` in policy, to model people in isolation escaping
+
 # 0.31.1
 
 * Data updated to 2020-07-22

@@ -2194,6 +2194,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
     stateShortSA2[i] = sa2_to_state(sa2s[i]);
   }
 
+  const double isol_compliance = Policy["isol_compliance"];
 
 
 
@@ -2489,6 +2490,7 @@ List do_au_simulate(IntegerVector StatusOriginal,
       stop("Internal error: Incubation.length() != N"); // # nocov
     }
 
+    std::vector<unsigned char> Q_isol_compliance = q_lemire_32(N, isol_compliance, nThread);
     // First, examine all individuals infected last night
     // and move them accordingly.
 #if defined _OPENMP && _OPENMP >= 201511
@@ -2553,6 +2555,13 @@ List do_au_simulate(IntegerVector StatusOriginal,
             Status[i] = (prog_killed) ? STATUS_KILLED : STATUS_HEALED;
           }
         }
+        int statusii = Status[i];
+        if (is_isolated(statusii)) {
+          if (!Q_isol_compliance[i]) {
+            Status[i] -= ISOLATED_PLUS;
+          }
+        }
+
       }
     }
 

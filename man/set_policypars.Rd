@@ -41,7 +41,8 @@ set_policypars(
   workplace_size_lmu = -1,
   workplace_size_lsi = -1,
   travel_outside_sa2 = FALSE,
-  lockdown_triggers__schools = set_lockdown_triggers__schools()
+  lockdown_triggers__schools = set_lockdown_triggers__schools(),
+  isol_compliance = 0.7
 )
 
 set_policy_no_restrictions(...)
@@ -142,6 +143,9 @@ rate distribution for the geometric distribution; \code{_lmu} and
 \item{travel_outside_sa2}{Should travel outside a person's SA2 be modelled?}
 
 \item{lockdown_triggers__schools}{A list constructed by \code{\link{set_lockdown_triggers__schools}}.}
+
+\item{isol_compliance}{Chance of a person in isolation going about their
+normal business while in isolation.}
 
 \item{...}{Arguments passed to \code{set_policypars}.}
 }

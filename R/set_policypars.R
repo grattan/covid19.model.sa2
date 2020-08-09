@@ -79,6 +79,9 @@
 #' @param lockdown_triggers__schools
 #' A list constructed by \code{\link{set_lockdown_triggers__schools}}.
 #'
+#' @param isol_compliance Chance of a person in isolation going about their
+#' normal business while in isolation.
+#'
 #' @param ... Arguments passed to \code{set_policypars}.
 #'
 #'
@@ -118,7 +121,8 @@ set_policypars <- function(yday_start = 0L,
                            workplace_size_lmu = -1,
                            workplace_size_lsi = -1,
                            travel_outside_sa2 = FALSE,
-                           lockdown_triggers__schools = set_lockdown_triggers__schools()) {
+                           lockdown_triggers__schools = set_lockdown_triggers__schools(),
+                           isol_compliance = 0.7) {
 
   if (!is.integer(yday_start)) {
     yday_start <- yday(yday_start)
@@ -172,6 +176,8 @@ set_policypars <- function(yday_start = 0L,
     lockdown_triggers__schools <-
       set_lockdown_triggers__schools(do_school_lockdown = FALSE)
   }
+
+  checkmate::assert_number(isol_compliance, lower = 0, upper = 1)
 
 
   out <- mget(ls(sorted = FALSE))

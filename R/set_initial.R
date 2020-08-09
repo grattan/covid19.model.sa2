@@ -422,9 +422,13 @@ set_initial_stochastic <- function(aus, .yday, p_asympto = 0.48, nThread = 1L) {
 }
 
 set_initial_victoria <- function(aus) {
+  Postcode <- cases <- active <- sa2 <- state <- Status <-
+    i.aug06_cases <- i.aug06_active <-
+    sa2_pop <- InfectedOn <- NULL
+
   InfectionsByPostcode <-
     fread(system.file("extdata",
-                      "cases-by-postcode-2020-08-06-SMH.txt",
+                      "cases-by-postcode-2020-08-06-SMH.tsv",
                       package = "covid19.model.sa2"),
           nThread = 1L) %>%
     .[, Postcode := as.integer(fifelse(grepl("[A-Za-z]", Postcode), "", Postcode))] %>%

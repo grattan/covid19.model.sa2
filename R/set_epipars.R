@@ -58,6 +58,7 @@
 #' \code{rbeta} function that determines the distribution of visit frequency
 #' to supermarkets.
 #'
+#'
 #' @return A list of the components, plus an entry \code{CHECKED} having the
 #' value \code{TRUE}.
 #'
